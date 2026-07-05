@@ -11,7 +11,7 @@ gsap.registerPlugin(useGSAP);
 
 const INK = "#0B1220";
 const BLUE = "#2454FF";
-const SKY = "#EEF4FF";
+const SKY = "#F8F8F8";
 const SLATE = "#64748B";
 const GOLD = "#F5A623";
 const CYAN = "#06B6D4";
@@ -99,6 +99,7 @@ export function Hero() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
+      let safetyTimer: ReturnType<typeof setTimeout> | undefined;
 
       mm.add(
         {
@@ -106,101 +107,164 @@ export function Hero() {
           reduceMotion: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
-          const conditions = context.conditions as {
+          const { isDesktop, reduceMotion } = context.conditions as {
             isDesktop: boolean;
             reduceMotion: boolean;
           };
-          const { isDesktop, reduceMotion } = conditions;
 
+          const lines = gsap.utils.toArray<HTMLElement>(".hero-line");
+          const ctaChildren = ctaRef.current
+            ? gsap.utils.toArray<HTMLElement>(ctaRef.current.children)
+            : [];
+
+          // Everything that must NEVER end up stuck invisible.
           const revealTargets = [
             badgeRef.current,
-            ".hero-line",
+            ...lines,
             paragraphRef.current,
-            ctaRef.current,
+            ...ctaChildren,
             socialRef.current,
             imageCardRef.current,
             ringWrapRef.current,
             flameWrapRef.current,
-          ];
+          ].filter(Boolean) as HTMLElement[];
 
-          // Respect reduced motion: snap everything into place, no animation.
+          // ---- Reduced motion: snap in place, done. ----
           if (reduceMotion) {
             gsap.set(revealTargets, { clearProps: "all", opacity: 1 });
             return;
           }
 
-          const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+          // ---- Explicit initial hidden state (not implicit via .from()) ----
+          // Using gsap.set() up front means the "hidden" state is only ever
+          // applied once, deliberately — a stalled/killed tween later can't
+          // leave things half-configured the way a chained .from() can.
+          gsap.set(badgeRef.current, { y: -16, opacity: 0 });
+          gsap.set(lines, { yPercent: 120, opacity: 0 });
+          gsap.set(paragraphRef.current, { y: 18, opacity: 0 });
+          gsap.set(ctaChildren, { y: 18, opacity: 0 });
+          gsap.set(socialRef.current, { y: 14, opacity: 0 });
 
-          tl.from(badgeRef.current, { y: -16, opacity: 0, duration: 0.6 })
-            .from(
-              ".hero-line",
-              { yPercent: 120, opacity: 0, duration: 1, stagger: 0.12 },
+          if (isDesktop) {
+            gsap.set(imageCardRef.current, {
+              clipPath: "inset(100% 0% 0% 0%)",
+              scale: 1.12,
+              filter: "blur(14px)",
+            });
+            gsap.set(ringWrapRef.current, { scale: 0, opacity: 0 });
+            gsap.set(flameWrapRef.current, { scale: 0, opacity: 0 });
+          } else {
+            gsap.set(imageCardRef.current, { y: 24, opacity: 0 });
+            gsap.set(ringWrapRef.current, { y: 16, opacity: 0 });
+            gsap.set(flameWrapRef.current, { opacity: 0 });
+          }
+
+          // Safety net: whatever happens (tab throttling, a stray error,
+          // a target resolving late on a fast refresh) the hero is
+          // guaranteed to be fully visible within 2.5s.
+          safetyTimer = setTimeout(() => {
+            gsap.set(revealTargets, { clearProps: "opacity,transform,filter" });
+          }, 2500);
+
+          const tl = gsap.timeline({
+            defaults: { ease: "power4.out" },
+            onComplete: () => {
+              if (safetyTimer) clearTimeout(safetyTimer);
+              // Clean up inline styles on static text/CTA so nothing lingers
+              // to fight with Tailwind's hover/active transforms later.
+              gsap.set(
+                [
+                  badgeRef.current,
+                  ...lines,
+                  paragraphRef.current,
+                  ...ctaChildren,
+                  socialRef.current,
+                ],
+                { clearProps: "transform,opacity" }
+              );
+            },
+          });
+
+          tl.to(badgeRef.current, { y: 0, opacity: 1, duration: 0.6 })
+            .to(
+              lines,
+              {
+                yPercent: 0,
+                opacity: 1,
+                duration: 1,
+                stagger: 0.12,
+                ease: "expo.out",
+              },
               "-=0.3"
             )
-            .from(
+            .to(
               paragraphRef.current,
-              { y: 18, opacity: 0, duration: 0.7 },
+              { y: 0, opacity: 1, duration: 0.7 },
               "-=0.55"
             )
-            .from(
-              ctaRef.current ? Array.from(ctaRef.current.children) : [],
-              { y: 18, opacity: 0, duration: 0.6, stagger: 0.1 },
+            .to(
+              ctaChildren,
+              { y: 0, opacity: 1, duration: 0.6, stagger: 0.1 },
               "-=0.45"
             )
-            .from(
+            .to(
               socialRef.current,
-              { y: 14, opacity: 0, duration: 0.6 },
+              { y: 0, opacity: 1, duration: 0.6 },
               "-=0.35"
             );
 
           if (isDesktop) {
-            // Awwwards-style clip reveal + scale-down on the hero image.
-            tl.fromTo(
+            // Awwwards-style focus-pull: clip reveal + scale settle + blur-to-sharp.
+            tl.to(
               imageCardRef.current,
-              { clipPath: "inset(100% 0% 0% 0%)", scale: 1.15 },
               {
                 clipPath: "inset(0% 0% 0% 0%)",
                 scale: 1,
-                duration: 1.3,
-                ease: "power4.inOut",
+                filter: "blur(0px)",
+                duration: 1.4,
+                ease: "expo.inOut",
               },
               "-=0.6"
             )
-              .from(
+              .to(
                 ringWrapRef.current,
-                { scale: 0, opacity: 0, duration: 0.7, ease: "back.out(1.7)" },
-                "-=0.5"
+                { scale: 1, opacity: 1, duration: 0.7, ease: "back.out(1.7)" },
+                "-=0.55"
               )
-              .from(
+              .to(
                 flameWrapRef.current,
-                { scale: 0, opacity: 0, duration: 0.7, ease: "back.out(1.7)" },
+                { scale: 1, opacity: 1, duration: 0.7, ease: "back.out(1.7)" },
                 "-=0.5"
               );
 
-            // Idle float loop on the floating badges once they've landed.
-            gsap.to(ringWrapRef.current, {
+            // Idle float loop, started only after landing so it never fights the entrance.
+            const floatRing = gsap.to(ringWrapRef.current, {
               y: "+=8",
               duration: 2.4,
               repeat: -1,
               yoyo: true,
               ease: "sine.inOut",
+              delay: tl.duration(),
             });
-            gsap.to(flameWrapRef.current, {
+            const floatFlame = gsap.to(flameWrapRef.current, {
               y: "+=8",
               duration: 2.6,
               repeat: -1,
               yoyo: true,
               ease: "sine.inOut",
-              delay: 0.3,
+              delay: tl.duration() + 0.3,
             });
 
-            // Magnetic buttons — CTA links pull toward the cursor.
+            // Magnetic CTAs.
             const buttons = ctaRef.current
               ? (Array.from(
                   ctaRef.current.querySelectorAll("a")
                 ) as HTMLElement[])
               : [];
-            const cleanups: Array<() => void> = [];
+           const cleanups: Array<() => void> = [
+             () => floatRing.kill(),
+             () => floatFlame.kill(),
+           ];
 
             buttons.forEach((btn) => {
               const xTo = gsap.quickTo(btn, "x", {
@@ -229,10 +293,11 @@ export function Hero() {
               cleanups.push(() => {
                 btn.removeEventListener("mousemove", onMove);
                 btn.removeEventListener("mouseleave", onLeave);
+                gsap.set(btn, { clearProps: "transform" });
               });
             });
 
-            // Subtle tilt on the hero image, following the cursor.
+            // Subtle cursor tilt on the hero image.
             const imageEl = imageCardRef.current;
             if (imageEl) {
               const rotateX = gsap.quickTo(imageEl, "rotateX", {
@@ -264,23 +329,29 @@ export function Hero() {
               });
             }
 
-            return () => cleanups.forEach((fn) => fn());
+            return () => {
+              if (safetyTimer) clearTimeout(safetyTimer);
+              cleanups.forEach((fn) => fn());
+            };
           }
 
-          // Mobile: minimal — plain fade/slide, no tilt, no clip reveal, no idle loop.
-          tl.from(
+          // ---- Mobile: simple reveal only — no clip-path, no tilt, no idle float, no magnetism. ----
+          tl.to(
             imageCardRef.current,
-            { y: 24, opacity: 0, duration: 0.7 },
+            { y: 0, opacity: 1, duration: 0.6 },
             "-=0.3"
-          ).from(
+          ).to(
             ringWrapRef.current,
-            { y: 16, opacity: 0, duration: 0.5 },
-            "-=0.4"
+            { y: 0, opacity: 1, duration: 0.5 },
+            "-=0.35"
           );
         }
       );
 
-      return () => mm.revert();
+      return () => {
+        if (safetyTimer) clearTimeout(safetyTimer);
+        mm.revert();
+      };
     },
     { scope: sectionRef }
   );

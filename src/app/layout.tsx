@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -32,7 +33,10 @@ export default function RootLayout({
       className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <SmoothScrollProvider>
+          {children}
+         
+        </SmoothScrollProvider>
       </body>
     </html>
   );
