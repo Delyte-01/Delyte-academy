@@ -1,0 +1,15 @@
+supabase data_password : DelyteAcademy01
+
+milesmorales123
+delytesam@gmail.com
+
+
+delyte780@gmail.com
+dolcegabana12
+
+
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Student';
+  const displayLevel = profile?.level || 'SS3 Student';
+  const avatarUrl =
+    profile?.avatar_url ||
+    'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=60';

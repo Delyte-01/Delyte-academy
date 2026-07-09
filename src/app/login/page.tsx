@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/services/auth";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 gsap.registerPlugin(useGSAP);
 
@@ -58,6 +62,70 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.warning("Email is required");
+      return;
+    }
+
+    if (!password.trim()) {
+      toast.warning("Password is required");
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const { data, error } = await authService.login(email, password);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(data);
+
+      toast.success("Logged in successfully!");
+
+      router.push("/dashboard");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.warning("Something went wrong.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await authService.signInWithGoogle();
+
+    if (error) {
+      toast.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        router.replace("/dashboard");
+      }
+    };
+
+    checkUser();
+  }, [router]);
+
+  // ------  Animation states ,refs and logic -------------------
 
   const leftPerspectiveRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -345,7 +413,7 @@ export default function LoginPage() {
             <p className="mt-2.5 text-[15px]" style={{ color: SLATE }}>
               New to StudyHub?{" "}
               <Link
-                href="/signup"
+                href="/sign-up"
                 className="font-semibold hover:opacity-80"
                 style={{ color: BLUE }}
               >
@@ -355,7 +423,8 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 py-3.5 text-sm font-semibold transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+              onClick={handleGoogleLogin}
+              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 py-3.5 text-sm font-semibold transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
               style={{ color: INK }}
             >
               <GoogleIcon />
@@ -370,10 +439,7 @@ export default function LoginPage() {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-6 space-y-5"
-            >
+            <form onSubmit={handleLogin} className="mt-6 space-y-5">
               <div>
                 <label
                   className="mb-1.5 block text-sm font-medium"
@@ -464,14 +530,15 @@ export default function LoginPage() {
                 </label>
               </div>
 
-              <Link
-                href="/dashboard"
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 disabled:opacity-50"
                 style={{ background: INK }}
               >
-                Sign in
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+                {loading ? "signing in..." : "Sign in"}
+                {!loading && <ArrowRight className="h-4 w-4" />}
+              </button>
             </form>
 
             <p className="mt-9 text-center text-xs" style={{ color: SLATE }}>

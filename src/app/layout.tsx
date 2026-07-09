@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
+import { Toaster } from "sonner";
 
 
 const inter = Inter({
@@ -35,7 +36,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <SmoothScrollProvider>
           {children}
-         
+          <Toaster richColors position="top-right" />
         </SmoothScrollProvider>
       </body>
     </html>

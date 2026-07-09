@@ -1,5 +1,6 @@
 import { Footer } from "@/components/footer";
-import { Navbar } from "@/components/nvabar";
+import { Navbar } from "@/components/navbar";
+
 import { CoursesSection } from "@/features/courses-section";
 import { FAQ } from "@/features/FAQ";
 import { Hero } from "@/features/hero-section";

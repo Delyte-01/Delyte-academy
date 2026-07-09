@@ -420,7 +420,7 @@ export function Hero() {
               className="flex w-full flex-col gap-3.5 xs:w-auto sm:gap-4 md:flex-row"
             >
               <Link
-                href="/signup"
+                href="/sign-up"
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-slate-900/10 transition-opacity hover:opacity-90 active:scale-[0.97]"
                 style={{ background: INK }}
               >

@@ -257,7 +257,7 @@ export function Navbar() {
               Login
             </Link>
             <Link
-              href="/signup"
+              href="/sign-up"
               className="rounded-lg px-5 py-2 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{ background: INK }}
             >
@@ -332,7 +332,7 @@ export function Navbar() {
             Login
           </Link>
           <Link
-            href="/signup"
+            href="/sign-up"
             onClick={() => setMobileOpen(false)}
             className="mobile-cta flex-1 rounded-lg py-3 text-center text-sm font-bold text-white"
             style={{ background: INK }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+
+import { toast } from "sonner";
+import { authService } from "@/services/auth";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 gsap.registerPlugin(useGSAP);
 
@@ -65,6 +70,115 @@ function GoogleIcon() {
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+   const router = useRouter();
+
+  // ------------ form states ---------------------
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+
+
+
+
+  const handleGoogleLogin = async () => {
+    const { error } = await authService.signInWithGoogle();
+
+    if (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // ----------Handle Sign up Functionality ---------------------------
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Validation will go here
+    if (!firstName.trim()) {
+      toast.warning("First name is required");
+      return;
+    }
+
+    if (!lastName.trim()) {
+      toast.warning("Last name is required");
+      return;
+    }
+
+    if (!email.trim()) {
+      toast.warning("Email is required");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.warning("Password must be at least 8 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.warning("Passwords do not match");
+      return;
+    }
+
+    if (!acceptTerms) {
+      toast.warning("Please accept the Terms of Service");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await authService.signup(
+        email,
+        password,
+        firstName,
+        lastName
+      );
+
+      if (error) {
+        throw error;
+      }
+      toast.success(
+        "Account created! Please check your email to verify your account."
+      );
+      console.log(data);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Something went wrong.");
+      }
+    } finally {
+      setLoading(false);
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setAcceptTerms(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await  supabase.auth.getUser();
+
+      if (user) {
+        router.replace("/dashboard");
+      }
+    };
+
+    checkUser();
+  }, [router]);
+
+  // ------------// animations states and refs ---------------------------------------------
 
   const leftPerspectiveRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -310,7 +424,8 @@ export default function SignupPage() {
 
             <button
               type="button"
-              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 py-3.5 text-sm font-semibold transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+              onClick={handleGoogleLogin}
+              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 py-3.5 text-sm font-semibold transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
               style={{ color: INK }}
             >
               <GoogleIcon />
@@ -325,10 +440,7 @@ export default function SignupPage() {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-6 space-y-5"
-            >
+            <form onSubmit={handleSignUp} className="mt-6 space-y-5">
               <div className="flex flex-col gap-5 sm:grid sm:grid-cols-2 sm:gap-4">
                 <div>
                   <label
@@ -345,6 +457,8 @@ export default function SignupPage() {
                     <input
                       type="text"
                       placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none transition-shadow focus:border-transparent"
                       onFocus={(e) =>
                         (e.target.style.boxShadow = `0 0 0 2px ${BLUE}`)
@@ -367,6 +481,8 @@ export default function SignupPage() {
                     />
                     <input
                       type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe"
                       className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none transition-shadow focus:border-transparent"
                       onFocus={(e) =>
@@ -392,6 +508,9 @@ export default function SignupPage() {
                   />
                   <input
                     type="email"
+                    value={email}
+                    required
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none transition-shadow focus:border-transparent"
                     onFocus={(e) =>
@@ -416,6 +535,8 @@ export default function SignupPage() {
                   />
                   <input
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
                     className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-12 text-sm outline-none transition-shadow focus:border-transparent"
                     onFocus={(e) =>
@@ -453,6 +574,8 @@ export default function SignupPage() {
                   />
                   <input
                     type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat your password"
                     className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-12 text-sm outline-none transition-shadow focus:border-transparent"
                     onFocus={(e) =>
@@ -479,6 +602,8 @@ export default function SignupPage() {
               <div className="flex items-start gap-2 pt-1">
                 <input
                   id="terms"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-slate-300"
                   style={{ accentColor: BLUE }}
@@ -505,14 +630,15 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              <Link
-                href="/dashboard"
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 disabled:opacity-50"
                 style={{ background: INK }}
               >
-                Create account
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+                {loading ? "Creating Account..." : "Create Account"}
+                {!loading && <ArrowRight className="h-4 w-4" />}
+              </button>
             </form>
           </div>
         </div>
