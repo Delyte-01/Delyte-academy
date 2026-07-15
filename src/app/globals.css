@@ -25,25 +25,34 @@
   --ring: oklch(0.55 0.16 258);
 }
 
+/*
+  Dark mode — tuned to read as an elevated charcoal-navy rather than
+  near-black. Background lightness bumped from 0.145 -> 0.165 and given a
+  touch more chroma (0.02 -> 0.028) so it sits as a deep navy, not gray-black.
+  Card is pushed clearly above the background (0.225 vs 0.165) so panels,
+  the sidebar, and the topbar visibly layer instead of blending into the
+  page. Primary/accent brighten slightly so they still pop against the
+  lighter dark background.
+*/
 .dark {
-  --background: oklch(0.145 0.02 265);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.19 0.02 265);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.19 0.02 265);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.7 0.13 258);
-  --primary-foreground: oklch(0.145 0.02 265);
-  --secondary: oklch(0.27 0.02 265);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.27 0.02 265);
-  --muted-foreground: oklch(0.65 0.02 264);
-  --accent: oklch(0.55 0.16 258);
+  --background: oklch(0.165 0.028 264);
+  --foreground: oklch(0.96 0.006 264);
+  --card: oklch(0.225 0.026 264);
+  --card-foreground: oklch(0.96 0.006 264);
+  --popover: oklch(0.225 0.026 264);
+  --popover-foreground: oklch(0.96 0.006 264);
+  --primary: oklch(0.72 0.135 258);
+  --primary-foreground: oklch(0.165 0.028 264);
+  --secondary: oklch(0.27 0.024 264);
+  --secondary-foreground: oklch(0.96 0.006 264);
+  --muted: oklch(0.25 0.022 264);
+  --muted-foreground: oklch(0.68 0.02 264);
+  --accent: oklch(0.58 0.17 258);
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.55 0.16 258);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.58 0.17 258);
 }
 
 @theme inline {

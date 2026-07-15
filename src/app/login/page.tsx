@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { profileService } from "@/services/profile";
 
 gsap.registerPlugin(useGSAP);
 
@@ -89,7 +90,17 @@ export default function LoginPage() {
 
       toast.success("Logged in successfully!");
 
-      router.push("/dashboard");
+      const profile = await profileService.getCurrentProfile();
+
+      if (!profile) {
+        throw new Error("Profile not found.");
+      }
+
+      if (profile.role === "admin" || profile.role === "super_admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -442,7 +453,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="mt-6 space-y-5">
               <div>
                 <label
-                  className="mb-1.5 block text-sm font-medium"
+                  className="mb-1.5 block text-sm font-medium text-foreground"
                   style={{ color: INK }}
                 >
                   Email address

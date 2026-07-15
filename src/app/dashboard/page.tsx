@@ -13,9 +13,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-
-  
-
   return (
     <div>
       <h1>Dashboard</h1>

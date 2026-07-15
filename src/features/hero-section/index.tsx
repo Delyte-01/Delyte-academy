@@ -485,9 +485,9 @@ export function Hero() {
               style={{ willChange: "transform" }}
             >
               <Image
-                src="https://res.cloudinary.com/dk5mfu099/image/upload/v1783154244/university-student-woman-and-portrait-with-backpack-books-and-happy-for-back-to-school_xf78fh.jpg"
+                src="https://res.cloudinary.com/dk5mfu099/image/upload/v1783847682/photo-1622295023825-6e319464b810_qqtdmi.jpg"
                 width={800}
-                height={1000}
+                height={800}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 50vw"
                 alt="Student studying"
                 className="h-[340px] w-full object-cover sm:h-[400px] lg:h-[460px]"
