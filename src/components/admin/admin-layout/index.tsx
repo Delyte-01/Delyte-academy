@@ -1,16 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import AdminSidebar, { navItems } from "@/components/admin/admin-sidebar";
 import AdminTopbar from "@/components/admin/admin-topbar";
+import { authService } from "@/services/auth";
+import { toast } from "sonner";
+
 
 export default function AdminLayoutClient({
   children,
 }: {
   children: React.ReactNode;
-}) {
+  }) {
+  
+  const router = useRouter();
+
+
+    const handleSignOut = async () => {
+      try {
+        const { error } = await authService.logout();
+
+        if (error) throw error;
+
+        toast.success("Logged out successfully.");
+
+        router.replace("/login");
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to log out."
+        );
+      }
+    };
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -45,6 +69,7 @@ export default function AdminLayoutClient({
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
         onToggleCollapse={() => setCollapsed(!collapsed)}
+        handleSignOut={handleSignOut}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">

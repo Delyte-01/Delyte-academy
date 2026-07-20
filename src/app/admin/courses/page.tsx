@@ -7,7 +7,7 @@ import AdminPageShell, {
 } from "@/components/admin/admin-page-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, GraduationCap, Layers, Sparkles } from "lucide-react";
+import { GraduationCap, Layers, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { CourseCardMenu } from "@/components/admin/courses/courseCardMenu";
@@ -15,57 +15,15 @@ import { Course } from "@/types/course";
 import { courseService } from "@/services/course";
 import { toast } from "sonner";
 import { CourseThumbnail } from "@/components/admin/courses/courseThumbnail";
+import Link from "next/link";
 
-const courses = [
-  {
-    title: "Advanced Mathematics",
-    category: "Science",
-    students: 1240,
-    questions: 320,
-    status: "Published",
-  },
-  {
-    title: "English Language & Lit.",
-    category: "Arts",
-    students: 980,
-    questions: 215,
-    status: "Published",
-  },
-  {
-    title: "Biology & Life Sciences",
-    category: "Science",
-    students: 1560,
-    questions: 410,
-    status: "Published",
-  },
-  {
-    title: "Physics Fundamentals",
-    category: "Science",
-    students: 870,
-    questions: 290,
-    status: "Draft",
-  },
-  {
-    title: "Economics & Commerce",
-    category: "Social Science",
-    students: 1100,
-    questions: 180,
-    status: "Published",
-  },
-  {
-    title: "Chemistry in Depth",
-    category: "Science",
-    students: 1320,
-    questions: 340,
-    status: "Published",
-  },
-];
 
-const categoryStyles: Record<string, { bg: string; icon: string }> = {
-  Science: { bg: "bg-blue-500/10", icon: "text-blue-600" },
-  Arts: { bg: "bg-violet-500/10", icon: "text-violet-600" },
-  "Social Science": { bg: "bg-amber-500/10", icon: "text-amber-600" },
-};
+
+// const categoryStyles: Record<string, { bg: string; icon: string }> = {
+//   Science: { bg: "bg-blue-500/10", icon: "text-blue-600" },
+//   Arts: { bg: "bg-violet-500/10", icon: "text-violet-600" },
+//   "Social Science": { bg: "bg-amber-500/10", icon: "text-amber-600" },
+// };
 
 const statusStyles: Record<string, string> = {
   published:
@@ -79,6 +37,8 @@ const statusStyles: Record<string, string> = {
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+
+  console.log(loading)
 
   const fetchCourses = async () => {
     try {
@@ -223,59 +183,63 @@ export default function CoursesPage() {
             // );
 
             return (
-              <Card
-                key={course.title}
-                data-course-card
-                className="group cursor-pointer overflow-hidden border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 capitalize"
+              <Link
+                key={course.id}
+                href={`/admin/courses/${course.id}`}
+                className="block"
               >
-                 
-                <CourseThumbnail
-                  src={course.thumbnail} alt={course.title} />
+                <Card
+                  // key={course.title}
+                  data-course-card
+                  className="group cursor-pointer overflow-hidden border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 capitalize"
+                >
+                  <CourseThumbnail src={course.thumbnail} alt={course.title} />
 
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="min-w-0">
-                      <h2 className="uppercase extra-bold">
-                        {course.course_code}
-                      </h2>
-                      <CardTitle className="truncate text-sm font-bold mt-1">
-                        {course.title}
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {course.description}
-                      </p>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0">
+                        <h2 className="uppercase extra-bold">
+                          {course.course_code}
+                        </h2>
+                        <CardTitle className="truncate text-sm font-bold mt-1">
+                          {course.title}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {course.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-shrink-0 items-center gap-1.5">
-                    <Badge
-                      className={cn(
-                        "text-[10px] font-semibold",
-                        statusStyles[course.status]
-                      )}
-                    >
-                      {course.status}
-                    </Badge>
-                    <CourseCardMenu
-                      status={course.status}
-                      onEdit={() =>
-                        router.push(`/admin/courses/${course.id}/edit`)
-                      }
-                      onDelete={() => handleDelete(course.id)}
-                      onStatusChange={() =>
-                        course.status === "draft"
-                          ? handlePublish(course.id)
-                          : handleDraft(course.id)
-                      }
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-[width] duration-500" />
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex flex-shrink-0 items-center gap-1.5">
+                      <Badge
+                        className={cn(
+                          "text-[10px] font-semibold",
+                          statusStyles[course.status]
+                        )}
+                      >
+                        {course.status}
+                      </Badge>
+                      <CourseCardMenu
+                        status={course.status}
+                        onEdit={() =>
+                          router.push(`/admin/courses/${course.id}/edit`)
+                        }
+                        onDelete={() => handleDelete(course.id)}
+                        onStatusChange={() =>
+                          course.status === "draft"
+                            ? handlePublish(course.id)
+                            : handleDraft(course.id)
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-[width] duration-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

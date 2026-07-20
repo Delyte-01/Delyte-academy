@@ -118,6 +118,7 @@ export default function EditCoursePage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/immutability
     loadCourse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCourse = async () => {

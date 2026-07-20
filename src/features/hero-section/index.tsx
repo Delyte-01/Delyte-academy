@@ -359,7 +359,7 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-white py-16 sm:py-24 lg:py-32"
+      className="relative overflow-hidden bg-white  py-24 lg:py-32"
     >
       {/* ambient tints — quiet, symmetric, not a decorative mesh */}
       <div

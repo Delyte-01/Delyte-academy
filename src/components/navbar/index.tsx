@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import Image from "next/image";
 
 gsap.registerPlugin(useGSAP);
 
@@ -50,9 +51,8 @@ export function Navbar() {
   const headerRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-  const barTopRef = useRef<HTMLSpanElement>(null);
-  const barMidRef = useRef<HTMLSpanElement>(null);
-  const barBotRef = useRef<HTMLSpanElement>(null);
+  const menuIconRef = useRef<SVGSVGElement>(null);
+  const closeIconRef = useRef<SVGSVGElement>(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -116,23 +116,71 @@ export function Navbar() {
     { scope: headerRef }
   );
 
-  // ── Hamburger → X morph ──
-  useGSAP(() => {
-    const top = barTopRef.current;
-    const mid = barMidRef.current;
-    const bot = barBotRef.current;
-    if (!top || !mid || !bot) return;
+  // ── First-paint entrance: logo, links and CTAs settle in together ──
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        ".nav-reveal",
+        { opacity: 0, y: -10 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          stagger: 0.05,
+          delay: 0.1,
+          ease: EASE_PREMIUM,
+        }
+      );
+    },
+    { scope: headerRef }
+  );
 
-    if (mobileOpen) {
-      gsap.to(top, { rotate: 45, y: 6, duration: 0.4, ease: EASE_PREMIUM });
-      gsap.to(mid, { opacity: 0, duration: 0.2, ease: EASE_SNAP });
-      gsap.to(bot, { rotate: -45, y: -6, duration: 0.4, ease: EASE_PREMIUM });
-    } else {
-      gsap.to(top, { rotate: 0, y: 0, duration: 0.4, ease: EASE_PREMIUM });
-      gsap.to(mid, { opacity: 1, duration: 0.3, delay: 0.1, ease: EASE_SNAP });
-      gsap.to(bot, { rotate: 0, y: 0, duration: 0.4, ease: EASE_PREMIUM });
-    }
-  }, [mobileOpen]);
+  // ── Hamburger ⇄ close icon swap ──
+  // Two lucide icons stacked in the same slot; the outgoing one shrinks,
+  // rotates and fades out while the incoming one settles in from the
+  // opposite rotation — reads as a single fluid morph, not a hard cut.
+  useGSAP(
+    () => {
+      const menuIcon = menuIconRef.current;
+      const closeIcon = closeIconRef.current;
+      if (!menuIcon || !closeIcon) return;
+
+      if (mobileOpen) {
+        gsap.to(menuIcon, {
+          opacity: 0,
+          rotate: 45,
+          scale: 0.6,
+          duration: 0.25,
+          ease: EASE_SNAP,
+        });
+        gsap.to(closeIcon, {
+          opacity: 1,
+          rotate: 0,
+          scale: 1,
+          duration: 0.4,
+          delay: 0.08,
+          ease: EASE_PREMIUM,
+        });
+      } else {
+        gsap.to(closeIcon, {
+          opacity: 0,
+          rotate: -45,
+          scale: 0.6,
+          duration: 0.22,
+          ease: EASE_SNAP,
+        });
+        gsap.to(menuIcon, {
+          opacity: 1,
+          rotate: 0,
+          scale: 1,
+          duration: 0.4,
+          delay: 0.08,
+          ease: EASE_PREMIUM,
+        });
+      }
+    },
+    { dependencies: [mobileOpen] }
+  );
 
   // ── Mobile panel: clip-path wipe + staggered content ──
   useGSAP(() => {
@@ -212,7 +260,7 @@ export function Navbar() {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-50 border-b"
+      className="fixed inset-x-0 top-0 z-50 w-full border-b"
       style={{
         borderColor: "transparent",
         willChange: "background-color, height",
@@ -220,19 +268,24 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
-          className="nav-inner flex items-center justify-between"
-          style={{ height: 72 }}
+          className="nav-inner flex items-center justify-between "
+          style={{ height: 100 }}
         >
-          <Link href="/" className="flex items-center gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg"
-              style={{ background: INK }}
-            >
-              <BookOpen className="h-4 w-4 text-white" />
+          <Link
+            href="/"
+            className="nav-reveal flex items-center gap-2 transition-transform duration-300 hover:scale-[1.03] -ml-6"
+          >
+            <div>
+              <Image
+                src={
+                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784143281/light_mode_yra76b.svg"
+                }
+                alt="delyte academy logo"
+                width={200}
+                height={120}
+                className="object-cover w-[220px] height-[100px] "
+              />
             </div>
-            <span className="text-xl font-extrabold" style={{ color: INK }}>
-              Study<span style={{ color: BLUE }}>Hub</span>
-            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -240,10 +293,16 @@ export function Navbar() {
               <Link
                 key={label}
                 href={href}
-                className="text-sm font-medium transition-colors hover:text-[--hover]"
-                style={{ color: SLATE, ["--hover" as string]: INK }}
+                className="nav-reveal group relative text-sm font-medium transition-colors"
+                style={{ color: SLATE, ["--hover" as string]: BLUE }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = BLUE)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = SLATE)}
               >
                 {label}
+                <span
+                  className="absolute -bottom-1 left-0 h-[2px] w-0 rounded-full transition-all duration-300 ease-out group-hover:w-full"
+                  style={{ background: BLUE }}
+                />
               </Link>
             ))}
           </nav>
@@ -251,44 +310,37 @@ export function Navbar() {
           <div className="hidden items-center gap-3 md:flex">
             <Link
               href="/login"
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition-colors hover:border-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="nav-reveal rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition-colors hover:border-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{ color: INK }}
             >
               Login
             </Link>
             <Link
               href="/sign-up"
-              className="rounded-lg px-5 py-2 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="nav-reveal rounded-lg px-5 py-2 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               style={{ background: INK }}
             >
               Sign up
             </Link>
           </div>
 
-          {/* Custom 3-bar hamburger — morphs into an X, not a crossfade */}
+          {/* Hamburger / close — lucide icons cross-faded + rotated via GSAP */}
           <button
-            className="relative flex h-9 w-9 items-center justify-center md:hidden"
+            className="nav-reveal relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-slate-100 active:scale-90 md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
-            <span className="flex h-4 w-5 flex-col justify-between">
-              <span
-                ref={barTopRef}
-                className="block h-[2px] w-full rounded-full"
-                style={{ background: INK, transformOrigin: "center" }}
-              />
-              <span
-                ref={barMidRef}
-                className="block h-[2px] w-full rounded-full"
-                style={{ background: INK }}
-              />
-              <span
-                ref={barBotRef}
-                className="block h-[2px] w-full rounded-full"
-                style={{ background: INK, transformOrigin: "center" }}
-              />
-            </span>
+            <Menu
+              ref={menuIconRef}
+              className="absolute h-5 w-5"
+              style={{ color: INK }}
+            />
+            <X
+              ref={closeIconRef}
+              className="absolute h-5 w-5 opacity-0"
+              style={{ color: INK, transform: "rotate(-45deg) scale(0.6)" }}
+            />
           </button>
         </div>
       </div>

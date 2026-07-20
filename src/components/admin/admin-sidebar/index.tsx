@@ -22,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 export const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -42,6 +44,7 @@ interface AdminSidebarProps {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   onToggleCollapse: () => void;
+  handleSignOut: () => void;
 }
 
 export default function AdminSidebar({
@@ -49,6 +52,7 @@ export default function AdminSidebar({
   mobileOpen,
   onCloseMobile,
   onToggleCollapse,
+  handleSignOut
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
@@ -145,8 +149,16 @@ export default function AdminSidebar({
             href="/admin"
             className="group flex items-center gap-2.5 overflow-hidden"
           >
-            <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary to-indigo-700 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_-2px_rgba(79,70,229,0.55)] transition-transform duration-300 group-hover:scale-105">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <div>
+              <Image
+                src={
+                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784147337/Group_1_bpvzwx.svg"
+                }
+                alt="delyte academy logo"
+                width={120}
+                height={120}
+                className="object-cover w-[40px] height-[60px] "
+              />
             </div>
             {!collapsed && (
               <div className="flex flex-col leading-tight">
@@ -255,17 +267,18 @@ export default function AdminSidebar({
             <GraduationCap className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Student View</span>}
           </Link>
-          <Link
-            href="/"
+          <button
+            onClick={handleSignOut}
             className={cn(
-              "mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive",
+              "mt-1 flex items-center gap-3 border w-full justify-center rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive",
               collapsed && "lg:justify-center lg:px-0"
             )}
             title={collapsed ? "Logout" : undefined}
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
-          </Link>
+
+          </button>
         </div>
 
         {/* Collapse toggle (desktop) */}

@@ -19,6 +19,7 @@ import { authService } from "@/services/auth";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { profileService } from "@/services/profile";
+import Image from "next/image";
 
 gsap.registerPlugin(useGSAP);
 
@@ -403,16 +404,18 @@ export default function LoginPage() {
           className="flex min-h-screen w-full flex-col justify-center px-6 py-12 sm:px-10 lg:px-16 xl:px-20"
         >
           <div className="mx-auto w-full max-w-sm">
-            <Link href="/" className="mb-12 flex items-center gap-2">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg"
-                style={{ background: INK }}
-              >
-                <BookOpen className="h-4 w-4 text-white" />
+            <Link href="/" className=" flex items-center gap-2 ">
+              <div>
+                <Image
+                  src={
+                    "https://res.cloudinary.com/dk5mfu099/image/upload/v1784143281/light_mode_yra76b.svg"
+                  }
+                  alt="delyte academy logo"
+                  width={200}
+                  height={120}
+                  className="object-cover w-[220px] height-[100px] "
+                />
               </div>
-              <span className="text-lg font-bold" style={{ color: INK }}>
-                Study<span style={{ color: BLUE }}>Hub</span>
-              </span>
             </Link>
 
             <h1
@@ -422,7 +425,7 @@ export default function LoginPage() {
               Welcome back
             </h1>
             <p className="mt-2.5 text-[15px]" style={{ color: SLATE }}>
-              New to StudyHub?{" "}
+              New to Delyte Academy?{" "}
               <Link
                 href="/sign-up"
                 className="font-semibold hover:opacity-80"

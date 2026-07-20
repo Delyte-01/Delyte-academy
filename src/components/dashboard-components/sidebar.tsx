@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import {
-  BookOpen,
   LayoutDashboard,
   GraduationCap,
   BarChart2,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 gsap.registerPlugin(useGSAP);
 
@@ -172,14 +172,19 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
         className="fixed top-0 left-0 z-40 flex h-full w-72 flex-col border-r border-slate-100 bg-white lg:sticky lg:h-screen"
       >
         {/* Logo */}
-        <div className="sidebar-reveal flex items-center justify-between px-6 py-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#6D5BF5_0%,#9B6BF0_100%)] shadow-[0_6px_16px_-4px_rgba(109,91,245,0.55)]">
-              <BookOpen className="h-4.5 w-4.5 text-white" strokeWidth={2.25} />
+        <div className="sidebar-reveal flex items-center justify-between ">
+          <Link href="/" className="flex items-center  ">
+            <div>
+              <Image
+                src={
+                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784496645/gradient-logo_bo8vrn.svg"
+                }
+                alt="delyte academy logo"
+                width={200}
+                height={100}
+                className="object-cover w-[220px] height-[100px] "
+              />
             </div>
-            <span className="font-[var(--font-display)] text-[19px] font-extrabold tracking-tight text-slate-900">
-              Study<span className="text-[#6D5BF5]">Hub</span>
-            </span>
           </Link>
           <button
             className="text-slate-400 transition-colors hover:text-slate-700 lg:hidden"

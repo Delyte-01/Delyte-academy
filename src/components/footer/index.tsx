@@ -18,6 +18,7 @@ import {
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -337,15 +338,17 @@ export function Footer() {
         <div className="mt-14 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:mt-16">
           <div className="foot-col col-span-2 space-y-4 sm:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl"
-                style={{ background: BLUE }}
-              >
-                <BookOpen className="h-5 w-5 text-white" />
+              <div>
+                <Image
+                  src={
+                    "https://res.cloudinary.com/dk5mfu099/image/upload/v1784143355/dark_mode_yern29.svg"
+                  }
+                  alt="delyte academy logo"
+                  width={200}
+                  height={100}
+                  className="object-cover w-[220px] height-[100px]  "
+                />
               </div>
-              <span className="text-xl font-extrabold text-white">
-                Study<span style={{ color: BLUE }}>Hub</span>
-              </span>
             </Link>
             <p
               className="max-w-xs text-sm leading-relaxed"
