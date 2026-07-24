@@ -181,7 +181,6 @@ export function TopicOverviewTab({
       { scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.5)" },
       0.3
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -191,7 +190,7 @@ export function TopicOverviewTab({
         <Card data-overview-card className="border-border/60">
           <CardHeader className="pb-4">
             <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-base font-bold">{title}</CardTitle>
+              <CardTitle className="text-base font-bold first-letter:capitalize">{title}</CardTitle>
               <Badge
                 variant="outline"
                 className={cn("text-xs", statusStyles[status])}

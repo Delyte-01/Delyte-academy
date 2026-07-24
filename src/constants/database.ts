@@ -3,5 +3,9 @@ export const TABLES = {
   TOPICS: "topics",
   PRACTICE_SETS: "practice_sets",
   QUESTIONS: "questions",
-  RESOURCES: "resources",
+  TOPIC_ATTACHMENTS: "topic_attachments",
+  QUIZZES: "quizzes",
+  QUESTION_OPTIONS:"question_options",
 } as const;
+
+

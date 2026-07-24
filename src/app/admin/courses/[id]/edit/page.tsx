@@ -188,11 +188,17 @@ export default function EditCoursePage() {
       });
 
       if (bannerChanged && originalCourse?.banner) {
-        await uploadService.deleteImage(originalCourse.banner);
+        await uploadService.deleteImage(
+          originalCourse.banner,
+          "course-banners"
+        );
       }
 
       if (thumbnailChanged && originalCourse?.thumbnail) {
-        await uploadService.deleteImage(originalCourse.thumbnail);
+        await uploadService.deleteImage(
+          originalCourse.thumbnail,
+          "course-banners"
+        );
       }
 
       toast.success("Draft updated successfully");
@@ -235,11 +241,17 @@ export default function EditCoursePage() {
       });
       setSavingMessage("Finishing...");
       if (bannerChanged && originalCourse?.banner) {
-        await uploadService.deleteImage(originalCourse.banner);
+        await uploadService.deleteImage(
+          originalCourse.banner,
+          "course-banners"
+        );
       }
 
       if (thumbnailChanged && originalCourse?.thumbnail) {
-        await uploadService.deleteImage(originalCourse.thumbnail);
+        await uploadService.deleteImage(
+          originalCourse.thumbnail,
+          "course-banners"
+        );
       }
       toast.success("Course updated successfully");
 

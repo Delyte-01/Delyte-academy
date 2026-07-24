@@ -1,0 +1,63 @@
+import type { LucideIcon } from 'lucide-react';
+
+export type QuestionType = 'Multiple Choice' | 'True / False' | 'Short Answer';
+export type Difficulty = 'Easy' | 'Medium' | 'Hard';
+export type QuizStatus = 'Draft' | 'Published' | 'Archived';
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  number: number;
+  text: string;
+  type: QuestionType;
+  difficulty: Difficulty;
+  points: number;
+  options: QuizOption[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface QuizSettings {
+  title: string;
+  description: string;
+  instructions: string;
+  passingScore: number;
+  timeLimit: number;
+  maxAttempts: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showCorrectAnswers: boolean;
+  requirePassingScore: boolean;
+  autoPublishResults: boolean;
+}
+
+export const difficultyStyles: Record<Difficulty, string> = {
+  Easy: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+  Medium: 'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  Hard: 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-400',
+};
+
+export const questionTypeStyles: Record<QuestionType, string> = {
+  'Multiple Choice': 'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-400',
+  'True / False': 'border-violet-500/30 bg-violet-500/15 text-violet-700 dark:text-violet-400',
+  'Short Answer': 'border-cyan-500/30 bg-cyan-500/15 text-cyan-700 dark:text-cyan-400',
+};
+
+export const statusStyles: Record<QuizStatus, string> = {
+  Published: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+  Draft: 'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  Archived: 'border-zinc-500/30 bg-zinc-500/15 text-zinc-700 dark:text-zinc-400',
+};
+
+export interface QuizStatItem {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  color: string;
+  bgColor: string;
+}

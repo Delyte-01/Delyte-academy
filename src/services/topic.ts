@@ -1,7 +1,7 @@
 import { TABLES } from "@/constants/database";
 import { createClient } from "@/lib/supabase/client";
 
-import { CreateTopicData, TopicStatus, UpdateTopicData } from "@/types/topic";
+import { CreateTopicData, Topic, TopicStatus, UpdateTopicData } from "@/types/topic";
 import slugify from "slugify";
 
 const supabase = createClient();
@@ -13,6 +13,13 @@ async function createTopic({
   estimatedTime,
   difficulty,
   status,
+  content,
+  objectives,
+  prerequisites,
+  summary,
+  video_url,
+  external_links,
+  attachments,
 }: CreateTopicData) {
   const {
     data: { user },
@@ -38,6 +45,19 @@ async function createTopic({
       difficulty,
       estimated_time: estimatedTime,
       status,
+      content: content ?? "",
+
+      summary: summary ?? "",
+
+      objectives: objectives ?? [],
+
+      prerequisites: prerequisites ?? [],
+
+      video_url: video_url ?? "",
+
+      external_links: external_links ?? [],
+
+      attachments: attachments ?? [],
     })
     .select()
     .single();
@@ -72,9 +92,8 @@ async function getTopicById(id: string) {
 
   return data;
 }
-
-async function updateTopic(data: UpdateTopicData) {
-  const { error } = await supabase
+async function updateTopic(data: UpdateTopicData): Promise<Topic> {
+  const { data: updatedTopic, error } = await supabase
     .from(TABLES.TOPICS)
     .update({
       title: data.title,
@@ -86,13 +105,24 @@ async function updateTopic(data: UpdateTopicData) {
       estimated_time: data.estimatedTime,
       difficulty: data.difficulty,
       status: data.status,
+      introduction: data.introduction,
+      content: data.content,
+      objectives: data.objectives,
+      prerequisites: data.prerequisites,
+      summary: data.summary,
+      video_url: data.video_url,
+      external_links: data.external_links,
+      attachments: data.attachments,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", data.id);
+    .eq("id", data.id)
+    .select()
+    .single();
 
   if (error) throw error;
-}
 
+  return updatedTopic;
+}
 async function deleteTopic(id: string) {
   const { error } = await supabase.from(TABLES.TOPICS).delete().eq("id", id);
 

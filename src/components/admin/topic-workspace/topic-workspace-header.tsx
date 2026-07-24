@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import {
@@ -10,12 +10,12 @@ import {
   UploadCloud,
   EyeOff,
   Clock,
-  Copy,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useParams, useRouter } from "next/navigation";
+import { TopicStatus } from "../topics/topic-form";
 
 type Status = "draft" | "published";
 type Difficulty = "beginner" | "intermediate" | "advanced";
@@ -28,6 +28,7 @@ interface TopicWorkspaceHeaderProps {
   duration: number;
   status: Status;
   courseSlug: string;
+  onChangeStatus: (id: string, status: TopicStatus) => void;
 }
 
 const difficultyStyles: Record<Difficulty, string> = {
@@ -44,16 +45,20 @@ const statusStyles: Record<Status, string> = {
 export function TopicWorkspaceHeader({
   title,
   description,
-  code,
   difficulty,
   duration,
   status,
   courseSlug,
+  onChangeStatus,
 }: TopicWorkspaceHeaderProps) {
+  const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const accentRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
-  const [copied, setCopied] = useState(false);
+  const params = useParams();
+  const id = params.id as string;
+  const courseId = id;
+  const topicId = params.topicsId as string;
 
   useEffect(() => {
     const tl = gsap.timeline();
@@ -75,7 +80,6 @@ export function TopicWorkspaceHeader({
         0.25
       );
   }, []);
-
 
 
   return (
@@ -114,7 +118,7 @@ export function TopicWorkspaceHeader({
             {/* Title block */}
             <div className="min-w-0 pb-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
+                <h1 className="text-xl first-letter:capitalize font-extrabold tracking-tight text-foreground sm:text-2xl">
                   {title}
                 </h1>
                 <Badge
@@ -140,25 +144,12 @@ export function TopicWorkspaceHeader({
                 >
                   {difficulty}
                 </Badge>
-                {/* <button
-                  type="button"
-                  onClick={handleCopyCode}
-                  title="Copy topic code"
-                  className="group/code inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5 font-mono text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  {code}
-                  {copied ? (
-                    <Check className="h-3 w-3 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/code:opacity-100" />
-                  )}
-                </button> */}
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   {duration}
                 </span>
               </div>
-              <p className="mt-2 hidden max-w-xl line-clamp-1 text-xs text-muted-foreground sm:block">
+              <p className="mt-2 hidden max-w-xl line-clamp-1 text-xs text-muted-foreground sm:block first-letter:capitalize">
                 {description}
               </p>
             </div>
@@ -166,12 +157,28 @@ export function TopicWorkspaceHeader({
 
           {/* Quick actions */}
           <div className="flex flex-shrink-0 items-center gap-2">
-            <Button variant="outline" size="sm" className="group">
+            <Button
+              variant="outline"
+              size="sm"
+              className="group"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(
+                  `/admin/courses/${courseId}/topics/${topicId}/edit`
+                );
+              }}
+            >
               <Pencil className="mr-1.5 h-3.5 w-3.5 transition-transform duration-200 group-hover:-rotate-12" />
               Edit
             </Button>
             {status === "published" ? (
-              <Button variant="secondary" size="sm" className="group">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="group"
+                onClick={() => onChangeStatus(topicId, "draft")}
+              >
                 <EyeOff className="mr-1.5 h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-90" />
                 Unpublish
               </Button>
@@ -180,6 +187,7 @@ export function TopicWorkspaceHeader({
                 variant="secondary"
                 size="sm"
                 className="group bg-emerald-600/10 text-emerald-700 transition-colors hover:bg-emerald-600/20"
+                onClick={() => onChangeStatus(topicId, "published")}
               >
                 <UploadCloud className="mr-1.5 h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" />
                 Publish

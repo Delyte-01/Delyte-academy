@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,14 @@ import { Topic } from "@/types/topic";
 import { TopicService } from "@/services/topic";
 import { toast } from "sonner";
 import { TopicStatus } from "../topics/topic-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EmptyState } from "@/components/empty-states";
 
 interface TopicsPageProp {
   topics: Topic[];
@@ -56,6 +64,59 @@ export function TopicsTab({ courseId, topics, setTopics }: TopicsPageProp) {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "published"
+  >("all");
+
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "duration" | "alphabetical"
+  >("newest");
+
+  const filteredTopics = useMemo(() => {
+    let data = [...topics];
+
+    // Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+
+      data = data.filter((topic) => topic.title.toLowerCase().includes(query));
+    }
+
+    // Status Filter
+    if (statusFilter !== "all") {
+      data = data.filter((topic) => topic.status === statusFilter);
+    }
+
+    // Sorting
+    switch (sortBy) {
+      case "newest":
+        data.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        break;
+
+      case "oldest":
+        data.sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        break;
+
+      case "duration":
+        data.sort((a, b) => a.estimated_time - b.estimated_time);
+        break;
+
+      case "alphabetical":
+        data.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+    }
+
+    return data;
+  }, [topics, searchQuery, statusFilter, sortBy]);
 
   useEffect(() => {
     const tl = gsap.timeline();
@@ -121,34 +182,47 @@ export function TopicsTab({ courseId, topics, setTopics }: TopicsPageProp) {
           <Input
             placeholder="Search topics..."
             className="border-border/60 bg-muted/40 pl-9 transition-colors focus-visible:bg-background"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Filter: All
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem>All</DropdownMenuItem>
-              <DropdownMenuItem>Draft</DropdownMenuItem>
-              <DropdownMenuItem>Published</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Sort: Newest
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem>Newest first</DropdownMenuItem>
-              <DropdownMenuItem>Oldest first</DropdownMenuItem>
-              <DropdownMenuItem>Title (A–Z)</DropdownMenuItem>
-              <DropdownMenuItem>Duration</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) =>
+              setStatusFilter(value as typeof statusFilter)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+
+              <SelectItem value="draft">Draft</SelectItem>
+
+              <SelectItem value="published">Publish</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={sortBy}
+            onValueChange={(value) => setSortBy(value as typeof sortBy)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+
+              <SelectItem value="oldest">Oldest</SelectItem>
+
+              <SelectItem value="duration">Duration</SelectItem>
+
+              <SelectItem value="alphabetical">A–Z</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             size="sm"
             onClick={handleNavigateId}
@@ -162,10 +236,13 @@ export function TopicsTab({ courseId, topics, setTopics }: TopicsPageProp) {
 
       {/* Topic cards */}
       <div ref={gridRef} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {topics.length === 0 ? (
-          <div>empty data</div>
+        {filteredTopics.length === 0 ? (
+          <EmptyState
+            title="No topics found"
+            description="Try changing your search or filters."
+          />
         ) : (
-          topics.map((topic) => (
+          filteredTopics.map((topic) => (
             <Card
               className=" border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
               key={topic.id}
