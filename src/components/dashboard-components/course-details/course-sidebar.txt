@@ -1,0 +1,101 @@
+"use client";
+
+import {
+  BookOpen,
+  ClipboardCheck,
+  Star,
+  Users,
+  Clock,
+  Award,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProgressCard } from "./progress-card";
+import { Course } from "@/types/course";
+
+interface CourseSidebarProps {
+  course: Course;
+}
+
+export function CourseSidebar({ course }: CourseSidebarProps) {
+  const certificateStatus: "locked" | "in-progress" | "ready" =
+    course.progress >= 100
+      ? "ready"
+      : course.progress > 0
+        ? "in-progress"
+        : "locked";
+
+  return (
+    <div className="space-y-5 lg:sticky lg:top-6">
+      <ProgressCard
+        progress={course.progress}
+        completedTopics={course.completedTopics}
+        totalTopics={course.totalTopics}
+        certificateStatus={certificateStatus}
+        estimatedCompletion={course.estimatedCompletion}
+        lastActivity={course.lastActivity}
+      />
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold">Course Statistics</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4 pt-0">
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <BookOpen className="h-4 w-4 text-primary" />
+              Total Topics
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {course.title.length > 0 ? course.totalTopics : "N/A"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ClipboardCheck className="h-4 w-4 text-amber-600" />
+              Quizzes
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {course.title.length > 0 ? course.totalTopics : "N/A"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Star className="h-4 w-4 text-amber-500" />
+              Rating
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {course.rating} / 5
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Users className="h-4 w-4 text-blue-600" />
+              Students
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {course.studentsCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-4 w-4 text-violet-600" />
+              Duration
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {course.estimatedDuration}
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Award className="h-4 w-4 text-emerald-600" />
+              Certificate
+            </span>
+            <span className="text-sm font-bold text-foreground">
+              {certificateStatus === "ready" ? "Available" : "On Completion"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -24,11 +24,7 @@ gsap.registerPlugin(useGSAP);
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  {
-    href: "/dashboard/courses/math-101",
-    label: "Courses",
-    icon: GraduationCap,
-  },
+  { href: "/dashboard/courses", label: "Courses", icon: GraduationCap },
   { href: "/dashboard/progress", label: "Progress", icon: BarChart2 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
@@ -52,15 +48,24 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
     return pathname.startsWith(href);
   };
 
-  // Entrance stagger for nav items + logo, once on mount. Only touches
-  // the children (nav rows / cards), never the aside's own transform,
-  // so it can never fight the drawer animation below.
+
+  useEffect(() => {
+    if (asideRef.current) {
+      if (window.matchMedia(DESKTOP_QUERY).matches) {
+        gsap.set(asideRef.current, { x: 0 });
+      } else {
+        gsap.set(asideRef.current, { x: "-100%" });
+      }
+    }
+  }, []);
+
+  // Entrance stagger for nav items + logo, once on mount.
   useGSAP(
     () => {
       gsap.fromTo(
         ".sidebar-reveal",
         { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: "power2.out" }
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: "power2.out" },
       );
       gsap.fromTo(
         ".sidebar-item",
@@ -72,7 +77,7 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
           stagger: 0.05,
           delay: 0.15,
           ease: "power2.out",
-        }
+        },
       );
 
       if (flameRef.current) {
@@ -86,117 +91,113 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
         });
       }
     },
-    { scope: asideRef }
+    { scope: asideRef },
   );
 
-  // Drawer. GSAP is the SINGLE owner of `transform` on the aside —
-  // there is no Tailwind translate-x class fighting it anymore, which
-  // was the root cause of the previous "gap on desktop / dead on
-  // mobile" behaviour. The breakpoint is read synchronously from
-  // matchMedia at the moment the animation runs (not from React
-  // state), so there's no first-paint race: it's correct immediately,
-  // every time, on mount and on every open/close.
-
-  // 1. Wrap the core logic in useCallback so its reference remains stable
+  // Drawer. GSAP owns `transform` once mounted, but the aside ships with
+  // a Tailwind `-translate-x-full lg:translate-x-0` fallback so the very
+  // first paint (before JS runs) is already correct on mobile — this is
+  // what fixes the "sidebar flashes open on dashboard load" bug. GSAP's
+  // inline transform simply overrides the class the instant it runs.
   const applyDrawerState = useCallback(() => {
     if (!asideRef.current || !overlayRef.current) return;
+
     const desktop = window.matchMedia(DESKTOP_QUERY).matches;
 
     if (desktop) {
-      gsap.set(asideRef.current, { clearProps: "transform" });
+      gsap.set(asideRef.current, { x: 0 });
       gsap.set(overlayRef.current, { display: "none", opacity: 0 });
       return;
     }
 
     if (isOpen) {
       gsap.set(overlayRef.current, { display: "block" });
+
       gsap.to(overlayRef.current, {
         opacity: 1,
-        duration: 0.25,
+        duration: 0.18,
         ease: "power1.out",
         overwrite: true,
       });
+
       gsap.to(asideRef.current, {
-        xPercent: 0,
-        duration: 0.4,
+        x: 0,
+        duration: 0.28,
         ease: "power3.out",
         overwrite: true,
       });
     } else {
       gsap.to(asideRef.current, {
-        xPercent: -100,
-        duration: 0.35,
+        x: "-100%",
+        duration: 0.22,
         ease: "power3.in",
         overwrite: true,
       });
+
       gsap.to(overlayRef.current, {
         opacity: 0,
-        duration: 0.25,
+        duration: 0.18,
         overwrite: true,
         onComplete: () => gsap.set(overlayRef.current, { display: "none" }),
       });
     }
-  }, [isOpen]); // Add isOpen here since the logic depends on it
+  }, [isOpen]);
 
-  // 2. Use the internal contextSafe provided by the hook callback argument
   useGSAP(
     (context) => {
-      // context.add() or wrapping it ensures it runs safely inside this GSAP context
       context.add(applyDrawerState);
     },
-    { dependencies: [isOpen, applyDrawerState], scope: asideRef }
+    { dependencies: [isOpen, applyDrawerState], scope: asideRef },
   );
 
-  // Re-sync if the viewport crosses the breakpoint without `isOpen`
-  // changing — e.g. rotating a tablet, or dragging the devtools
-  // responsive-mode width across 1024px.
+  // Re-sync if the viewport crosses the breakpoint without `isOpen` changing.
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
     mql.addEventListener("change", applyDrawerState);
     return () => mql.removeEventListener("change", applyDrawerState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [applyDrawerState]);
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Real full-screen backdrop — click to close. Hidden by default,
+          only relevant on mobile (lg:hidden), sits BELOW the sidebar (z-30
+          vs z-40) so the drawer stacks on top of it. */}
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-30 hidden bg-slate-900/40 backdrop-blur-sm"
+        className="fixed inset-0 z-30 hidden bg-black/50 backdrop-blur-[1px] opacity-0 lg:hidden"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* SIDEBAR — no translate-x classes; GSAP owns transform entirely */}
+      {/* SIDEBAR — Tailwind translate classes give a correct hidden state
+          on first paint; GSAP takes over transform after mount. */}
       <aside
         ref={asideRef}
-        className="fixed top-0 left-0 z-40 flex h-full w-72 flex-col border-r border-slate-100 bg-white lg:sticky lg:h-screen"
+        className="fixed top-0 left-0 z-40 flex h-full w-72 flex-col border-r border-border bg-card lg:sticky lg:h-screen"
       >
         {/* Logo */}
-        <div className="sidebar-reveal flex items-center justify-between ">
-          <Link href="/" className="flex items-center  ">
-            <div>
-              <Image
-                src={
-                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784496645/gradient-logo_bo8vrn.svg"
-                }
-                alt="delyte academy logo"
-                width={200}
-                height={100}
-                className="object-cover w-[220px] height-[100px] "
-              />
-            </div>
-          </Link>
+        <div className="sidebar-reveal flex items-center justify-between px-4 ">
+          {/* <Link href="/" className="flex items-center"> */}
+            <Image
+              src="https://res.cloudinary.com/dk5mfu099/image/upload/v1784496645/gradient-logo_bo8vrn.svg"
+              alt="delyte academy logo"
+              width={200}
+              height={100}
+              className="w-[180px]  object-contain"
+            />
+          {/* </Link> */}
           <button
-            className="text-slate-400 transition-colors hover:text-slate-700 lg:hidden"
+            className="-mr-1.5 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95 lg:hidden"
             onClick={onClose}
             aria-label="Close sidebar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" strokeWidth={2.25} />
           </button>
         </div>
 
         {/* Streak strip */}
-        <div className="sidebar-reveal mx-4 mb-2 flex items-center justify-between rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
+        <div className="sidebar-reveal mx-4 mb-2 mt-4 flex items-center justify-between rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
           <div className="flex items-center gap-2">
             <svg
               ref={flameRef}
@@ -226,7 +227,7 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-4 py-2">
-          <p className="sidebar-reveal px-2 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <p className="sidebar-reveal px-2 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Main menu
           </p>
           <ul className="space-y-1">
@@ -240,7 +241,7 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
                     className={`group relative flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all duration-200 ${
                       active
                         ? "text-white shadow-[0_8px_18px_-6px_rgba(109,91,245,0.55)]"
-                        : "text-slate-500 hover:bg-violet-50/70 hover:text-slate-900"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                     style={
                       active
@@ -264,12 +265,12 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
         </nav>
 
         {/* Upgrade card */}
-        <div className="sidebar-reveal mx-4 mb-4 overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#EDE9FE_0%,#FCE7F3_100%)] p-4">
+        <div className="sidebar-reveal mx-4 mb-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 p-4">
           <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/70">
             <Sparkles className="h-4 w-4 text-[#6D5BF5]" />
           </div>
-          <p className="text-[13px] font-bold text-slate-800">Go Premium</p>
-          <p className="mt-0.5 text-[11.5px] leading-snug text-slate-500">
+          <p className="text-[13px] font-bold text-foreground">Go Premium</p>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">
             Unlock every course, past questions &amp; mock exams.
           </p>
           <Button size="sm" className="mt-3 w-full">
@@ -281,13 +282,13 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
 
         {/* Footer */}
         <div className="sidebar-reveal space-y-1 px-4 py-4">
-          <button className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900">
+          <button className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <LifeBuoy className="h-4 w-4" strokeWidth={2.25} />
             Help &amp; support
           </button>
           <button
             onClick={onSignOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="h-4 w-4" strokeWidth={2.25} />
             Logout

@@ -10,7 +10,7 @@ async function getQuizByTopic(topicId: string) {
     .from(TABLES.QUIZZES)
     .select("*")
     .eq("topic_id", topicId)
-    .single();
+    .maybeSingle();
 
   if (error && error.code !== "PGRST116") throw error;
 
@@ -109,6 +109,35 @@ async function saveDraft(id: string) {
 
   if (error) throw error;
 }
+
+// export async function submitQuizAttempt({
+//   quizId,
+//   score,
+//   totalQuestions,
+// }: {
+//   quizId: string;
+//   score: number;
+//   totalQuestions: number;
+// }) {
+//   const { data: userData } = await supabase.auth.getUser();
+
+//   const { data, error } = await supabase
+//     .from(TABLES.QUIZ_ATTEMPTS)
+//     .insert({
+//       quiz_id: quizId,
+//       student_id: userData.user?.id,
+//       score,
+//       total_questions: totalQuestions,
+//       percentage: Math.round((score / totalQuestions) * 100),
+//       completed_at: new Date().toISOString(),
+//     })
+//     .select()
+//     .single();
+
+//   if (error) throw error;
+
+//   return data;
+// }
 
 export const QuizService = {
   getQuizByTopic,

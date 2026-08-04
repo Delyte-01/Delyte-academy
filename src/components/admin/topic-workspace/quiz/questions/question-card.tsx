@@ -17,6 +17,7 @@ import {
   questionTypeStyles,
   QuizQuestion,
 } from "@/types/quiz";
+import { MathRenderer } from "@/components/common/math-renderer";
 
 interface QuestionCardProps {
   question: QuizQuestion;
@@ -27,6 +28,7 @@ interface QuestionCardProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  displayNumber: number;
 }
 
 export function QuestionCard({
@@ -38,17 +40,18 @@ export function QuestionCard({
   onEdit,
   onDuplicate,
   onDelete,
+  displayNumber,
 }: QuestionCardProps) {
   return (
     <div
       className={cn(
         "group rounded-2xl border bg-card transition-all duration-200",
         isSelected && "border-primary/50 ring-1 ring-primary/20",
-        isExpanded ? "shadow-sm" : "hover:shadow-sm"
+        isExpanded ? "shadow-sm" : "hover:shadow-sm",
       )}
     >
       {/* Collapsed header */}
-      <div className="flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+      <div className="flex items-center gap-2 p-3 sm:gap-3 sm:p-6">
         {/* Drag handle */}
         <div className="flex cursor-grab items-center text-muted-foreground/40 hover:text-muted-foreground">
           <GripVertical className="h-5 w-5" />
@@ -63,13 +66,13 @@ export function QuestionCard({
 
         {/* Question number badge */}
         <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
-          {question.order_index}
+          {displayNumber}
         </div>
 
         {/* Question text */}
-        <button onClick={onToggleExpand} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {question.question}
+        <button onClick={onToggleExpand} className="min-w-0 flex-1 text-left ">
+          <p className=" h-full text-sm font-semibold text-foreground">
+            <MathRenderer text={question.question} />
           </p>
         </button>
 
@@ -130,7 +133,7 @@ export function QuestionCard({
             <ChevronDown
               className={cn(
                 "h-4 w-4 transition-transform duration-200",
-                isExpanded && "rotate-180"
+                isExpanded && "rotate-180",
               )}
             />
           </Button>
@@ -161,14 +164,14 @@ export function QuestionCard({
 
       {/* Expanded content */}
       {isExpanded && (
-        <div className="space-y-4 border-t px-4 py-4">
+        <div className="space-y-4 border-t px-4 py-4 sm:px-6">
           {/* Question text */}
           <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Question
             </p>
             <p className="text-sm leading-relaxed text-foreground">
-              {question.question}
+              <MathRenderer text={question.question} />
             </p>
           </div>
 
@@ -185,7 +188,7 @@ export function QuestionCard({
                     "flex items-center gap-2.5 rounded-xl border p-2.5 text-sm",
                     option.is_correct
                       ? "border-emerald-500/40 bg-emerald-500/10"
-                      : "border-border bg-muted/20"
+                      : "border-border bg-muted/20",
                   )}
                 >
                   {option.is_correct ? (
@@ -197,10 +200,10 @@ export function QuestionCard({
                     className={cn(
                       option.is_correct
                         ? "font-medium text-foreground"
-                        : "text-muted-foreground"
+                        : "text-muted-foreground",
                     )}
                   >
-                    {option.option_text}
+                    <MathRenderer text={option.option_text} />
                   </span>
                   {option.is_correct && (
                     <Badge
@@ -215,23 +218,15 @@ export function QuestionCard({
             </div>
           </div>
 
-          {/* Correct answer */}
-          {/* <div className="space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Correct Answer
-            </p>
-            <p className="text-sm font-medium text-foreground">
-              {question.correctAnswer}
-            </p>
-          </div> */}
-
           {/* Explanation */}
           <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Explanation
             </p>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {question.explanation ?? "No explanation provided."}
+              <MathRenderer
+                text={question.explanation ?? "No explanation provided."}
+              />
             </p>
           </div>
 

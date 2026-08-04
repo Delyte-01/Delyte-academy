@@ -25,13 +25,23 @@ import { useParams } from "next/navigation";
 import { TopicAttachment, UploadAttachmentForm } from "@/types/attachment";
 import { getAttachmentMeta } from "@/lib/utils/file-icon";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  // CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface ContentTabEditorProps {
   data: TopicContentFormData;
 
   onChange: <K extends keyof TopicContentFormData>(
     field: K,
-    value: TopicContentFormData[K]
+    value: TopicContentFormData[K],
   ) => void;
 
   addListItem: (field: "objectives" | "prerequisites") => void;
@@ -39,12 +49,12 @@ interface ContentTabEditorProps {
   updateListItem: (
     field: "objectives" | "prerequisites",
     index: number,
-    value: string
+    value: string,
   ) => void;
 
   removeListItem: (
     field: "objectives" | "prerequisites",
-    index: number
+    index: number,
   ) => void;
 }
 
@@ -61,7 +71,9 @@ function AttachmentRow({
     <div className=" flex  gap-3 rounded-xl border bg-card p-3 transition-all duration-200 hover:shadow-sm flex-col">
       <div>
         {" "}
-        <Badge className="border shadow bg-transparent text-black border-green-400 dark:text-white">{attachment.title}</Badge>
+        <Badge className="border shadow bg-transparent text-black border-green-400 dark:text-white">
+          {attachment.title}
+        </Badge>
       </div>
 
       <div className="flex gap-2">
@@ -69,7 +81,7 @@ function AttachmentRow({
           className={cn(
             "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg",
             bg,
-            color
+            color,
           )}
         >
           <Icon className="h-5 w-5" />
@@ -207,6 +219,117 @@ export function ContentEditor({
           onChange={(value) => onChange("content", value)}
         />
       </ContentSection>{" "}
+      <ContentSection
+        id="Video urls"
+        icon={<Target className="h-4 w-4" />}
+        label="Uplaod Video Urls"
+        accent="bg-emerald-500/10 text-emerald-600"
+      >
+        {" "}
+        <Card>
+          <CardHeader>
+            <CardTitle>Video Lesson</CardTitle>
+            <CardDescription>
+              Add a YouTube or embeddable video URL for this topic.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            <Label>Video URL</Label>
+
+            <Input
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={data.video_url}
+              onChange={(e) => onChange("video_url", e.target.value)}
+            />
+
+            <p className="text-xs text-muted-foreground">
+              Paste a YouTube or embeddable video link.
+            </p>
+          </CardContent>
+        </Card>
+      </ContentSection>
+      <ContentSection
+        id="External Links"
+        icon={<ListChecks className="h-4 w-4" />}
+        label="External Links"
+        accent="bg-rose-500/10 text-rose-600"
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Useful Links</CardTitle>
+            <CardDescription>
+              Add documentation, articles, videos, or references for this topic.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {data.external_links.map((link, index) => (
+              <div
+                key={index}
+                className="grid gap-3 rounded-lg border p-4 md:grid-cols-2"
+              >
+                <div className="space-y-2">
+                  <Label>Link Title</Label>
+
+                  <Input
+                    placeholder="Oracle Java Documentation"
+                    value={link.title}
+                    onChange={(e) => {
+                      const updated = [...data.external_links];
+
+                      updated[index].title = e.target.value;
+
+                      onChange("external_links", updated);
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>URL</Label>
+
+                  <Input
+                    placeholder="https://docs.oracle.com/..."
+                    value={link.url}
+                    onChange={(e) => {
+                      const updated = [...data.external_links];
+
+                      updated[index].url = e.target.value;
+
+                      onChange("external_links", updated);
+                    }}
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      onChange(
+                        "external_links",
+                        data.external_links.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                onChange("external_links", [...data.external_links, { title: "", url: "" }])
+              }
+            >
+              Add Link
+            </Button>
+          </CardContent>
+        </Card>
+      </ContentSection>
       {/* Section 5: Summary */}
       <ContentSection
         id="summary"

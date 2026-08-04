@@ -55,19 +55,19 @@ export default function Header({
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-slate-100 bg-white/80 px-4 py-4 backdrop-blur-md sm:px-6"
+      className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border bg-background/80 px-4 py-4 backdrop-blur-md sm:px-6"
     >
       <div className="flex items-center gap-3">
         <button
-          className="rounded-xl p-1.5 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
+          className="rounded-xl p-1.5  transition-colors text-muted-foreground hover:bg-muted lg:hidden"
           onClick={onMenuClick}
           aria-label="Open sidebar"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="hidden items-center gap-2 rounded-xl bg-slate-100/80 px-3.5 py-2.5 transition-colors focus-within:bg-slate-100 sm:flex">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+        <div className="hidden items-center gap-2 rounded-xl  px-3.5 py-2.5 transition-colors bg-muted/60 focus-within:bg-muted0 sm:flex">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search courses, topics, past questions…"
@@ -78,7 +78,7 @@ export default function Header({
 
       <div className="flex items-center gap-2 sm:gap-3">
         <button
-          className="relative rounded-xl p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted"
           aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
@@ -91,21 +91,23 @@ export default function Header({
           </span>
         </button>
 
-        <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+        <div className="hidden h-8 w-px bg-border sm:block" />
 
         <Link
           href="/dashboard/settings"
-          className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-slate-50"
+          className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-muted"
         >
-          <Avatar className="h-9 w-9 ring-2 ring-white shadow-[0_0_0_1.5px_#EDE9FE]">
+          <Avatar className="h-9 w-9  ring-2 ring-background shadow-sm ">
             <AvatarImage src={avatarUrl} alt={displayName} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <span className="hidden text-left leading-tight md:block">
-            <span className="block text-[13px] font-semibold text-slate-800">
+            <span className="block text-[13px] font-semibold text-foreground">
               {displayName}
             </span>
-            <span className="block text-[11px] text-slate-400">{displayLevel}</span>
+            <span className="block text-[11px] text-muted-foreground">
+              {displayLevel}
+            </span>
           </span>
         </Link>
       </div>

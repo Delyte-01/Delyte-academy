@@ -2,13 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import gsap from "gsap";
 import Sidebar from "@/components/dashboard-components/sidebar";
 import Header from "@/components/dashboard-components/header";
 import { toast } from "sonner";
 import { authService } from "@/services/auth";
+import { FullPageLoader } from "@/components/loading/Loading";
+
+import { ProfileProvider, useProfile } from "@/context/profile-context";
+
 
 const display = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,6 +29,31 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <ProfileProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </ProfileProvider>
+  );
+}
+
+ function DashboardContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+
+
+  const { profile } = useProfile();
+
+  const displayName = profile?.full_name || "Student";
+
+  const displayLevel =
+    profile?.role === "admin" || profile?.role === "super_admin"
+      ? "Administrator"
+      : "Student";
+
+  const avatarUrl = profile?.avatar_url || "";
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,10 +80,7 @@ export default function DashboardLayout({
     }
   };
 
-  const displayName = "Student";
-  const displayLevel = "SS3 Student";
-  const avatarUrl =
-    "https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=60";
+  
 
   // Ambient background aura — slow breathing motion, purely decorative
   useEffect(() => {
@@ -85,22 +111,15 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div
-        className={`${display.variable} ${body.variable} flex min-h-screen items-center justify-center bg-[#FAF9FF] font-sans`}
-      >
-        <Loader2 className="h-8 w-8 animate-spin text-[#6D5BF5]" />
-      </div>
+    <FullPageLoader />
     );
   }
 
-  // if (!user) {
-  //   router.push('/login');
-  //   return null;
-  // }
+
 
   return (
     <div
-      className={`${display.variable} ${body.variable} relative flex min-h-screen bg-[#FAF9FF] font-sans antialiased`}
+      className={`${display.variable} ${body.variable} relative flex min-h-screen bg-background text-foreground font-sans antialiased student-theme`}
     >
       {/* Ambient gradient aura, fixed to viewport, behind everything */}
       <div
@@ -143,5 +162,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  
   );
 }

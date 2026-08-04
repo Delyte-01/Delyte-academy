@@ -5,7 +5,8 @@ export const TABLES = {
   QUESTIONS: "questions",
   TOPIC_ATTACHMENTS: "topic_attachments",
   QUIZZES: "quizzes",
-  QUESTION_OPTIONS:"question_options",
+  QUESTION_OPTIONS: "question_options",
+  ENROLLMENTS: "enrollments",
 } as const;
 
 

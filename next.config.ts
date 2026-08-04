@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
         hostname: "res.cloudinary.com",
         pathname: "/**", // Allow all images from Cloudinary
       },
+      {
+        protocol: "https",
+        hostname: "ifggosbdehcamqobuzva.supabase.co",
+        pathname: "/**", // Allow all images from Unsplash
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**", // Allow all images from Googleusercontent
+      },
     ],
   },
 };

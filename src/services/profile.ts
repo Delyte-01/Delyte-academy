@@ -42,7 +42,35 @@ async function upsertProfile() {
   if (error) throw error;
 }
 
+
+async function updateProfile(
+  updates: Partial<Pick<Profile, "full_name" | "email"| "username" | "phone" | "country" | "bio" | "avatar_url">>,
+): Promise<Profile> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("User not found.");
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
 export const profileService = {
   getCurrentProfile,
   upsertProfile,
+  updateProfile,
 };

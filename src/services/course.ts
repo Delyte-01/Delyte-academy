@@ -1,6 +1,6 @@
 import { TABLES } from "@/constants/database";
 import { createClient } from "@/lib/supabase/client";
-import { CreateCourseData, UpdateCourseData } from "@/types/course";
+import { Course, CreateCourseData, UpdateCourseData } from "@/types/course";
 
 async function createCourse({
   title,
@@ -135,6 +135,37 @@ async function unpublishCourse(id: string) {
   if (error) throw error;
 }
 
+
+async function getPublishedCourses() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from(TABLES.COURSES)
+    .select("*")
+    .eq("status", "published")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data as Course[];
+}
+
+
+async function searchPublishedCourses(search: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from(TABLES.COURSES)
+    .select("*")
+    .eq("status", "published")
+    .or(
+      `title.ilike.%${search}%,description.ilike.%${search}%,code.ilike.%${search}%`
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data as Course[];
+}
+
 export const courseService = {
   createCourse,
   getCourses,
@@ -143,4 +174,7 @@ export const courseService = {
   deleteCourse,
   publishCourse,
   unpublishCourse,
+  getPublishedCourses,
+  searchPublishedCourses,
+
 };

@@ -5,7 +5,8 @@ type StorageBucket =
   | "course-thumbnails"
   | "course-banners"
   | "course-content"
-  | "lesson-attachment";
+  | "lesson-attachment"
+  | "avatars";
 
 async function uploadImage(file: File, bucket: StorageBucket, folder?: string) {
   const fileExt = file.name.split(".").pop();

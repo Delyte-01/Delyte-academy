@@ -28,6 +28,7 @@ import { formatReadableDate } from "@/constants/date-format";
 import { ContentTab } from "@/components/admin/topic-workspace/content/content-tab";
 import { useCourse } from "@/hooks/useCourse";
 import { QuizPage } from "@/components/admin/topic-workspace/quiz/quiz-page";
+import { FullPageLoader } from "@/components/loading/Loading";
 
 const stats = [
   {
@@ -117,7 +118,7 @@ export default function TopicWorkspacePage() {
     content: "",
     summary: "",
     video_url: "",
-    external_links: [],
+    external_links: [{ title: "", url: "" }],
     attachments: [],
   });
   const [loading, setLoading] = useState(true);
@@ -148,7 +149,7 @@ export default function TopicWorkspacePage() {
 
   const handleContentChange = <K extends keyof typeof contentData>(
     field: K,
-    value: (typeof contentData)[K]
+    value: (typeof contentData)[K],
   ) => {
     setContentData((prev) => ({
       ...prev,
@@ -168,12 +169,12 @@ export default function TopicWorkspacePage() {
     gsap.fromTo(
       tabContentRef.current,
       { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
+      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
     );
   }, [activeTab]);
 
   if (!topic) {
-    return <div>loading</div>;
+    return <FullPageLoader />;
   }
 
   //  changes the status of the topic----------------------------
@@ -188,11 +189,11 @@ export default function TopicWorkspacePage() {
               ...prev,
               status,
             }
-          : prev
+          : prev,
       );
 
       toast.success(
-        status === "published" ? "Topic published." : "Topic moved to draft."
+        status === "published" ? "Topic published." : "Topic moved to draft.",
       );
     } catch (error) {
       toast.error(`Failed to update topic. ${error}`);
@@ -206,7 +207,7 @@ export default function TopicWorkspacePage() {
   const updateListItem = (
     field: "objectives" | "prerequisites",
     index: number,
-    value: string
+    value: string,
   ) => {
     const updated = [...contentData[field]];
 
@@ -217,11 +218,11 @@ export default function TopicWorkspacePage() {
 
   const removeListItem = (
     field: "objectives" | "prerequisites",
-    index: number
+    index: number,
   ) => {
     handleContentChange(
       field,
-      contentData[field].filter((_, i) => i !== index)
+      contentData[field].filter((_, i) => i !== index),
     );
   };
 
@@ -254,7 +255,7 @@ export default function TopicWorkspacePage() {
       toast.success(
         status === "published"
           ? "Content published successfully."
-          : "Draft saved successfully."
+          : "Draft saved successfully.",
       );
     } catch (err) {
       toast.error(`Failed to save content. ${err}`);

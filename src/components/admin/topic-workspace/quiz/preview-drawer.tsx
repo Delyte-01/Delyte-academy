@@ -18,6 +18,7 @@ import {
   Quiz,
   QuizQuestion,
 } from "@/types/quiz";
+import { MathRenderer } from "@/components/common/math-renderer";
 
 interface PreviewDrawerProps {
   open: boolean;
@@ -160,7 +161,7 @@ export function PreviewDrawer({
               </div>
 
               <p className="mb-4 text-base font-semibold leading-relaxed text-foreground">
-                {currentQuestion.question}
+               <MathRenderer text={currentQuestion.question} />
               </p>
 
               {/* Options */}
@@ -178,7 +179,7 @@ export function PreviewDrawer({
                         "flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150",
                         isSelected
                           ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30",
                       )}
                     >
                       <div
@@ -186,7 +187,7 @@ export function PreviewDrawer({
                           "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all",
                           isSelected
                             ? "border-primary bg-primary"
-                            : "border-muted-foreground/30"
+                            : "border-muted-foreground/30",
                         )}
                       >
                         {isSelected && (
@@ -198,10 +199,10 @@ export function PreviewDrawer({
                           "text-sm",
                           isSelected
                             ? "font-medium text-foreground"
-                            : "text-muted-foreground"
+                            : "text-muted-foreground",
                         )}
                       >
-                        {option.option_text}
+                        <MathRenderer text={option.option_text} />
                       </span>
                     </button>
                   );

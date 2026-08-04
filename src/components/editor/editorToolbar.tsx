@@ -20,17 +20,21 @@ import {
   Link2,
   Eraser,
   Image as ImageIcon,
+  Calculator,
+  CalendarHeart,
 } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToolbarButton } from "./toolbarButton";
-import "../editor/editorToolbar.css"
+import "../editor/editorToolbar.css";
 
 interface EditorToolbarProps {
   editor: Editor | null;
   onInsertImage: () => void;
-  uploadingImage:boolean
+  uploadingImage: boolean;
+  onOpenInlineMath: () => void;
+  onOpenBlockMath: () => void;
 }
 
 function ToolbarGroup({ children }: { children: React.ReactNode }) {
@@ -41,7 +45,14 @@ function ToolbarDivider() {
   return <Separator orientation="vertical" className="mx-1 h-6 bg-border/70" />;
 }
 
-export default function EditorToolbar({ editor ,onInsertImage,uploadingImage}: EditorToolbarProps) {
+export default function EditorToolbar({
+  editor,
+  onInsertImage,
+  uploadingImage,
+  onOpenBlockMath,
+  onOpenInlineMath
+   
+}: EditorToolbarProps) {
   if (!editor) return null;
 
   const setLink = () => {
@@ -191,7 +202,7 @@ export default function EditorToolbar({ editor ,onInsertImage,uploadingImage}: E
           <ToolbarButton
             icon={ImageIcon}
             label="Image (coming soon)"
-            disabled={ uploadingImage }
+            disabled={uploadingImage}
             onClick={onInsertImage}
           />
         </ToolbarGroup>
@@ -226,6 +237,21 @@ export default function EditorToolbar({ editor ,onInsertImage,uploadingImage}: E
             shortcut="Ctrl+Shift+Z"
             disabled={!editor.can().redo()}
             onClick={() => editor.chain().focus().redo().run()}
+          />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton
+            icon={Calculator}
+            label="Insert Inline Math"
+            onClick={onOpenInlineMath}
+          />
+
+          <ToolbarButton
+            icon={CalendarHeart}
+            label="Insert Block Math"
+            onClick={onOpenBlockMath}
           />
         </ToolbarGroup>
       </div>

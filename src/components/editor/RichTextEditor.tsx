@@ -13,6 +13,10 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { uploadService } from "@/services/upload";
 import Image from "@tiptap/extension-image";
+import Mathematics from "@tiptap/extension-mathematics";
+import "katex/dist/katex.min.css";
+import MathPalette from "./MathPalette";
+
 
 const lowlight = createLowlight(common);
 
@@ -27,6 +31,10 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [mathOpen, setMathOpen] = useState(false);
+  const [mathMode, setMathMode] = useState<"inline" | "block">("inline");
+
+  console.log(mathMode);
 
   const params = useParams();
   const courseId = params.id as string;
@@ -36,6 +44,12 @@ export default function RichTextEditor({
     extensions: [
       StarterKit,
       Underline,
+     Mathematics.configure({
+    katexOptions: {
+      throwOnError: false,
+      output: "html",
+    },
+  }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
@@ -106,6 +120,17 @@ export default function RichTextEditor({
     }
   };
 
+
+  const handleInsertMath = (latex: string, mode: "inline" | "block") => {
+    if (!editor) return;
+
+    if (mode === "inline") {
+      editor.chain().focus().insertInlineMath({ latex }).run();
+    } else {
+      editor.chain().focus().insertBlockMath({ latex }).run();
+    }
+  };
+
   return (
     <div className="rounded-xl border bg-background min-h-[500px] ">
       <div
@@ -121,6 +146,14 @@ border-b"
           editor={editor}
           onInsertImage={() => imageInputRef.current?.click()}
           uploadingImage={uploadingImage}
+          onOpenInlineMath={() => {
+            setMathMode("inline");
+            setMathOpen(true);
+          }}
+          onOpenBlockMath={() => {
+            setMathMode("block");
+            setMathOpen(true);
+          }}
         />
         <input
           ref={imageInputRef}
@@ -132,6 +165,11 @@ border-b"
       </div>
       <div className="h-[70vh] overflow-y-auto">
         <EditorContent editor={editor} className="min-h-[500px] p-5" />
+        <MathPalette
+          open={mathOpen}
+          onOpenChange={setMathOpen}
+          onInsert={handleInsertMath}
+        />
       </div>
     </div>
   );

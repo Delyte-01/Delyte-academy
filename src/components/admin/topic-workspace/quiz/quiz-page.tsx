@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, HelpCircle } from "lucide-react";
+import { Plus, HelpCircle, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,6 +21,7 @@ import { QuestionFilters } from "./questions/question-filters";
 import { QuestionCard } from "./questions/question-card";
 import { QuestionDialog } from "./questions/question-dialog";
 import {
+  Difficulty,
   QuestionFormData,
   QuizOptionForm,
   QuizQuestion,
@@ -31,13 +32,37 @@ import { useQuestion } from "@/hooks/useQuestion";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { BulkActions } from "./bulk-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { UploadCenter } from "../upload/upload-center";
+import { ParsedQuestion } from "@/types/parser";
+import { parseCSV } from "@/lib/parsers/csv-parser";
+import { parseQuestions } from "@/lib/question-parser";
+import { extractDocxText } from "@/lib/parsers/docx-parser";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Checkbox } from "@/components/ui/checkbox";
+import { parsePDF } from "@/lib/parsers/pdf-parser";
 
 export function QuizPage() {
   const [deleting, setDeleting] = useState(false);
   const params = useParams();
   const topicId = params.topicsId as string;
 
-  const { quiz, saveQuiz, saving } = useQuiz(topicId);
+  const { quiz, saveQuiz, saving } = useQuiz(topicId, {
+    createIfMissing: true,
+  });
 
   const {
     questions,
@@ -51,18 +76,23 @@ export function QuizPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(
-    null
+    null,
   );
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [settings, setSettings] = useState<QuizSettingsForm | null>(null);
+  const [page, setPage] = useState(1);
 
   // Filters
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState("newest");
+
+  const QUESTIONS_PER_PAGE = 10;
 
   const status = quiz?.status ?? "draft";
 
@@ -90,7 +120,7 @@ export function QuizPage() {
 
     if (search) {
       result = result.filter((q) =>
-        q.question.toLowerCase().includes(search.toLowerCase())
+        q.question.toLowerCase().includes(search.toLowerCase()),
       );
     }
     if (difficultyFilter !== "all") {
@@ -134,6 +164,12 @@ export function QuizPage() {
       return next;
     });
   };
+
+  const totalPages = Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE);
+  const paginatedQuestions = filteredQuestions.slice(
+    (page - 1) * QUESTIONS_PER_PAGE,
+    page * QUESTIONS_PER_PAGE,
+  );
 
   const clearSelection = () => setSelectedIds(new Set());
 
@@ -211,7 +247,7 @@ export function QuizPage() {
       toast.success(
         deleteTargetIds.length === 1
           ? "Question deleted"
-          : `${deleteTargetIds.length} questions deleted`
+          : `${deleteTargetIds.length} questions deleted`,
       );
     } catch (err) {
       toast.error("Failed to delete questions");
@@ -245,7 +281,7 @@ export function QuizPage() {
     });
 
     toast.success(
-      status === "published" ? "Quiz published successfully." : "Draft saved."
+      status === "published" ? "Quiz published successfully." : "Draft saved.",
     );
   };
 
@@ -361,6 +397,89 @@ export function QuizPage() {
     setDeleteOpen(true);
   };
 
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      const updated = new Set(selectedIds);
+
+      paginatedQuestions.forEach((q) => updated.delete(q.id));
+
+      setSelectedIds(updated);
+
+      return;
+    }
+
+    const updated = new Set(selectedIds);
+
+    paginatedQuestions.forEach((q) => updated.add(q.id));
+
+    setSelectedIds(updated);
+  };
+
+  // -------------- upload functionaities -----------------------
+
+  const handleImportQuestions = async (files: File[]) => {
+    if (!quiz) return;
+
+    setImporting(true);
+
+    try {
+      for (const file of files) {
+        const ext = file.name.split(".").pop()?.toLowerCase();
+
+        let parsed: ParsedQuestion[] = [];
+
+        if (ext === "csv") {
+          parsed = await parseCSV(file);
+        } else if (ext === "docx") {
+          const text = await extractDocxText(file);
+
+          parsed = parseQuestions(text);
+        }
+
+        // later
+        else if (ext === "pdf") {
+          const text = await parsePDF(file);
+
+          parsed = parseQuestions(text);
+        }
+
+        let nextOrder = Math.max(...questions.map((q) => q.order_index), 0) + 1;
+
+        for (const question of parsed) {
+          await addQuestion({
+            quizId: quiz.id,
+            question: question.question,
+            type: question.type ?? "multiple_choice",
+            difficulty: question.difficulty as Difficulty,
+            points: question.points ?? 0,
+            explanation: question.explanation,
+            orderIndex: nextOrder,
+            options: question.options.map((o) => ({
+              optionText: o.optionText,
+              isCorrect: o.isCorrect,
+            })),
+          });
+          nextOrder++;
+        }
+      }
+
+      toast.success(` questions imported successfully 🎉`);
+      setImportOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to import questions.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const allSelected =
+    paginatedQuestions.length > 0 &&
+    paginatedQuestions.every((q) => selectedIds.has(q.id));
+
+  const start = (page - 1) * QUESTIONS_PER_PAGE + 1;
+  const end = Math.min(page * QUESTIONS_PER_PAGE, filteredQuestions.length);
+
   return (
     <div className="space-y-6">
       <QuizHeader
@@ -394,14 +513,20 @@ export function QuizPage() {
                 </CardDescription>
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={handleAddQuestion}
-              className="flex-shrink-0"
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add Question
-            </Button>
+            <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportOpen(true)}
+              >
+                <UploadCloud className="mr-1.5 h-4 w-4" />
+                Import
+              </Button>
+              <Button size="sm" onClick={handleAddQuestion}>
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add Question
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -420,6 +545,19 @@ export function QuizPage() {
             sort={sort}
             onSortChange={setSort}
           />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium">Select All</span>
+            </div>
+
+            <span className="text-xs text-muted-foreground">
+              Showing {start}-{end} of {filteredQuestions.length}
+            </span>
+          </div>
 
           <BulkActions
             selectedCount={selectedIds.size}
@@ -431,7 +569,7 @@ export function QuizPage() {
 
           {/* Question list with drag handles */}
           <div className="space-y-3">
-            {filteredQuestions.length === 0 ? (
+            {paginatedQuestions.length === 0 ? (
               <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/20 p-8 text-center">
                 <HelpCircle className="h-8 w-8 text-muted-foreground/50" />
                 <p className="mt-3 text-sm font-semibold text-foreground">
@@ -442,7 +580,7 @@ export function QuizPage() {
                 </p>
               </div>
             ) : (
-              filteredQuestions.map((q) => (
+              paginatedQuestions.map((q, index) => (
                 <QuestionCard
                   key={q.id}
                   question={q}
@@ -453,8 +591,57 @@ export function QuizPage() {
                   onEdit={() => handleEditQuestion(q)}
                   onDelete={() => handleDelete(q.id)}
                   onDuplicate={() => handleDuplicate(q)}
+                  displayNumber={index + 1}
                 />
               ))
+            )}
+
+            {/* 2. Render Shadcn Pagination only if there's more than 1 page */}
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  {/* Previous Button */}
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                      className={
+                        page === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {/* Render Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          isActive={page === pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  {/* Next Button */}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setPage((p) => Math.min(p + 1, totalPages))
+                      }
+                      className={
+                        page === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             )}
           </div>
         </div>
@@ -483,6 +670,29 @@ export function QuizPage() {
         questions={questions}
         quiz={quiz}
       />
+
+      {/* ------- upload dialog ----------- */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-h-[90vh] max-w-3xl gap-0 overflow-y-auto p-0 sm:max-w-3xl rounded-4xl">
+          <DialogHeader className="space-y-1 border-b px-6 pb-4 pt-6">
+            <DialogTitle className="text-lg font-bold tracking-tight">
+              Import Questions
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Upload files to automatically generate quiz questions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-6">
+            <UploadCenter
+              mode="quiz"
+              acceptedFormats={["DOCX", "CSV", "PDF"]}
+              multiple
+              loading={importing}
+              onUpload={handleImportQuestions}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

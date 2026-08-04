@@ -26,6 +26,7 @@ import { TopicService } from "@/services/topic";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { formatReadableDate } from "@/constants/date-format";
+import FullPageLoader from "@/components/loading/Loading";
 
 
 const stats = [
@@ -148,7 +149,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
   }, [activeTab]);
 
   if (loading) {
-    return <div>laoding...</div>;
+    return <FullPageLoader />;
   }
 
   if (!course) {

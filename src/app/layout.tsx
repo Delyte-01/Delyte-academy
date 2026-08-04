@@ -5,6 +5,9 @@ import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 
+import "katex/dist/katex.min.css";
+import { AppProviders } from "@/providers/authProvider";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -35,16 +38,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-        
-        >
-          <SmoothScrollProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </SmoothScrollProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <AppProviders>
+            <SmoothScrollProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </SmoothScrollProvider>
+          </AppProviders>
         </ThemeProvider>
       </body>
     </html>
