@@ -7,6 +7,9 @@ export const TABLES = {
   QUIZZES: "quizzes",
   QUESTION_OPTIONS: "question_options",
   ENROLLMENTS: "enrollments",
+  QUIZ_ATTEMPTS: "quiz_attempts",
+  QUIZ_ATTEMPT_ANSWERS: "quiz_attempt_answers",
+  Profiles:"profiles",
 } as const;
 
 

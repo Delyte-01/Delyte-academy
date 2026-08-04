@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ChevronRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-
 import { OverviewStats } from "@/components/dashboard-components/progress/overview-stats";
 import { StreakCard } from "@/components/dashboard-components/progress/streak-card";
 import { CourseProgressSection } from "@/components/dashboard-components/progress/course-progress-section";
@@ -19,7 +18,6 @@ import { useProgressDashboard } from "@/hooks/useProgressDashboard";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProgressPage() {
-
   const { user } = useAuth();
 
   const {
@@ -57,10 +55,6 @@ export default function ProgressPage() {
             Track your courses, quizzes, and study consistency.
           </p>
         </div>
-        <Button className="flex-shrink-0">
-          <Play className="mr-2 h-4 w-4" />
-          Continue Learning
-        </Button>
       </div>
 
       {/* Overview stats */}
@@ -72,7 +66,7 @@ export default function ProgressPage() {
           <StreakCard data={streakData} />
         </div>
         <div>
-          <WeeklyGoalCard  goal={weeklyGoal} />
+          <WeeklyGoalCard goal={weeklyGoal} />
         </div>
       </div>
 

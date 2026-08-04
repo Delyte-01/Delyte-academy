@@ -1,18 +1,16 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ArrowLeft, Play,  BookOpen, Users, Star } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Course } from '@/types/course';
-import { useEnrollment } from '@/hooks/useEnrollment';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-
-
-
+import Link from "next/link";
+import { ArrowLeft, Play, BookOpen, Users, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Course } from "@/types/course";
+import { useEnrollment } from "@/hooks/useEnrollment";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export function CourseHero({ course }: { course: Course }) {
   const { user } = useAuth();
@@ -20,8 +18,9 @@ export function CourseHero({ course }: { course: Course }) {
   const { enrollments, enroll, saving } = useEnrollment(user?.id);
   const enrollment = enrollments.find((e) => e.course_id === course.id);
   const isEnrolled = Boolean(enrollment);
-  const progress = enrollments.find((e) => e.course_id === course.id)?.progress ?? 0;
-const linkHref = `/dashboard/courses/${course.id}`;
+  const progress =
+    enrollments.find((e) => e.course_id === course.id)?.progress ?? 0;
+  const linkHref = `/dashboard/courses/${course.id}`;
 
   const handleEnroll = async () => {
     if (!course || !user) {
@@ -47,11 +46,17 @@ const linkHref = `/dashboard/courses/${course.id}`;
   return (
     <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 via-emerald-950/80 to-emerald-900/50 text-white shadow-xl">
       <div className="absolute inset-0 opacity-10">
-        <img
-          src={course?.banner ?? ""}
-          alt=""
-          className="h-full w-full object-cover"
-        />
+        {course.banner && (
+          <Image
+            src={course.banner}
+            alt={course.title}
+            width={1920}
+            height={1080}
+            priority
+            quality={100}
+            className="h-full w-full object-cover"
+          />
+        )}
       </div>
       <CardContent className="relative grid gap-8 p-6 lg:grid-cols-3 lg:p-10">
         <div className="space-y-5 lg:col-span-2">
@@ -64,11 +69,16 @@ const linkHref = `/dashboard/courses/${course.id}`;
           </Link>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <img
-              src={course?.thumbnail ?? ""}
-              alt={course?.title ?? ""}
-              className="h-28 w-44 flex-shrink-0 rounded-xl object-cover shadow-lg ring-1 ring-white/20"
-            />
+            {course.thumbnail && (
+              <Image
+                src={course?.thumbnail}
+                alt={course?.title ?? ""}
+                width={400}
+                height={200}
+                className="h-28 w-44 flex-shrink-0 rounded-xl object-cover shadow-lg ring-1 ring-white/20"
+              />
+            )}
+
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge

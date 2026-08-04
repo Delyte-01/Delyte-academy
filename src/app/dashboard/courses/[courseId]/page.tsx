@@ -13,19 +13,7 @@ import { useTopics } from "@/hooks/useTopic";
 import { useAuth } from "@/hooks/useAuth";
 import { useTopicProgress } from "@/hooks/useTopicProgress";
 
-const learningOutcomes = [
-  "Understand Java syntax and fundamentals",
-  "Work with variables and data types",
-  "Master control flow statements",
-  "Apply object-oriented programming principles",
-  "Handle exceptions and errors",
-  "Build practical Java applications",
-];
 
-const prerequisites = [
-  "Basic computer literacy",
-  "No prior programming experience required",
-];
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
@@ -67,8 +55,6 @@ export default function CourseDetailPage() {
         <div className="space-y-6 lg:col-span-2">
           <CourseOverview
             description={course?.description ?? ""}
-            learningOutcomes={learningOutcomes}
-            prerequisites={prerequisites}
           />
 
           <TopicAccordion

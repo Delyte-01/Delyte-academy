@@ -8,11 +8,12 @@ import {
   Award,
   Target,
   ArrowRight,
-  Play,
+
   Star,
-  Download,
-  GraduationCap,
+
   ClipboardCheck,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import gsap from "gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,12 +105,23 @@ const activityMeta = {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  console.log(profile)
 
   const { activities, loading: activityLoading } = useRecentActivity(user?.id);
   const { enrollments, loading } = useEnrollment(user?.id ?? "");
   const { upcomingQuizzes } = useDashboard();
 
   const [greeting, setGreeting] = useState("Welcome back");
+
+  const ACTIVITY_COLLAPSED_COUNT = 5;
+
+  // inside component:
+  const [activitiesExpanded, setActivitiesExpanded] = useState(false);
+
+  const visibleActivities = activitiesExpanded
+    ? activities
+    : activities.slice(0, ACTIVITY_COLLAPSED_COUNT);
+  const hasMoreActivities = activities.length > ACTIVITY_COLLAPSED_COUNT;
 
   // Computed client-side only, so the server-rendered markup and first paint
   // stay identical (avoids a hydration mismatch from the visitor's clock).
@@ -164,15 +176,15 @@ export default function DashboardPage() {
 
       hasAnimatedRef.current = true;
 
-        gsap.killTweensOf([
-          statsRef.current?.children,
-          heroRef.current,
-          heroBarRef.current,
-          coursesGridRef.current?.children,
-          activityRef.current?.children,
-          quizzesRef.current?.children,
-          recommendedRef.current?.children,
-        ]); 
+      gsap.killTweensOf([
+        statsRef.current?.children,
+        heroRef.current,
+        heroBarRef.current,
+        coursesGridRef.current?.children,
+        activityRef.current?.children,
+        quizzesRef.current?.children,
+        recommendedRef.current?.children,
+      ]);
 
       if (prefersReducedMotion()) {
         if (heroBarRef.current && continueCourse) {
@@ -190,7 +202,7 @@ export default function DashboardPage() {
         opacity: 0,
         duration: 0.45,
         stagger: 0.08,
-          clearProps: "opacity,transform",
+        clearProps: "opacity,transform",
       });
 
       tl.from(
@@ -409,7 +421,7 @@ export default function DashboardPage() {
               Recent Activity
             </CardTitle>
           </CardHeader>
-          <CardContent ref={activityRef} className="space-y-4 p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             {activityLoading ? (
               <p className="text-sm text-muted-foreground">
                 Loading activity...
@@ -419,38 +431,78 @@ export default function DashboardPage() {
                 No recent activity yet.
               </p>
             ) : (
-              activities.map((activity, idx) => {
-                const meta = activityMeta[activity.type];
-                const Icon = meta.icon;
+              <>
+                <div
+                  ref={activityRef}
+                  className={`relative ${
+                    activitiesExpanded
+                      ? "max-h-[400px] overflow-y-auto pr-1"
+                      : ""
+                  }`}
+                >
+                  <div className="space-y-4">
+                    {visibleActivities.map((activity, idx) => {
+                      const meta = activityMeta[activity.type];
+                      const Icon = meta.icon;
 
-                return (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <div className="relative flex flex-col items-center">
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl ${meta.bg}`}
-                      >
-                        <Icon className={`h-4 w-4 ${meta.color}`} />
-                      </div>
+                      return (
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-3 min-w-0"
+                        >
+                          <div className="relative flex flex-col items-center flex-shrink-0">
+                            <div
+                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${meta.bg}`}
+                            >
+                              <Icon className={`h-4 w-4 ${meta.color}`} />
+                            </div>
+                            {idx < visibleActivities.length - 1 && (
+                              <div className="mt-1 h-full w-px flex-1 bg-border" />
+                            )}
+                          </div>
 
-                      {idx < activities.length - 1 && (
-                        <div className="mt-1 h-full w-px flex-1 bg-border" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 pb-4">
-                      <p className="text-sm font-semibold text-foreground">
-                        {activity.text}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.course}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {activity.time}
-                      </p>
-                    </div>
+                          <div className="flex-1 min-w-0 pb-4">
+                            <p className="text-sm font-semibold text-foreground break-words">
+                              {activity.text}
+                            </p>
+                            <p className="text-xs text-muted-foreground break-words">
+                              {activity.course}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {activity.time}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })
+
+                  {activitiesExpanded && (
+                    <div className="pointer-events-none sticky bottom-0 left-0 h-6 w-full bg-gradient-to-t from-background to-transparent" />
+                  )}
+                </div>
+
+                {hasMoreActivities && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 w-full text-xs text-muted-foreground"
+                    onClick={() => setActivitiesExpanded((v) => !v)}
+                  >
+                    {activitiesExpanded ? (
+                      <>
+                        Show less
+                        <ChevronUp className="ml-1 h-3.5 w-3.5" />
+                      </>
+                    ) : (
+                      <>
+                        View all {activities.length} activities
+                        <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                      </>
+                    )}
+                  </Button>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -463,7 +515,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
 
-          <CardContent ref={quizzesRef} className="space-y-3 p-5 pt-0">
+          <CardContent ref={quizzesRef} className="space-y-3 p-4 sm:p-5 pt-0">
             {upcomingQuizzes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No quizzes available right now.
@@ -472,7 +524,7 @@ export default function DashboardPage() {
               upcomingQuizzes.slice(0, 5).map((quiz) => (
                 <div
                   key={quiz.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3 transition-colors duration-200 hover:border-emerald-500/30 hover:bg-muted/50"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/60 p-3 transition-colors duration-200 hover:border-emerald-500/30 hover:bg-muted/50"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-foreground">
@@ -481,9 +533,9 @@ export default function DashboardPage() {
                     <p className="truncate text-xs text-muted-foreground">
                       {quiz.course}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                       <span>Passing: {quiz.passingScore}%</span>
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>{quiz.timeLimit} min</span>
                     </div>
                   </div>
@@ -491,7 +543,7 @@ export default function DashboardPage() {
                   <Button
                     size="sm"
                     asChild
-                    className="flex-shrink-0 transition-transform duration-150 active:scale-95"
+                    className="w-full sm:w-auto flex-shrink-0 transition-transform duration-150 active:scale-95"
                   >
                     <Link href={`/dashboard/topics/${quiz.topicId}/quiz`}>
                       Start

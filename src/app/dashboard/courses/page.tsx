@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseCard } from "@/components/dashboard-components/courses/course-card";
+import { useProfile } from "@/context/profile-context";
 
 const PAGE_SIZE = 9;
 
@@ -48,7 +49,11 @@ export default function MyCoursesPage() {
   const [page, setPage] = useState(1);
 
   const { loading, courses, search, setSearch } = useStudentCourses();
-  const { enrollments } = useEnrollment();
+ const { profile } = useProfile();
+
+ const { enrollments } = useEnrollment(profile?.id);
+
+
 
   const totalPages = Math.ceil(courses.length / PAGE_SIZE);
 

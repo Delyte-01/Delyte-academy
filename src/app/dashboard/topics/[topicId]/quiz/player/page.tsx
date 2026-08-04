@@ -20,6 +20,11 @@ import { QuizOption } from "@/types/quiz";
 import { useCourse } from "@/hooks/useCourse";
 import { useTopic } from "@/hooks/useTopics";
 import { QuestionState } from "@/components/dashboard-components/Quiz-component/question-navigator";
+import {
+  submitQuizAttempt,
+  submitQuizAttemptAnswers,
+} from "@/services/quiz-attempt";
+import { useProfile } from "@/context/profile-context";
 
 const letters = ["A", "B", "C", "D", "E", "F"];
 
@@ -31,6 +36,7 @@ const prefersReducedMotion = () =>
 export default function QuizPlayerPage() {
   const { topicId } = useParams();
   const router = useRouter();
+  const { profile } = useProfile();
 
   const { quiz, loading: quizLoading } = useQuiz(topicId as string);
   const { questions, loading: questionLoading } = useQuestion(quiz?.id ?? "");
@@ -97,28 +103,53 @@ export default function QuizPlayerPage() {
       })),
     [questions],
   );
-
-  const handleSubmit = (auto = false) => {
-    if (submitted) return;
+  const handleSubmit = async (auto = false) => {
+    if (submitted || !quiz || !profile) return;
 
     setSubmitted(true);
 
-    let score = 0;
+    let correctAnswers = 0;
 
-    mappedQuestions.forEach((q) => {
-      const selected = selectedAnswers[q.id];
-      const correct = q.options.find((o) => o.isCorrect)?.id;
+    const answerRows = mappedQuestions.map((q) => {
+      const selected = selectedAnswers[q.id] ?? null;
 
-      if (selected === correct) {
-        score++;
-      }
+      const correct = q.options.find((o) => o.isCorrect)?.id ?? null;
+
+      const isCorrect = selected === correct;
+
+      if (isCorrect) correctAnswers++;
+
+      return {
+        questionId: q.id,
+        selectedOptionId: selected,
+        isCorrect,
+      };
     });
 
-    const encodedAnswers = encodeURIComponent(JSON.stringify(selectedAnswers));
+    const score = Math.round((correctAnswers / mappedQuestions.length) * 100);
 
-    router.push(
-      `/dashboard/topics/${topicId}/quiz/result?score=${score}&total=${mappedQuestions.length}&quizId=${quiz?.id}&auto=${auto}&answers=${encodedAnswers}`,
-    );
+    const timeSpent = quiz.time_limit * 60 - (timeLeft ?? 0);
+
+    try {
+      const attempt = await submitQuizAttempt({
+        quizId: quiz.id,
+        studentId: profile.id,
+        score,
+        correctAnswers,
+        totalQuestions: mappedQuestions.length,
+        timeSpent,
+        attemptNumber: 1,
+      });
+
+      await submitQuizAttemptAnswers(attempt.id, answerRows);
+
+      router.push(
+        `/dashboard/topics/${topicId}/quiz/result?attempt=${attempt.id}&auto=${auto}`,
+      );
+    } catch (error) {
+      console.error(error);
+      setSubmitted(false);
+    }
   };
 
   useEffect(() => {
@@ -158,7 +189,7 @@ export default function QuizPlayerPage() {
         )
         .from(
           optionsListRef.current ? optionsListRef.current.children : [],
-          { y: 10,  duration: 0.35, stagger: 0.06 },
+          { y: 10, duration: 0.35, stagger: 0.06 },
           "-=0.25",
         )
         .from(
@@ -206,7 +237,6 @@ export default function QuizPlayerPage() {
     });
 
     return () => ctx.revert();
-
   }, [current]);
 
   // --- Subtle pulse on the timer badge once time is running low ---

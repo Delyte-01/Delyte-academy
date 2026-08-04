@@ -1,5 +1,6 @@
 // src/services/profile.ts
 
+import { TABLES } from "@/constants/database";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types/profile";
 
@@ -8,21 +9,27 @@ async function getCurrentProfile(): Promise<Profile | null> {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  console.log("AUTH USER:", user);
+  console.log("AUTH ERROR:", userError);
 
   if (!user) return null;
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from(TABLES.Profiles)
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+
+  console.log("PROFILE QUERY DATA:", data);
+  console.log("PROFILE QUERY ERROR:", error);
 
   if (error) throw error;
 
   return data;
 }
-
 async function upsertProfile() {
   const supabase = createClient();
 
@@ -55,7 +62,7 @@ async function updateProfile(
   if (!user) throw new Error("User not found.");
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from(TABLES.Profiles)
     .update({
       ...updates,
       updated_at: new Date().toISOString(),

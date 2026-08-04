@@ -273,7 +273,7 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
           <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">
             Unlock every course, past questions &amp; mock exams.
           </p>
-          <Button size="sm" className="mt-3 w-full">
+          <Button size="sm" className="mt-3 w-full" disabled>
             Upgrade now
           </Button>
         </div>
