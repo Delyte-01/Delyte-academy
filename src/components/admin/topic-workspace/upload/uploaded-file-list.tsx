@@ -1,6 +1,6 @@
 "use client";
 
-import { FilePreviewItem } from "./file-preview";
+import { FilePreviewItem, UploadedFile } from "./file-preview";
 
 
 

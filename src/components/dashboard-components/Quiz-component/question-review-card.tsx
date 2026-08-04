@@ -3,8 +3,15 @@
 import { CheckCircle2, XCircle, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { QuizQuestion } from "./types";
+
 import { MathRenderer } from "@/components/common/math-renderer";
+
+interface QuizQuestion {
+  number: number;
+  text: string;
+  correctAnswer: string;
+  explanation: string | null;
+}
 
 interface QuestionReviewCardProps {
   question: QuizQuestion;
@@ -93,7 +100,7 @@ export function QuestionReviewCard({
               Explanation :
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              <MathRenderer text={question.explanation} />
+              <MathRenderer text={question.explanation ?? ""} />
             </p>
           </div>
         </div>

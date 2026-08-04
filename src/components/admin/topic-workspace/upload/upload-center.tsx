@@ -8,6 +8,7 @@ import { UploadDropzone } from "./upload-dropzone";
 import { UploadedFileList } from "./uploaded-file-list";
 import { UploadFooterActions } from "./upload-footer-actions";
 import { UploadGuideCard } from "./upoload-guide-card";
+import { UploadedFile } from "./file-preview";
 
 
 export interface UploadCenterProps {

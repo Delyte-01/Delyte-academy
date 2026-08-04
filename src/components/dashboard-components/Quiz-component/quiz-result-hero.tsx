@@ -3,7 +3,14 @@
 import { Trophy, CheckCircle2, XCircle, Award } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { QuizResultData } from "./types";
+
+interface QuizResultData {
+  score: number;
+  passed: boolean;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  totalPoints: number;
+}
 
 interface QuizResultsHeroProps {
   result: QuizResultData;

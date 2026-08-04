@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import type { QuizQuestion } from "./types";
+// import type { QuizQuestion } from "./types";
 import { MathRenderer } from "@/components/common/math-renderer";
+import { QuizPlayerQuestion } from "@/types/quiz";
+
 
 interface QuestionCardProps {
-  question: QuizQuestion;
+  question: QuizPlayerQuestion;
 }
 
 const difficultyStyles: Record<string, string> = {

@@ -56,6 +56,24 @@ export interface QuizQuestion {
   order_index: number;
 
   options?: QuizOption[];
+  text?: string;
+  number?: number;
+}
+
+
+export interface QuizPlayerQuestion {
+  id: string;
+  number: number;
+  text: string;
+  type: string;
+  difficulty: Difficulty;
+  points: number;
+  options: {
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }[];
+  explanation: string | null;
 }
 
 export interface QuizOption {

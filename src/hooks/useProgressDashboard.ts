@@ -324,15 +324,18 @@ export function useProgressDashboard(studentId?: string) {
               100,
           );
 
+    const scoreTrend = data.quizAttempts.map((a: any) => ({
+      date: a.completed_at,
+      score: a.score,
+    }));
+
     return {
       averageScore,
       highestScore,
       quizzesTaken: scores.length,
       passRate,
-      trend: data.quizAttempts.map((a: any) => ({
-        date: a.completed_at,
-        score: a.score,
-      })),
+      trend: scoreTrend,
+      scoreTrend,
     };
   }, [data]);
 
