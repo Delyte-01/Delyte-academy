@@ -13,7 +13,6 @@ import { FullPageLoader } from "@/components/loading/Loading";
 
 import { ProfileProvider, useProfile } from "@/context/profile-context";
 
-
 const display = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["600", "700", "800"],
@@ -36,13 +35,7 @@ export default function DashboardLayout({
   );
 }
 
- function DashboardContent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-
-
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
 
   const displayName = profile?.full_name || "Student";
@@ -58,7 +51,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   // const [profile, setProfile] = useState("");
-  console.log(setLoading)
+  console.log(setLoading);
 
   const blobRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
@@ -75,12 +68,10 @@ export default function DashboardLayout({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to log out."
+        error instanceof Error ? error.message : "Failed to log out.",
       );
     }
   };
-
-  
 
   // Ambient background aura — slow breathing motion, purely decorative
   useEffect(() => {
@@ -104,18 +95,14 @@ export default function DashboardLayout({
       gsap.fromTo(
         contentRef.current,
         { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.05 }
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.05 },
       );
     }
   }, [loading]);
 
   if (loading) {
-    return (
-    <FullPageLoader />
-    );
+    return <FullPageLoader />;
   }
-
-
 
   return (
     <div
@@ -125,21 +112,21 @@ export default function DashboardLayout({
       <div
         ref={blobRef}
         aria-hidden
-        className="pointer-events-none fixed -right-40 -top-40 z-0 h-[520px] w-[520px] rounded-full opacity-40 blur-3xl"
+        className="pointer-events-none fixed -right-48 -top-48 z-0 h-[700px] w-[700px] rounded-full blur-[140px]"
         style={{
           background:
-            "radial-gradient(circle at 30% 30%, #C4B5FD 0%, #FBCFE8 45%, transparent 75%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -left-32 bottom-0 z-0 h-[380px] w-[380px] rounded-full opacity-30 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 50%, #A7F3D0 0%, #C4B5FD 50%, transparent 75%)",
+            "radial-gradient(circle at 30% 30%, rgba(16,185,129,0.55) 0%, rgba(45,212,191,0.30) 26%, rgba(99,102,241,0.16) 54%, rgba(0,0,0,0) 82%)",
         }}
       />
 
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -left-44 bottom-[-140px] z-0 h-[560px] w-[560px] rounded-full blur-[140px]"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, rgba(34,197,94,0.40) 0%, rgba(16,185,129,0.24) 34%, rgba(139,92,246,0.12) 64%, rgba(0,0,0,0) 86%)",
+        }}
+      />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -162,6 +149,5 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
-  
   );
 }
