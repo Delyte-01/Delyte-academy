@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { Menu, Search, Bell } from 'lucide-react';
+import { Menu, Search, Bell, Sun, Moon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useTheme } from 'next-themes';
+import { Button } from '../ui/button';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -22,13 +24,19 @@ export default function Header({
 }: HeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
+  const iconWrapRef = useRef<HTMLSpanElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         headerRef.current,
         { opacity: 0, y: -14 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
       );
     });
 
@@ -38,7 +46,7 @@ export default function Header({
         opacity: 0,
         duration: 1.4,
         repeat: -1,
-        ease: 'power1.out',
+        ease: "power1.out",
       });
     }
 
@@ -46,11 +54,29 @@ export default function Header({
   }, []);
 
   const initials = displayName
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const toggleTheme = () => {
+    if (iconWrapRef.current) {
+      gsap.fromTo(
+        iconWrapRef.current,
+        { rotate: -90, opacity: 0, scale: 0.6 },
+        {
+          rotate: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.35,
+          ease: "back.out(2)",
+        },
+      );
+    }
+
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <header
@@ -77,6 +103,20 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+        >
+          <span ref={iconWrapRef} className="inline-flex">
+            {mounted && theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </span>
+        </Button>
         <button
           className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted"
           aria-label="Notifications"

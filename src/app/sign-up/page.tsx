@@ -720,7 +720,7 @@ export default function SignupPage() {
           </h2>
           <p className="mt-4 text-base leading-relaxed text-blue-100">
             Join thousands of students already turning practice into progress
-            with StudyHub.
+            with Delyte Academy.
           </p>
 
           <div ref={benefitsRef} className="mt-8 space-y-3.5">
@@ -752,7 +752,7 @@ export default function SignupPage() {
         </div>
 
         <p className="relative z-10 mt-10 text-xs text-blue-200">
-          © {new Date().getFullYear()} StudyHub. All rights reserved.
+          © {new Date().getFullYear()} Delyte Academy. All rights reserved.
         </p>
       </div>
     </div>

@@ -48,7 +48,6 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
     return pathname.startsWith(href);
   };
 
-
   useEffect(() => {
     if (asideRef.current) {
       if (window.matchMedia(DESKTOP_QUERY).matches) {
@@ -155,7 +154,6 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
     const mql = window.matchMedia(DESKTOP_QUERY);
     mql.addEventListener("change", applyDrawerState);
     return () => mql.removeEventListener("change", applyDrawerState);
-
   }, [applyDrawerState]);
 
   return (
@@ -177,23 +175,32 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
         className="fixed top-0 left-0 z-40 flex h-full w-72 flex-col border-r border-border bg-card lg:sticky lg:h-screen"
       >
         {/* Logo */}
-        <div className="sidebar-reveal flex items-center justify-between px-4 ">
-          {/* <Link href="/" className="flex items-center"> */}
-            <Image
-              src="https://res.cloudinary.com/dk5mfu099/image/upload/v1784496645/gradient-logo_bo8vrn.svg"
-              alt="delyte academy logo"
-              width={200}
-              height={100}
-              className="w-[180px]  object-contain"
-            />
-          {/* </Link> */}
-          <button
-            className="-mr-1.5 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95 lg:hidden"
-            onClick={onClose}
-            aria-label="Close sidebar"
+        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border/60 px-4">
+          <Link
+            href="/admin"
+            className="group flex items-center gap-2.5 overflow-hidden"
           >
-            <X className="h-5 w-5" strokeWidth={2.25} />
-          </button>
+            <div>
+              <Image
+                src={
+                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1785940928/logo-grad-1_bcqnbn.svg"
+                }
+                alt="delyte academy logo"
+                width={120}
+                height={120}
+                className="object-cover w-[40px] height-[60px] "
+              />
+            </div>
+
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-extrabold tracking-tight text-foreground">
+                Delyte
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-500">
+                Academy
+              </span>
+            </div>
+          </Link>
         </div>
 
         {/* Streak strip */}

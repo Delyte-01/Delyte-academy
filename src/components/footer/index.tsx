@@ -247,12 +247,12 @@ export function Footer() {
                 +234 701 234 5678
               </a>
               <a
-                href="mailto:hello@studyhub.ng"
+                href="mailto:delyte780@gmail.com"
                 className="flex items-center gap-2 text-sm"
                 style={{ color: MUTED }}
               >
                 <Mail className="h-3.5 w-3.5" style={{ color: BLUE }} />
-                hello@studyhub.ng
+                delyte780@gmail.com
               </a>
             </div>
 
@@ -416,7 +416,7 @@ export function Footer() {
           className="mt-6 flex flex-col items-center justify-between gap-4 text-xs sm:flex-row"
           style={{ color: FAINT }}
         >
-          <p>© {new Date().getFullYear()} StudyHub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Delyte Academy. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <span className="cursor-pointer transition-colors hover:text-white">
               Privacy policy

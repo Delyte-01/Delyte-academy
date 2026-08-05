@@ -149,15 +149,16 @@
 input,
 textarea,
 select {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
+  background-color: var(--background);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 input:disabled,
 textarea:disabled {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }

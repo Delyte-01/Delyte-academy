@@ -11,6 +11,7 @@ import { StudentDetailSheet } from "@/components/admin/students-component/studen
 
 import { AdminStudent, useAdminStudents } from "@/hooks/useAdminStudents";
 import { AdminStudentsTable } from "@/components/admin/students-component/students-table";
+import { exportStudentsToCsv } from "@/lib/utils/export-csv";
 
 
 export default function StudentsPage() {
@@ -84,8 +85,10 @@ export default function StudentsPage() {
     setSheetOpen(true);
   };
 
-  console.log("students", students);
-  console.log("filteredStudents", filteredStudents);
+ 
+  const handleExportCsv = () => {
+    exportStudentsToCsv(filteredStudents);
+  };
 
   return (
     <div className="space-y-6">
@@ -100,7 +103,7 @@ export default function StudentsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportCsv}>
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>

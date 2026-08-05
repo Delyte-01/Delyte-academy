@@ -768,7 +768,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 mt-14 text-xs text-blue-200">
-          © 2026 StudyHub. All rights reserved.
+          © {new Date().getFullYear()} Delyte Academy. All rights reserved.
         </p>
       </div>
     </div>

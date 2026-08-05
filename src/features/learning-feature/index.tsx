@@ -423,7 +423,7 @@ export function FeaturesSection() {
                 className="feat-copy mt-3 text-sm leading-relaxed"
                 style={{ color: SLATE }}
               >
-                StudyHub brings together everything you need for exam success in
+                Delyte Academy brings together everything you need for exam success in
                 one seamless platform.
               </p>
             </div>

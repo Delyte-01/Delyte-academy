@@ -16,11 +16,11 @@ const TINT = "#F8FAFC";
 
 const FAQS = [
   {
-    q: "Is StudyHub really free to use?",
+    q: "Is Delyte Academy really free to use?",
     a: "Yes. Every course, study guide, past question, and CBT mock test is free — no card required. We may introduce optional premium features later, but the core platform stays free for students.",
   },
   {
-    q: "Which exams does StudyHub cover?",
+    q: "Which exams does Delyte Academy cover?",
     a: "We cover WAEC, NECO, and JAMB prep, along with university-level course support. New subjects and past question sets are added regularly based on what students request most.",
   },
   {
@@ -32,8 +32,8 @@ const FAQS = [
     a: "Yes — our CBT tests mirror the timing, format, and question style of the real JAMB and WAEC computer-based tests, so you build familiarity with the actual exam experience, not just the content.",
   },
   {
-    q: "Can I access StudyHub on my phone?",
-    a: "Yes, StudyHub works on any device with a browser — phone, tablet, or laptop. There's nothing to install, and your progress stays synced to your account either way.",
+    q: "Can I access Delyte Academy on my phone?",
+    a: "Yes, Delyte Academy works on any device with a browser — phone, tablet, or laptop. There's nothing to install, and your progress stays synced to your account either way.",
   },
   {
     q: "Do I need an account to start practicing?",

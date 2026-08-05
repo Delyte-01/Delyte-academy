@@ -19,7 +19,7 @@ const TESTIMONIALS = [
     name: "Chiamaka O.",
     role: "WAEC Candidate",
     quote:
-      "StudyHub helped me score 8 A1s in WAEC. The past questions and study guides are incredibly detailed and easy to understand.",
+      "Delyte Academy helped me score 8 A1s in WAEC. The past questions and study guides are incredibly detailed and easy to understand.",
     avatar:
       "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
   },
