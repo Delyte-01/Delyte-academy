@@ -20,7 +20,7 @@ export interface StudentActivity {
   time: string;
 }
 
-function formatRelative(date: string) {
+export function formatRelative(date: string) {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
