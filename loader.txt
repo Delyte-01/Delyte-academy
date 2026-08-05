@@ -1,0 +1,523 @@
+dark version 
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+
+interface DelyteLoaderProps {
+  onComplete: () => void;
+}
+
+const BRAND_TEXT = "DELYTE ACADEMY";
+const SUB_TEXT = "Preparing your learning workspace";
+
+export default function DelyteLoader({ onComplete }: DelyteLoaderProps) {
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const curtainTopRef = useRef<HTMLDivElement>(null);
+  const curtainBottomRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const logoWrapRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<SVGSVGElement>(null);
+  const arcRef = useRef<SVGCircleElement>(null);
+  const textRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const ruleRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!loaderRef.current || !logoRef.current) return;
+
+    const ctx = gsap.context(() => {
+      const paths = logoRef.current!.querySelectorAll<SVGPathElement>(".logo-path");
+
+      paths.forEach((path) => {
+        const length = path.getTotalLength();
+        gsap.set(path, {
+          stroke: "url(#paint0_linear_15_2)",
+          strokeWidth: 1.1,
+          strokeDasharray: length,
+          strokeDashoffset: length,
+          fillOpacity: 0,
+        });
+      });
+
+      gsap.set(logoWrapRef.current, { opacity: 0, scale: 0.9, y: 10 });
+      gsap.set(arcRef.current, { opacity: 0, transformOrigin: "50% 50%" });
+      gsap.set(textRef.current, { opacity: 0, y: 8 });
+      gsap.set(subRef.current, { opacity: 0, y: 6 });
+      gsap.set(ruleRef.current, { scaleX: 0 });
+      gsap.set(counterRef.current, { opacity: 0 });
+
+      gsap.set([loaderRef.current, curtainTopRef.current, curtainBottomRef.current], {
+        willChange: "transform, opacity",
+        force3D: true,
+      });
+
+      // quiet ambient rotation — a single thin arc, never a busy spinner
+      const arcSpin = gsap.to(arcRef.current, {
+        rotate: "+=360",
+        duration: 9,
+        ease: "none",
+        repeat: -1,
+      });
+
+      const counter = { value: 0 };
+      const paintCounter = () => {
+        if (counterRef.current) {
+          counterRef.current.textContent = String(Math.round(counter.value)).padStart(3, "0");
+        }
+      };
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        onComplete: () => {
+          arcSpin.kill();
+          onComplete();
+        },
+      });
+
+      // logo settles in — unhurried, no bounce
+      tl.to(logoWrapRef.current, { opacity: 1, scale: 1, y: 0, duration: 1, ease: "power3.out" })
+        .to(arcRef.current, { opacity: 0.45, duration: 0.6 }, "<0.1")
+
+        // the mark draws itself, slowly and deliberately
+        .to(paths, { strokeDashoffset: 0, duration: 1.4, stagger: 0.14, ease: "power1.inOut" }, "-=0.4")
+        .to(counter, { value: 100, duration: 1.6, ease: "power1.inOut", onUpdate: paintCounter }, "<")
+        .to(counterRef.current, { opacity: 1, duration: 0.4 }, "<")
+
+        // fill settles, almost imperceptibly
+        .to(paths, { fillOpacity: 1, strokeWidth: 0, duration: 0.5, ease: "power1.out" }, "-=0.3")
+
+        // wordmark rises, then a hairline draws beneath it — the signature detail
+        .to(textRef.current, { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, "-=0.35")
+        .to(ruleRef.current, { scaleX: 1, duration: 0.6, ease: "power2.inOut" }, "-=0.2")
+        .to(subRef.current, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.25")
+
+        // a held moment of quiet
+        .to({}, { duration: 0.5 })
+
+        // ---- exit: content settles back, curtains part slowly to reveal the page ----
+        .to(counterRef.current, { opacity: 0, duration: 0.35 }, "exit")
+        .to(ruleRef.current, { scaleX: 0, duration: 0.45, ease: "power2.in" }, "exit")
+        .to(
+          contentRef.current,
+          { opacity: 0, y: -14, scale: 0.98, filter: "blur(2px)", duration: 0.6, ease: "power2.in" },
+          "exit",
+        )
+        .to(arcRef.current, { opacity: 0, duration: 0.4 }, "exit")
+        .to(
+          curtainTopRef.current,
+          { yPercent: -100, duration: 1.1, ease: "expo.inOut" },
+          "exit+=0.15",
+        )
+        .to(
+          curtainBottomRef.current,
+          { yPercent: 100, duration: 1.1, ease: "expo.inOut" },
+          "exit+=0.15",
+        );
+
+      return () => {
+        arcSpin.kill();
+        tl.kill();
+      };
+    }, loaderRef);
+
+    return () => ctx.revert();
+  }, [onComplete]);
+
+  return (
+    <div ref={loaderRef} className="fixed inset-0 z-[9999] overflow-hidden">
+      {/* curtain panels — the reveal mechanism */}
+      <div ref={curtainTopRef} className="absolute inset-x-0 top-0 h-1/2 bg-[#0A0D18]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+      </div>
+      <div ref={curtainBottomRef} className="absolute inset-x-0 bottom-0 h-1/2 bg-[#0A0D18]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+      </div>
+
+      {/* soft focal glow behind the mark — dark backgrounds want a light source */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 44%, rgba(49,87,255,0.16), transparent 45%)",
+        }}
+      />
+
+      {/* content, held above the curtains */}
+      <div className="relative flex h-full w-full items-center justify-center">
+        <div ref={contentRef} className="flex flex-col items-center">
+          <div ref={logoWrapRef} className="relative flex h-28 w-28 items-center justify-center">
+            <svg
+              ref={logoRef}
+              width="338"
+              height="333"
+              viewBox="0 0 338 333"
+              className="relative z-10 h-20 w-20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
+              <path
+                className="logo-path"
+                d="M0 2.1827C0.201193 13.5956 16.9002 33.2177 34.6052 42.8285L45.2684 48.8353L116.692 49.8364C194.956 51.0378 194.352 51.0378 220.306 64.4529C235.597 72.4619 258.131 94.8872 268.19 111.906C281.268 134.332 284.688 148.748 284.688 180.984C284.487 206.213 284.085 210.618 279.055 224.834L273.421 240.451L287.907 263.277C295.754 275.891 302.997 286.103 303.801 286.103C306.618 286.103 325.329 247.86 329.755 233.243C351.484 162.564 324.927 80.0705 265.977 35.6204C258.533 30.0141 244.45 21.6046 234.39 16.599C202.4 1.18158 202.199 1.18158 95.1643 0.380673C17.3026 -0.42023 0 -0.0197789 0 2.1827Z"
+                fill="url(#paint0_linear_15_2)"
+              />
+              <path
+                className="logo-path"
+                d="M13.0776 93.6859C10.8644 94.6871 7.24296 97.4902 5.02983 99.8929C1.20717 104.098 1.00597 107.502 0.402393 209.617C6.98152e-06 286.503 0.603586 316.537 2.21313 320.742C6.23699 330.353 12.8764 332.155 43.0553 332.155H70.0152L97.981 299.518C113.272 281.698 132.989 258.872 141.439 248.661C150.09 238.449 157.937 229.639 158.943 229.039C159.948 228.438 168.197 237.648 177.251 249.462C208.034 289.306 231.976 319.14 238.213 325.547L244.248 332.155H273.019C288.913 332.155 301.79 331.554 301.79 330.953C301.79 328.35 177.05 167.369 170.612 161.362C163.972 155.556 155.723 156.957 147.072 165.367C142.646 169.571 119.911 196.001 96.5727 224.033C73.0331 252.064 53.115 275.291 52.5114 275.491C51.9078 275.891 51.3042 246.058 51.3042 209.416V142.941L84.0987 142.341L116.692 141.94V135.333C116.692 119.315 102.206 100.894 85.1047 94.6871C76.6546 91.6837 19.9181 90.8828 13.0776 93.6859Z"
+                fill="url(#paint1_linear_15_2)"
+              />
+              <path
+                className="logo-path"
+                d="M138.823 309.529L119.911 331.154L139.628 331.754C150.291 331.955 167.191 331.955 177.05 331.754L195.157 331.154L178.056 309.529C168.6 297.716 160.15 288.105 159.345 288.105C158.54 288.105 149.285 297.716 138.823 309.529Z"
+                fill="url(#paint2_linear_15_2)"
+              />
+              <defs>
+                <linearGradient id="paint0_linear_15_2" x1="168.64" y1="286.103" x2="168.64" y2="0.0000610352" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+                <linearGradient id="paint1_linear_15_2" x1="151.036" y1="332.155" x2="151.036" y2="91.9573" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+                <linearGradient id="paint2_linear_15_2" x1="157.534" y1="331.905" x2="157.534" y2="288.105" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* single quiet arc — a mark of motion, not a spinner */}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden>
+              <circle
+                ref={arcRef}
+                cx="50"
+                cy="50"
+                r="47"
+                fill="none"
+                stroke="#5B86FF"
+                strokeWidth="0.4"
+                strokeDasharray="24 270"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <h2
+            ref={textRef}
+            className="mt-8 text-[13px] font-medium tracking-[0.42em] text-[#EAEDF7]"
+          >
+            {BRAND_TEXT}
+          </h2>
+
+          <div ref={ruleRef} className="mt-4 h-px w-10 origin-center bg-[#5B86FF]/50" />
+
+          <p ref={subRef} className="mt-4 text-[11px] font-light tracking-[0.14em] text-slate-500">
+            {SUB_TEXT}
+          </p>
+
+          <span
+            ref={counterRef}
+            className="mt-6 font-light text-[10px] tabular-nums tracking-[0.3em] text-slate-600"
+          >
+            000
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+light version
+
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+
+interface DelyteLoaderProps {
+  onComplete: () => void;
+}
+
+const BRAND_TEXT = "DELYTE ACADEMY";
+const SUB_TEXT = "Preparing your learning workspace";
+
+export default function DelyteLoader({ onComplete }: DelyteLoaderProps) {
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const curtainTopRef = useRef<HTMLDivElement>(null);
+  const curtainBottomRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const logoWrapRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<SVGSVGElement>(null);
+  const arcRef = useRef<SVGCircleElement>(null);
+  const textRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const ruleRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!loaderRef.current || !logoRef.current) return;
+
+    const ctx = gsap.context(() => {
+      const paths = logoRef.current!.querySelectorAll<SVGPathElement>(".logo-path");
+
+      paths.forEach((path) => {
+        const length = path.getTotalLength();
+        gsap.set(path, {
+          stroke: "url(#paint0_linear_15_2)",
+          strokeWidth: 1.1,
+          strokeDasharray: length,
+          strokeDashoffset: length,
+          fillOpacity: 0,
+        });
+      });
+
+      gsap.set(logoWrapRef.current, { opacity: 0, scale: 0.9, y: 10 });
+      gsap.set(arcRef.current, { opacity: 0, transformOrigin: "50% 50%" });
+      gsap.set(textRef.current, { opacity: 0, y: 8 });
+      gsap.set(subRef.current, { opacity: 0, y: 6 });
+      gsap.set(ruleRef.current, { scaleX: 0 });
+      gsap.set(counterRef.current, { opacity: 0 });
+
+      gsap.set([loaderRef.current, curtainTopRef.current, curtainBottomRef.current], {
+        willChange: "transform, opacity",
+        force3D: true,
+      });
+
+      // quiet ambient rotation — a single thin arc, never a busy spinner
+      const arcSpin = gsap.to(arcRef.current, {
+        rotate: "+=360",
+        duration: 9,
+        ease: "none",
+        repeat: -1,
+      });
+
+      const counter = { value: 0 };
+      const paintCounter = () => {
+        if (counterRef.current) {
+          counterRef.current.textContent = String(Math.round(counter.value)).padStart(3, "0");
+        }
+      };
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        onComplete: () => {
+          arcSpin.kill();
+          onComplete();
+        },
+      });
+
+      // logo settles in — unhurried, no bounce
+      tl.to(logoWrapRef.current, { opacity: 1, scale: 1, y: 0, duration: 1, ease: "power3.out" })
+        .to(arcRef.current, { opacity: 0.45, duration: 0.6 }, "<0.1")
+
+        // the mark draws itself, slowly and deliberately
+        .to(paths, { strokeDashoffset: 0, duration: 1.4, stagger: 0.14, ease: "power1.inOut" }, "-=0.4")
+        .to(counter, { value: 100, duration: 1.6, ease: "power1.inOut", onUpdate: paintCounter }, "<")
+        .to(counterRef.current, { opacity: 1, duration: 0.4 }, "<")
+
+        // fill settles, almost imperceptibly
+        .to(paths, { fillOpacity: 1, strokeWidth: 0, duration: 0.5, ease: "power1.out" }, "-=0.3")
+
+        // wordmark rises, then a hairline draws beneath it — the signature detail
+        .to(textRef.current, { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, "-=0.35")
+        .to(ruleRef.current, { scaleX: 1, duration: 0.6, ease: "power2.inOut" }, "-=0.2")
+        .to(subRef.current, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.25")
+
+        // a held moment of quiet
+        .to({}, { duration: 0.5 })
+
+        // ---- exit: content settles back, curtains part slowly to reveal the page ----
+        .to(counterRef.current, { opacity: 0, duration: 0.35 }, "exit")
+        .to(ruleRef.current, { scaleX: 0, duration: 0.45, ease: "power2.in" }, "exit")
+        .to(
+          contentRef.current,
+          { opacity: 0, y: -14, scale: 0.98, filter: "blur(2px)", duration: 0.6, ease: "power2.in" },
+          "exit",
+        )
+        .to(arcRef.current, { opacity: 0, duration: 0.4 }, "exit")
+        .to(
+          curtainTopRef.current,
+          { yPercent: -100, duration: 1.1, ease: "expo.inOut" },
+          "exit+=0.15",
+        )
+        .to(
+          curtainBottomRef.current,
+          { yPercent: 100, duration: 1.1, ease: "expo.inOut" },
+          "exit+=0.15",
+        );
+
+      return () => {
+        arcSpin.kill();
+        tl.kill();
+      };
+    }, loaderRef);
+
+    return () => ctx.revert();
+  }, [onComplete]);
+
+  return (
+    <div ref={loaderRef} className="fixed inset-0 z-[9999] overflow-hidden">
+      {/* curtain panels — the reveal mechanism */}
+      <div ref={curtainTopRef} className="absolute inset-x-0 top-0 h-1/2 bg-[#F8FAFC]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+      </div>
+      <div ref={curtainBottomRef} className="absolute inset-x-0 bottom-0 h-1/2 bg-[#F8FAFC]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+      </div>
+
+      {/* content, held above the curtains */}
+      <div className="relative flex h-full w-full items-center justify-center">
+        <div ref={contentRef} className="flex flex-col items-center">
+          <div ref={logoWrapRef} className="relative flex h-28 w-28 items-center justify-center">
+            <svg
+              ref={logoRef}
+              width="338"
+              height="333"
+              viewBox="0 0 338 333"
+              className="relative z-10 h-20 w-20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
+              <path
+                className="logo-path"
+                d="M0 2.1827C0.201193 13.5956 16.9002 33.2177 34.6052 42.8285L45.2684 48.8353L116.692 49.8364C194.956 51.0378 194.352 51.0378 220.306 64.4529C235.597 72.4619 258.131 94.8872 268.19 111.906C281.268 134.332 284.688 148.748 284.688 180.984C284.487 206.213 284.085 210.618 279.055 224.834L273.421 240.451L287.907 263.277C295.754 275.891 302.997 286.103 303.801 286.103C306.618 286.103 325.329 247.86 329.755 233.243C351.484 162.564 324.927 80.0705 265.977 35.6204C258.533 30.0141 244.45 21.6046 234.39 16.599C202.4 1.18158 202.199 1.18158 95.1643 0.380673C17.3026 -0.42023 0 -0.0197789 0 2.1827Z"
+                fill="url(#paint0_linear_15_2)"
+              />
+              <path
+                className="logo-path"
+                d="M13.0776 93.6859C10.8644 94.6871 7.24296 97.4902 5.02983 99.8929C1.20717 104.098 1.00597 107.502 0.402393 209.617C6.98152e-06 286.503 0.603586 316.537 2.21313 320.742C6.23699 330.353 12.8764 332.155 43.0553 332.155H70.0152L97.981 299.518C113.272 281.698 132.989 258.872 141.439 248.661C150.09 238.449 157.937 229.639 158.943 229.039C159.948 228.438 168.197 237.648 177.251 249.462C208.034 289.306 231.976 319.14 238.213 325.547L244.248 332.155H273.019C288.913 332.155 301.79 331.554 301.79 330.953C301.79 328.35 177.05 167.369 170.612 161.362C163.972 155.556 155.723 156.957 147.072 165.367C142.646 169.571 119.911 196.001 96.5727 224.033C73.0331 252.064 53.115 275.291 52.5114 275.491C51.9078 275.891 51.3042 246.058 51.3042 209.416V142.941L84.0987 142.341L116.692 141.94V135.333C116.692 119.315 102.206 100.894 85.1047 94.6871C76.6546 91.6837 19.9181 90.8828 13.0776 93.6859Z"
+                fill="url(#paint1_linear_15_2)"
+              />
+              <path
+                className="logo-path"
+                d="M138.823 309.529L119.911 331.154L139.628 331.754C150.291 331.955 167.191 331.955 177.05 331.754L195.157 331.154L178.056 309.529C168.6 297.716 160.15 288.105 159.345 288.105C158.54 288.105 149.285 297.716 138.823 309.529Z"
+                fill="url(#paint2_linear_15_2)"
+              />
+              <defs>
+                <linearGradient id="paint0_linear_15_2" x1="168.64" y1="286.103" x2="168.64" y2="0.0000610352" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+                <linearGradient id="paint1_linear_15_2" x1="151.036" y1="332.155" x2="151.036" y2="91.9573" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+                <linearGradient id="paint2_linear_15_2" x1="157.534" y1="331.905" x2="157.534" y2="288.105" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B86FF" />
+                  <stop offset="0.35" stopColor="#4873FF" />
+                  <stop offset="0.7" stopColor="#3157FF" />
+                  <stop offset="1" stopColor="#1E28F0" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* single quiet arc — a mark of motion, not a spinner */}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden>
+              <circle
+                ref={arcRef}
+                cx="50"
+                cy="50"
+                r="47"
+                fill="none"
+                stroke="#1E28F0"
+                strokeWidth="0.4"
+                strokeDasharray="24 270"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <h2
+            ref={textRef}
+            className="mt-8 text-[13px] font-medium tracking-[0.42em] text-[#14204d]"
+          >
+            {BRAND_TEXT}
+          </h2>
+
+          <div ref={ruleRef} className="mt-4 h-px w-10 origin-center bg-[#1E28F0]/40" />
+
+          <p ref={subRef} className="mt-4 text-[11px] font-light tracking-[0.14em] text-slate-400">
+            {SUB_TEXT}
+          </p>
+
+          <span
+            ref={counterRef}
+            className="mt-6 font-light text-[10px] tabular-nums tracking-[0.3em] text-slate-300"
+          >
+            000
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
