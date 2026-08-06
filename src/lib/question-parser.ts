@@ -3,66 +3,85 @@ import { ParsedQuestion } from "@/types/parser";
 export function parseQuestions(text: string): ParsedQuestion[] {
   const questions: ParsedQuestion[] = [];
 
-  // Split the PDF into question blocks
-  const blocks =
-    text.match(/\d+\.\s[\s\S]*?(?=\d+\.\s|$)/g)?.map((b) => b.trim()) ?? [];
+  // Normalize line endings and restore line breaks for PDF text
+  const normalized = text
+    .replace(/\r/g, "")
+    .replace(/\s+(?=Question(?:\s+\d+)?\s*:)/gi, "\n")
+    .replace(/\s+(?=Type:)/gi, "\n")
+    .replace(/\s+(?=Difficulty:)/gi, "\n")
+    .replace(/\s+(?=Points:)/gi, "\n")
+    .replace(/\s+(?=Option:)/gi, "\n")
+    .replace(/\s+(?=Correct\s+Answer:)/gi, "\n")
+    .replace(/\s+(?=Answer:)/gi, "\n")
+    .replace(/\s+(?=Explanation:)/gi, "\n");
+
+  const blocks = normalized
+    .split(/(?=Question(?:\s+\d+)?\s*:)/i)
+    .map((b) => b.trim())
+    .filter(Boolean);
 
   for (const block of blocks) {
-    // Question
-    const question = block.match(/^\d+\.\s*([\s\S]*?)\s*A\./)?.[1]?.trim() ?? "";
+    const lines = block
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
 
-    // Options
-    const optionA = block.match(/A\.\s*([\s\S]*?)\s*B\./)?.[1]?.trim() ?? "";
+    let question = "";
+    let explanation = "";
+    let difficulty: "easy" | "medium" | "hard" = "medium";
+    let points = 1;
+    const options: { optionText: string; isCorrect: boolean }[] = [];
+    let correctLetter = "";
 
-    const optionB = block.match(/B\.\s*([\s\S]*?)\s*C\./)?.[1]?.trim() ?? "";
+    for (const line of lines) {
+      if (/^Question(?:\s+\d+)?\s*:/i.test(line)) {
+        question = line.replace(/^Question(?:\s+\d+)?\s*:/i, "").trim();
+      } else if (/^Option\s*:/i.test(line)) {
+        let optionText = line.replace(/^Option\s*:/i, "").trim();
+        let isCorrect = false;
 
-    const optionC = block.match(/C\.\s*([\s\S]*?)\s*D\./)?.[1]?.trim() ?? "";
+        if (optionText.endsWith("*")) {
+          isCorrect = true;
+          optionText = optionText.replace(/\*$/, "").trim();
+        }
 
-    const optionD = block.match(/D\.\s*([\s\S]*?)\s*Answer:/)?.[1]?.trim() ?? "";
+        options.push({ optionText, isCorrect });
+      } else if (/^Correct\s+Answer\s*:/i.test(line)) {
+        correctLetter =
+          line.match(/^Correct\s+Answer\s*:\s*([A-D])/i)?.[1]?.toUpperCase() ??
+          "";
+      } else if (/^Answer\s*:/i.test(line)) {
+        correctLetter =
+          line.match(/^Answer\s*:\s*([A-D])/i)?.[1]?.toUpperCase() ?? "";
+      } else if (/^Explanation\s*:/i.test(line)) {
+        explanation = line.replace(/^Explanation\s*:/i, "").trim();
+      } else if (/^Difficulty\s*:/i.test(line)) {
+        difficulty = (
+          line.match(/Difficulty\s*:\s*(Easy|Medium|Hard)/i)?.[1] ?? "Medium"
+        ).toLowerCase() as "easy" | "medium" | "hard";
+      } else if (/^Points\s*:/i.test(line)) {
+        points = Number(line.match(/Points\s*:\s*(\d+)/i)?.[1] ?? 1);
+      }
+    }
 
-    // Correct Answer
-    const answer = block.match(/Answer:\s*([A-D])/i)?.[1]?.toUpperCase() ?? "";
+    // If the file uses Correct Answer: B
+    if (correctLetter) {
+      const index = correctLetter.charCodeAt(0) - 65;
+      if (options[index]) {
+        options[index].isCorrect = true;
+      }
+    }
 
-    // Explanation
-    const explanation =
-      block.match(/Explanation:\s*([\s\S]*?)\s*Difficulty:/)?.[1]?.trim() ?? "";
-
-    // Difficulty
-    const difficulty = (
-      block.match(/Difficulty:\s*(Easy|Medium|Hard)/i)?.[1] ?? "Medium"
-    ).toLowerCase() as "easy" | "medium" | "hard";
-
-    // Points
-    const points = Number(block.match(/Points:\s*(\d+)/)?.[1] ?? 1);
-
-    // Skip invalid blocks
-    if (!question) continue;
-
-    questions.push({
-      question,
-      options: [
-        {
-          optionText: optionA,
-          isCorrect: answer === "A",
-        },
-        {
-          optionText: optionB,
-          isCorrect: answer === "B",
-        },
-        {
-          optionText: optionC,
-          isCorrect: answer === "C",
-        },
-        {
-          optionText: optionD,
-          isCorrect: answer === "D",
-        },
-      ].filter((o) => o.optionText !== ""),
-      explanation,
-      difficulty,
-      points,
-      type: "multiple_choice",
-    });
+    if (question && options.length >= 2) {
+      questions.push({
+        question,
+        options,
+        explanation,
+        difficulty,
+        points,
+        type: "multiple_choice",
+      });
+    }
   }
 
   return questions;

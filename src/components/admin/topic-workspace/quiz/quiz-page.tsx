@@ -432,20 +432,25 @@ export function QuizPage() {
           parsed = await parseCSV(file);
         } else if (ext === "docx") {
           const text = await extractDocxText(file);
-
+          console.log("===== RAW DOCX TEXT =====");
+          console.log(text);
+          console.log("=========================");
           parsed = parseQuestions(text);
         }
 
         // later
         else if (ext === "pdf") {
           const text = await parsePDF(file);
-
+console.log("===== RAW PDF TEXT =====");
+console.log(text);
+console.log("========================");
           parsed = parseQuestions(text);
         }
 
         let nextOrder = Math.max(...questions.map((q) => q.order_index), 0) + 1;
-
+        console.log("Parsed questions:", parsed.length, parsed);
         for (const question of parsed) {
+          console.log("Importing:", question.question);
           await addQuestion({
             quizId: quiz.id,
             question: question.question,
