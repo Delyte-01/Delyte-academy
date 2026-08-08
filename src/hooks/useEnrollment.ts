@@ -39,6 +39,9 @@ export function useEnrollment(studentId?: string) {
 
   const enroll = async (courseId: string) => {
     if (!studentId) return;
+      if (enrollments.some((e) => e.course_id === courseId)) {
+        return;
+      }
 
     try {
       setSaving(true);

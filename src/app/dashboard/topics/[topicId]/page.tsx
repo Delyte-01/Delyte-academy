@@ -33,7 +33,7 @@ export default function TopicContentPage() {
   const { attachments } = useAttachments(topicId as string);
   const { user } = useAuth();
 
-  const { enrollments, updateProgress } = useEnrollment(user?.id);
+  const { enrollments, updateProgress, isEnrolled } = useEnrollment(user?.id);
 
   const enrollment = enrollments.find((e) => e.course_id === topic?.course_id);
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -9,11 +10,6 @@ interface DelyteLoaderProps {
 
 const VIEWBOX_W = 338;
 const VIEWBOX_H = 333;
-const LOGO_DISPLAY = 176;
-const LOGO_SHIFT_UP = 34;
-const COLOR_STOPS = ["#5B86FF", "#4873FF", "#3157FF", "#1E28F0"];
-const BUCKETS = 6;
-const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const BRAND_TEXT = "DELYTE ACADEMY";
 
 const PATH_D = [
@@ -22,7 +18,11 @@ const PATH_D = [
   "M138.823 309.529L119.911 331.154L139.628 331.754C150.291 331.955 167.191 331.955 177.05 331.754L195.157 331.154L178.056 309.529C168.6 297.716 160.15 288.105 159.345 288.105C158.54 288.105 149.285 297.716 138.823 309.529Z",
 ];
 
-// ---- hand-rolled cubic-bezier solver — our own "CustomEase", no plugin needed ----
+// depth positions for each shard, back to front, plus the sweep layer that floats above all of them
+const LAYER_Z = [-18, 0, 16];
+const SWEEP_Z = 30;
+
+// ---- hand-rolled cubic-bezier solver — a consistent "house" easing curve ----
 function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
   const A = (a1: number, a2: number) => 1 - 3 * a2 + 3 * a1;
   const B = (a1: number, a2: number) => 3 * a2 - 6 * a1;
@@ -43,695 +43,428 @@ function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
   return (x: number) => (x1 === y1 && x2 === y2 ? x : calc(solveT(x), y1, y2));
 }
 
-// the "house" cinematic curves, reused across every motion for a consistent identity
 const EASE_IN = cubicBezier(0.16, 1, 0.3, 1);
 const EASE_OUT = cubicBezier(0.7, 0, 0.84, 0);
-
-interface Particle {
-  x: number;
-  y: number;
-  sx: number;
-  sy: number;
-  cx: number;
-  cy: number;
-  tx: number;
-  ty: number;
-  cvDelay: number;
-  cvDur: number;
-  bsx: number;
-  bsy: number;
-  bcx: number;
-  bcy: number;
-  btx: number;
-  bty: number;
-  bDelay: number;
-  bDur: number;
-  angle: number;
-  baseSize: number;
-  size: number;
-  colorIdx: number;
-  alpha: number;
-}
+// a gentle, symmetric glide — no sharp start or sudden vanish, used for the logo's own dissolve
+const EASE_SMOOTH = cubicBezier(0.45, 0, 0.15, 1);
+const easeIn = (t: number) => EASE_IN(t);
+const easeOut = (t: number) => EASE_OUT(t);
+const easeSmooth = (t: number) => EASE_SMOOTH(t);
 
 let instanceCounter = 0;
 
-export default function DelyteLoaderCinematic({
-  onComplete,
-}: DelyteLoaderProps) {
-  const idRef = useRef(`dl${instanceCounter++}`);
+export default function DelyteLoaderDepth({ onComplete }: DelyteLoaderProps) {
+  const idRef = useRef(`dld${instanceCounter++}`);
   const loaderRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const logoSvgRef = useRef<SVGSVGElement>(null);
-  const materializeGroupRef = useRef<SVGGElement>(null);
-  const displaceRef = useRef<SVGFEDisplacementMapElement>(null);
+  const curtainTopRef = useRef<HTMLDivElement>(null);
+  const curtainBottomRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null); // perspective container
+  const logoWrapRef = useRef<HTMLDivElement>(null); // the tilting group
+  const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const sweepLayerRef = useRef<HTMLDivElement>(null);
+  const sweepRectRef = useRef<SVGRectElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   const ruleRef = useRef<HTMLDivElement>(null);
-  const barTopRef = useRef<HTMLDivElement>(null);
-  const barBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const id = idRef.current;
-    const canvas = canvasRef.current;
     const loader = loaderRef.current;
-    const logoSvg = logoSvgRef.current;
+    const stage = stageRef.current;
+    const logoWrap = logoWrapRef.current;
     const textEl = textRef.current;
-    if (!canvas || !loader || !logoSvg || !textEl) return;
+    const glow = glowRef.current;
+    const curtainTop = curtainTopRef.current;
+    const curtainBottom = curtainBottomRef.current;
+    const sweepLayer = sweepLayerRef.current;
+    const sweepRect = sweepRectRef.current;
+    const content = contentRef.current;
+    const rule = ruleRef.current;
+    const sub = subRef.current;
 
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
-
-    let raf = 0;
-    let holdActive = false;
-    let particleDim = 1; // global multiplier — dims particles to an ambient halo once the real mark is drawn
-
-    const isLowPower =
-      (typeof navigator !== "undefined" &&
-        (navigator.hardwareConcurrency ?? 8) <= 4) ||
-      window.innerWidth < 480;
-    const PARTICLE_COUNT = isLowPower ? 130 : 230;
-    const MAX_DPR = isLowPower ? 1.25 : 1.75;
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      canvas.width = Math.round(window.innerWidth * dpr);
-      canvas.height = Math.round(window.innerHeight * dpr);
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    // ---- position the real logo svg precisely where the particles will land ----
-    const scale = LOGO_DISPLAY / VIEWBOX_W;
-    const originX = window.innerWidth / 2 - (VIEWBOX_W * scale) / 2;
-    const originY =
-      window.innerHeight / 2 - (VIEWBOX_H * scale) / 2 - LOGO_SHIFT_UP;
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-
-    Object.assign(logoSvg.style, {
-      position: "absolute",
-      left: `${originX}px`,
-      top: `${originY}px`,
-      width: `${VIEWBOX_W * scale}px`,
-      height: `${VIEWBOX_H * scale}px`,
-      opacity: "1",
-    });
-
-    if (!isLowPower && materializeGroupRef.current) {
-      materializeGroupRef.current.setAttribute(
-        "filter",
-        `url(#${id}-materialize)`,
-      );
+    // resolve every ref once, up front — every element below is guaranteed non-null
+    // for the rest of the effect, instead of sprinkling `.current` (and `| null`) everywhere
+    if (
+      !loader ||
+      !stage ||
+      !logoWrap ||
+      !textEl ||
+      !glow ||
+      !curtainTop ||
+      !curtainBottom ||
+      !sweepLayer ||
+      !sweepRect ||
+      !content ||
+      !rule ||
+      !sub
+    ) {
+      return;
     }
 
-    // paths start fully undrawn and unfilled — invisible until the timeline reveals them
-    const pathEls = Array.from(
-      logoSvg.querySelectorAll<SVGPathElement>(".logo-path"),
-    );
-    const lengths = pathEls.map((p) => p.getTotalLength());
-    const totalLength = lengths.reduce((a, b) => a + b, 0);
-    pathEls.forEach((p, i) => {
-      gsap.set(p, {
-        strokeDasharray: lengths[i],
-        strokeDashoffset: lengths[i],
-        strokeWidth: 1.1,
-        fillOpacity: 0,
-      });
-    });
+    const mm = gsap.matchMedia();
 
-    // ---- pre-rendered particle glow sprites (drawImage instead of shadowBlur) ----
-    const makeSprite = (color: string, size: number) => {
-      const c = document.createElement("canvas");
-      c.width = c.height = size;
-      const sc = c.getContext("2d")!;
-      const r = size / 2;
-      const g = sc.createRadialGradient(r, r, 0, r, r, r);
-      g.addColorStop(0, color);
-      g.addColorStop(0.45, color);
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      sc.fillStyle = g;
-      sc.beginPath();
-      sc.arc(r, r, r, 0, Math.PI * 2);
-      sc.fill();
-      return c;
-    };
+    mm.add(
+      {
+        reduced: "(prefers-reduced-motion: reduce)",
+        full: "(prefers-reduced-motion: no-preference)",
+      },
+      (context) => {
+        const conditions = context.conditions as { reduced: boolean };
 
-    const colorFn = gsap.utils.interpolate(COLOR_STOPS) as (
-      t: number,
-    ) => string;
-    const sprites = Array.from({ length: BUCKETS }, (_, i) =>
-      makeSprite(colorFn(i / (BUCKETS - 1)), 48),
-    );
-    const spriteRed = makeSprite("#ff3b5c", 48);
-    const spriteBlue = makeSprite("#3ba7ff", 48);
-
-    // ---- particles sample real points off the same paths that will be vector-drawn ----
-    const particles: Particle[] = [];
-    pathEls.forEach((pathEl, i) => {
-      const count = Math.max(
-        6,
-        Math.round((lengths[i] / totalLength) * PARTICLE_COUNT),
-      );
-      const step = lengths[i] / count;
-      for (let k = 0; k < count; k++) {
-        const pt = pathEl.getPointAtLength(k * step + step / 2);
-        const tx = originX + pt.x * scale;
-        const ty = originY + pt.y * scale;
-        const angle = Math.atan2(ty - centerY, tx - centerX);
-        const startRadius =
-          Math.max(window.innerWidth, window.innerHeight) *
-          gsap.utils.random(0.6, 1.3);
-        const startAngle = gsap.utils.random(0, Math.PI * 2);
-        const sx = centerX + Math.cos(startAngle) * startRadius;
-        const sy = centerY + Math.sin(startAngle) * startRadius;
-
-        const dx = tx - sx;
-        const dy = ty - sy;
-        const dist = Math.hypot(dx, dy) || 1;
-        const perpX = -dy / dist;
-        const perpY = dx / dist;
-        const swirl =
-          (Math.random() < 0.5 ? -1 : 1) * dist * gsap.utils.random(0.18, 0.4);
-        const cx = (sx + tx) / 2 + perpX * swirl;
-        const cy = (sy + ty) / 2 + perpY * swirl;
-
-        const cvDur = gsap.utils.random(0.55, 0.9);
-        const cvDelay = gsap.utils.random(0, 1 - cvDur);
-        const baseSize = gsap.utils.random(1.1, 2.6);
-
-        particles.push({
-          x: sx,
-          y: sy,
-          sx,
-          sy,
-          cx,
-          cy,
-          tx,
-          ty,
-          cvDelay,
-          cvDur,
-          bsx: 0,
-          bsy: 0,
-          bcx: 0,
-          bcy: 0,
-          btx: 0,
-          bty: 0,
-          bDelay: 0,
-          bDur: 0,
-          angle,
-          baseSize,
-          size: baseSize,
-          colorIdx: Math.round((pt.y / VIEWBOX_H) * (BUCKETS - 1)),
-          alpha: 0,
-        });
-      }
-    });
-
-    // ---- pointer tracking, smoothed with quickTo ----
-    const pointer = { x: centerX, y: centerY };
-    const setPointerX = gsap.quickTo(pointer, "x", {
-      duration: 0.5,
-      ease: "power3",
-    });
-    const setPointerY = gsap.quickTo(pointer, "y", {
-      duration: 0.5,
-      ease: "power3",
-    });
-    const onPointerMove = (e: PointerEvent) => {
-      setPointerX(e.clientX);
-      setPointerY(e.clientY);
-    };
-    window.addEventListener("pointermove", onPointerMove);
-
-    const camera = { zoom: 1.08 };
-    const chroma = { v: 0 };
-    const flare = { scale: 0, alpha: 0 };
-
-    const updateConverge = (t: number) => {
-      for (const p of particles) {
-        const raw = Math.min(1, Math.max(0, (t - p.cvDelay) / p.cvDur));
-        const u = EASE_IN(raw);
-        const mu = 1 - u;
-        p.x = mu * mu * p.sx + 2 * mu * u * p.cx + u * u * p.tx;
-        p.y = mu * mu * p.sy + 2 * mu * u * p.cy + u * u * p.ty;
-        p.alpha = raw <= 0 ? 0 : Math.min(1, raw * 3);
-        const settle =
-          raw > 0.85 ? Math.max(0, 1 - Math.abs(raw - 0.92) / 0.08) : 0;
-        p.size = p.baseSize * (1 + settle * 0.6);
-      }
-    };
-
-    const updateBurst = (t: number) => {
-      for (const p of particles) {
-        const raw = Math.min(1, Math.max(0, (t - p.bDelay) / p.bDur));
-        const u = EASE_OUT(raw);
-        const mu = 1 - u;
-        p.x = mu * mu * p.bsx + 2 * mu * u * p.bcx + u * u * p.btx;
-        p.y = mu * mu * p.bsy + 2 * mu * u * p.bcy + u * u * p.bty;
-        p.alpha = 1 - raw;
-        p.size = p.baseSize * (1 - raw * 0.7);
-      }
-    };
-
-    // ---- render loop, fully decoupled from the gsap timeline ----
-    const render = () => {
-      ctx.fillStyle = "rgba(7,9,17,0.24)";
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.scale(camera.zoom, camera.zoom);
-      ctx.translate(-centerX, -centerY);
-
-      for (const p of particles) {
-        const alpha = p.alpha * particleDim;
-        if (alpha <= 0.01) continue;
-
-        let dx = p.x;
-        let dy = p.y;
-        if (holdActive) {
-          const rx = p.x - pointer.x;
-          const ry = p.y - pointer.y;
-          const d = Math.hypot(rx, ry);
-          if (d < 90 && d > 0.01) {
-            const force = 1 - d / 90;
-            dx = p.x + (rx / d) * force * 22;
-            dy = p.y + (ry / d) * force * 22;
-          }
+        // ---- respectful fallback: a simple, fast crossfade, no motion flourishes ----
+        if (conditions.reduced) {
+          gsap.set(content, { opacity: 0 });
+          gsap.set([curtainTop, curtainBottom], { yPercent: 0 });
+          const tlReduced = gsap.timeline({ onComplete });
+          tlReduced
+            .to(content, { opacity: 1, duration: 0.4 })
+            .to({}, { duration: 0.7 })
+            .to(content, { opacity: 0, duration: 0.3 })
+            .to(loader, { opacity: 0, duration: 0.35 }, "-=0.1");
+          return () => tlReduced.kill();
         }
 
-        const d2 = p.size * 7;
-        const half = d2 / 2;
+        // ---- full cinematic build ----
+        const paths = logoWrap.querySelectorAll<SVGPathElement>(".logo-path");
+        const chars = textEl.querySelectorAll<HTMLSpanElement>(".char");
 
-        if (chroma.v > 0.01) {
-          const off = chroma.v * 5;
-          ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = alpha * 0.5 * chroma.v;
-          ctx.drawImage(spriteRed, dx - off - half, dy - half, d2, d2);
-          ctx.drawImage(spriteBlue, dx + off - half, dy - half, d2, d2);
-          ctx.globalCompositeOperation = "source-over";
-        }
-
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(sprites[p.colorIdx], dx - half, dy - half, d2, d2);
-      }
-
-      if (flare.alpha > 0.01) {
-        const fx = centerX;
-        const fy = originY + (VIEWBOX_H * scale) / 2;
-        const r = 90 * flare.scale;
-        const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, r);
-        g.addColorStop(0, `rgba(180,200,255,${flare.alpha})`);
-        g.addColorStop(0.4, `rgba(91,134,255,${flare.alpha * 0.35})`);
-        g.addColorStop(1, "rgba(91,134,255,0)");
-        ctx.globalCompositeOperation = "lighter";
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(fx, fy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalCompositeOperation = "source-over";
-      }
-
-      ctx.restore();
-      ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(render);
-    };
-    raf = requestAnimationFrame(render);
-
-    // ---- decode / scramble text reveal ----
-    const scramble = (el: HTMLElement, finalText: string, duration: number) => {
-      const state = { p: 0 };
-      return gsap.to(state, {
-        p: 1,
-        duration,
-        ease: (t: number) => EASE_IN(t),
-        onUpdate: () => {
-          const revealCount = Math.floor(state.p * finalText.length);
-          let out = "";
-          for (let i = 0; i < finalText.length; i++) {
-            if (finalText[i] === " ") out += " ";
-            else if (i < revealCount) out += finalText[i];
-            else
-              out +=
-                SCRAMBLE_CHARS[
-                  Math.floor(Math.random() * SCRAMBLE_CHARS.length)
-                ];
-          }
-          el.textContent = out;
-        },
-        onComplete: () => {
-          el.textContent = finalText;
-        },
-      });
-    };
-
-    // ---- gsap setup ----
-    gsap.set(canvas, { opacity: 0 });
-    gsap.set(textEl, { opacity: 0, y: 8 });
-    gsap.set(subRef.current, { opacity: 0, y: 6 });
-    gsap.set(ruleRef.current, { scaleX: 0 });
-    gsap.set([barTopRef.current, barBottomRef.current], { scaleY: 0 });
-    if (displaceRef.current)
-      gsap.set(displaceRef.current, { attr: { scale: 46 } });
-
-    const CONVERGE_DURATION = 2.2;
-    const cineEase = (t: number) => EASE_IN(t);
-    const cineEaseOut = (t: number) => EASE_OUT(t);
-
-    const tl = gsap.timeline({ defaults: { ease: cineEase }, onComplete });
-
-    tl.to(canvas, { opacity: 1, duration: 0.3 })
-
-      // dust begins gathering
-      .call(() => {
-        gsap.to(camera, {
-          zoom: 1,
-          duration: CONVERGE_DURATION,
-          ease: cineEase,
+        paths.forEach((p) => {
+          const length = p.getTotalLength();
+          gsap.set(p, {
+            strokeDasharray: length,
+            strokeDashoffset: length,
+            strokeWidth: 1.1,
+            fillOpacity: 0,
+          });
         });
-        gsap.to(
-          { t: 0 },
-          {
-            t: 1,
-            duration: CONVERGE_DURATION,
-            ease: "none",
-            onUpdate: function () {
-              updateConverge(this.targets()[0].t);
-            },
-          },
-        );
-      })
-      .to(
-        [barTopRef.current, barBottomRef.current],
-        { scaleY: 1, duration: 0.7, ease: cineEase },
-        "+=0.6",
-      )
 
-      // the real vector mark draws itself while the dust is still arriving —
-      // both climax at the same instant
-      .to(
-        pathEls,
-        { strokeDashoffset: 0, duration: 0.9, stagger: 0.1, ease: cineEase },
-        "-=0.1",
-      )
-      .call(
-        () => {
-          if (!isLowPower && displaceRef.current) {
-            gsap.to(displaceRef.current, {
-              attr: { scale: 0 },
-              duration: 1.0,
-              ease: cineEaseOut,
-            });
-          }
-        },
-        [],
-        "<",
-      )
-      .to(
-        pathEls,
-        { fillOpacity: 1, strokeWidth: 0, duration: 0.35, ease: cineEase },
-        "-=0.15",
-      )
-
-      // the mark has landed — flare, glow pulse, particles recede to an ambient halo
-      .call(() => {
-        holdActive = true;
-        gsap
-          .timeline()
-          .set(flare, { scale: 0, alpha: 0.95 })
-          .to(flare, { scale: 2.6, alpha: 0, duration: 0.7, ease: cineEase });
-        gsap.to(logoSvg, {
-          filter:
-            "drop-shadow(0 0 20px rgba(91,134,255,0.35)) drop-shadow(0 0 40px rgba(49,87,255,0.18))",
-          duration: 0.3,
-        });
-        gsap.to(logoSvg, { filter: "none", duration: 0.4, delay: 0.35 });
-        gsap.to(
-          { v: particleDim },
-          {
-            v: 0.22,
-            duration: 0.6,
-            onUpdate: function () {
-              particleDim = this.targets()[0].v;
-            },
-          },
-        );
-      })
-      .to(textEl, { opacity: 1, y: 0, duration: 0.4 }, "holdStart")
-      .call(() => scramble(textEl, BRAND_TEXT, 0.85), [], "holdStart")
-      .to({}, { duration: 0.85 })
-      .to(ruleRef.current, { scaleX: 1, duration: 0.5, ease: cineEase })
-      .to(subRef.current, { opacity: 1, y: 0, duration: 0.5 }, "-=0.3")
-
-      .to({}, { duration: 0.5 })
-
-      // ---- burst ----
-      .call(
-        () => {
-          holdActive = false;
-          gsap.to(
-            { v: particleDim },
-            {
-              v: 1,
-              duration: 0.3,
-              onUpdate: function () {
-                particleDim = this.targets()[0].v;
-              },
-            },
-          );
-        },
-        [],
-        "burst",
-      )
-      .to(
-        [textEl, subRef.current, ruleRef.current],
-        { opacity: 0, y: -8, duration: 0.4 },
-        "burst",
-      )
-      .to(
-        [barTopRef.current, barBottomRef.current],
-        { scaleY: 0, duration: 0.5, ease: cineEaseOut },
-        "burst",
-      )
-      .to(
-        logoSvg,
-        {
+        gsap.set(stage, { perspective: 900 });
+        gsap.set(logoWrap, {
           opacity: 0,
-          scale: 1.15,
-          filter: "blur(6px)",
-          duration: 0.55,
-          ease: cineEaseOut,
-        },
-        "burst",
-      )
-      .call(
-        () => {
-          for (const p of particles) {
-            p.bsx = p.x;
-            p.bsy = p.y;
-            const distOut = gsap.utils.random(260, 620);
-            p.btx = p.x + Math.cos(p.angle) * distOut;
-            p.bty = p.y + Math.sin(p.angle) * distOut;
+          scale: 0.9,
+          rotateX: 14,
+          rotateY: -8,
+          filter: "blur(10px)",
+          transformStyle: "preserve-3d",
+          transformOrigin: "50% 50%",
+        });
+        layerRefs.current.forEach((el, i) => gsap.set(el, { z: LAYER_Z[i] }));
+        gsap.set(sweepLayer, { z: SWEEP_Z });
+        gsap.set(chars, { opacity: 0, y: 8, filter: "blur(4px)" });
+        gsap.set(rule, { scaleX: 0 });
+        gsap.set(sub, { opacity: 0, y: 6 });
+        gsap.set(sweepRect, { x: -90 });
+        gsap.set([curtainTop, curtainBottom], { yPercent: 0 });
+        gsap.set(content, { opacity: 1 });
 
-            const dx = p.btx - p.bsx;
-            const dy = p.bty - p.bsy;
-            const dist = Math.hypot(dx, dy) || 1;
-            const perpX = -dy / dist;
-            const perpY = dx / dist;
-            const swirl =
-              (Math.random() < 0.5 ? -1 : 1) *
-              dist *
-              gsap.utils.random(0.15, 0.35);
-            p.bcx = (p.bsx + p.btx) / 2 + perpX * swirl;
-            p.bcy = (p.bsy + p.bty) / 2 + perpY * swirl;
+        gsap.to(glow, {
+          opacity: 0.55,
+          scale: 1.08,
+          duration: 3.2,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+        });
 
-            p.bDur = gsap.utils.random(0.55, 0.8);
-            p.bDelay = gsap.utils.random(0, 1 - p.bDur);
-          }
+        // variable-weight settle on the wordmark — a no-op on non-variable fonts,
+        // a genuine typographic move on ones that support the 'wght' axis
+        const weightState = { w: 240 };
+        const paintWeight = () => {
+          textEl.style.fontVariationSettings = `'wght' ${Math.round(weightState.w)}`;
+        };
+        paintWeight();
 
-          gsap.to(camera, { zoom: 1.06, duration: 1, ease: cineEaseOut });
-          gsap
-            .timeline()
-            .to(chroma, { v: 1, duration: 0.3, ease: cineEase })
-            .to(chroma, { v: 0, duration: 0.6, ease: cineEase });
-          gsap.to(
-            { t: 0 },
+        // ---- cursor-driven depth parallax — only active while the mark is held ----
+        let holdActive = false;
+        const setRotY = gsap.quickTo(logoWrap, "rotateY", {
+          duration: 0.7,
+          ease: "power3",
+        });
+        const setRotX = gsap.quickTo(logoWrap, "rotateX", {
+          duration: 0.7,
+          ease: "power3",
+        });
+        const setGlowX = gsap.quickTo(glow, "x", {
+          duration: 0.9,
+          ease: "power3",
+        });
+        const setGlowY = gsap.quickTo(glow, "y", {
+          duration: 0.9,
+          ease: "power3",
+        });
+        const onPointerMove = (e: PointerEvent) => {
+          if (!holdActive) return;
+          const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+          const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+          setRotY(nx * 9);
+          setRotX(-ny * 7);
+          setGlowX(-nx * 14);
+          setGlowY(-ny * 10);
+        };
+        window.addEventListener("pointermove", onPointerMove);
+
+        const tl = gsap.timeline({ defaults: { ease: easeIn }, onComplete });
+
+        // ---- entrance ----
+        tl.to(logoWrap, {
+          opacity: 1,
+          scale: 1,
+          rotateX: 0,
+          rotateY: 0,
+          filter: "blur(0px)",
+          duration: 1.15,
+        })
+          .to(
+            paths,
+            { strokeDashoffset: 0, duration: 1.1, stagger: 0.12 },
+            "-=0.75",
+          )
+          .to(paths, { fillOpacity: 1, duration: 0.5 }, "-=0.35")
+          .to(
+            sweepRect,
+            { x: VIEWBOX_W + 90, duration: 0.75, ease: easeOut },
+            "-=0.4",
+          )
+          .to(
+            chars,
             {
-              t: 1,
-              duration: 1,
-              ease: "none",
-              onUpdate: function () {
-                updateBurst(this.targets()[0].t);
-              },
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              duration: 0.6,
+              stagger: 0.02,
             },
-          );
-        },
-        [],
-        "burst",
-      )
-      .to(
-        canvas,
-        { opacity: 0, duration: 0.9, ease: cineEaseOut },
-        "burst+=0.5",
-      )
-      .to(
-        loader,
-        { opacity: 0, duration: 0.4, ease: cineEaseOut },
-        "burst+=1.1",
-      );
+            "-=0.55",
+          )
+          .to(
+            weightState,
+            { w: 520, duration: 0.7, onUpdate: paintWeight },
+            "-=0.6",
+          )
+          .to(rule, { scaleX: 1, duration: 0.5 }, "-=0.25")
+          .to(sub, { opacity: 1, y: 0, duration: 0.5 }, "-=0.25")
 
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", onPointerMove);
-      tl.kill();
-      gsap.killTweensOf(particles);
-      gsap.killTweensOf(camera);
-      gsap.killTweensOf(chroma);
-      gsap.killTweensOf(flare);
-    };
+          // the mark is held — parallax comes alive, invites a glance around it
+          .call(() => {
+            holdActive = true;
+          })
+          .to({}, { duration: 1.1 })
+
+          // ---- exit: the logo gets a longer, gentler dissolve than everything else,
+          // so it recedes quietly instead of popping out at the same beat as the text ----
+          .call(
+            () => {
+              holdActive = false;
+              setRotX(0);
+              setRotY(0);
+            },
+            [],
+            "exit",
+          )
+          .to(
+            [chars, sub, rule],
+            {
+              opacity: 0,
+              y: -10,
+              filter: "blur(2px)",
+              duration: 0.5,
+              ease: easeOut,
+            },
+            "exit",
+          )
+          .to(
+            logoWrap,
+            {
+              opacity: 0,
+              scale: 1.015,
+              filter: "blur(5px)",
+              duration: 1.1,
+              ease: easeSmooth,
+            },
+            "exit",
+          )
+          .to(glow, { opacity: 0, duration: 0.9, ease: easeSmooth }, "exit")
+          .to(
+            curtainTop,
+            { yPercent: -100, duration: 1.05, ease: easeIn },
+            "exit+=0.35",
+          )
+          .to(
+            curtainBottom,
+            { yPercent: 100, duration: 1.05, ease: easeIn },
+            "exit+=0.35",
+          );
+
+        return () => {
+          window.removeEventListener("pointermove", onPointerMove);
+          tl.kill();
+        };
+      },
+    );
+
+    return () => mm.revert();
   }, [onComplete]);
 
-  // eslint-disable-next-line react-hooks/refs
   const id = idRef.current;
 
-  return (
-    <div
-      ref={loaderRef}
-      className="fixed inset-0 z-[9999] overflow-hidden bg-[#0A0D18]"
-    >
-      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
-
-      {/* the real, crisp vector logo — drawn and filled, not just approximated by dust */}
-      <svg
-        ref={logoSvgRef}
-        viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
-        className="pointer-events-none absolute z-10 opacity-0"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden
+  const gradientDefs = (
+    <>
+      <linearGradient
+        id={`${id}-paint0`}
+        x1="168.64"
+        y1="286.103"
+        x2="168.64"
+        y2="0.0000610352"
+        gradientUnits="userSpaceOnUse"
       >
-        <defs>
-          <linearGradient
-            id={`${id}-paint0`}
-            x1="168.64"
-            y1="286.103"
-            x2="168.64"
-            y2="0.0000610352"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#5B86FF" />
-            <stop offset="0.35" stopColor="#4873FF" />
-            <stop offset="0.7" stopColor="#3157FF" />
-            <stop offset="1" stopColor="#1E28F0" />
-          </linearGradient>
-          <linearGradient
-            id={`${id}-paint1`}
-            x1="151.036"
-            y1="332.155"
-            x2="151.036"
-            y2="91.9573"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#5B86FF" />
-            <stop offset="0.35" stopColor="#4873FF" />
-            <stop offset="0.7" stopColor="#3157FF" />
-            <stop offset="1" stopColor="#1E28F0" />
-          </linearGradient>
-          <linearGradient
-            id={`${id}-paint2`}
-            x1="157.534"
-            y1="331.905"
-            x2="157.534"
-            y2="288.105"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#5B86FF" />
-            <stop offset="0.35" stopColor="#4873FF" />
-            <stop offset="0.7" stopColor="#3157FF" />
-            <stop offset="1" stopColor="#1E28F0" />
-          </linearGradient>
+        <stop stopColor="#5B86FF" />
+        <stop offset="0.35" stopColor="#4873FF" />
+        <stop offset="0.7" stopColor="#3157FF" />
+        <stop offset="1" stopColor="#1E28F0" />
+      </linearGradient>
+      <linearGradient
+        id={`${id}-paint1`}
+        x1="151.036"
+        y1="332.155"
+        x2="151.036"
+        y2="91.9573"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#5B86FF" />
+        <stop offset="0.35" stopColor="#4873FF" />
+        <stop offset="0.7" stopColor="#3157FF" />
+        <stop offset="1" stopColor="#1E28F0" />
+      </linearGradient>
+      <linearGradient
+        id={`${id}-paint2`}
+        x1="157.534"
+        y1="331.905"
+        x2="157.534"
+        y2="288.105"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#5B86FF" />
+        <stop offset="0.35" stopColor="#4873FF" />
+        <stop offset="0.7" stopColor="#3157FF" />
+        <stop offset="1" stopColor="#1E28F0" />
+      </linearGradient>
+    </>
+  );
 
-          {/* materialize filter: heavy noise-driven displacement that eases to zero,
-              so the vector mark looks like it's condensing out of energy rather than just fading in */}
-          <filter
-            id={`${id}-materialize`}
-            x="-30%"
-            y="-30%"
-            width="160%"
-            height="160%"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.012 0.09"
-              numOctaves="2"
-              seed="7"
-              result="noise"
-            />
-            <feDisplacementMap
-              ref={displaceRef}
-              in="SourceGraphic"
-              in2="noise"
-              scale={46}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-
-        <g ref={materializeGroupRef}>
-          <path
-            className="logo-path"
-            stroke={`url(#${id}-paint0)`}
-            fill={`url(#${id}-paint0)`}
-            d={PATH_D[0]}
-          />
-          <path
-            className="logo-path"
-            stroke={`url(#${id}-paint1)`}
-            fill={`url(#${id}-paint1)`}
-            d={PATH_D[1]}
-          />
-          <path
-            className="logo-path"
-            stroke={`url(#${id}-paint2)`}
-            fill={`url(#${id}-paint2)`}
-            d={PATH_D[2]}
-          />
-        </g>
-      </svg>
-
-      {/* cinematic letterbox framing */}
+  return (
+    <div ref={loaderRef} className="fixed inset-0 z-[9999] overflow-hidden">
       <div
-        ref={barTopRef}
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[9vh] origin-top bg-black"
-        style={{ boxShadow: "0 1px 0 rgba(91,134,255,0.25)" }}
+        ref={curtainTopRef}
+        className="absolute inset-x-0 top-0 h-1/2 bg-[#0A0D18]"
       />
       <div
-        ref={barBottomRef}
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[9vh] origin-bottom bg-black"
-        style={{ boxShadow: "0 -1px 0 rgba(91,134,255,0.25)" }}
+        ref={curtainBottomRef}
+        className="absolute inset-x-0 bottom-0 h-1/2 bg-[#0A0D18]"
       />
 
-      <div className="relative z-10 flex h-full w-full flex-col items-center justify-center">
-        <div
-          style={{ height: LOGO_DISPLAY - LOGO_SHIFT_UP + 56 }}
-          aria-hidden
-        />
+      <div
+        ref={glowRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 44%, rgba(49,87,255,0.18), transparent 45%)",
+        }}
+      />
+
+      <div
+        ref={contentRef}
+        className="relative flex h-full w-full flex-col items-center justify-center"
+      >
+        <div ref={stageRef} className="relative h-24 w-24">
+          <div ref={logoWrapRef} className="relative h-full w-full">
+            {/* three depth shards of the same mark, stacked with real translateZ */}
+            {PATH_D.map((d, i) => (
+              <div
+                key={i}
+                ref={(el) => {
+                  layerRefs.current[i] = el;
+                }}
+                className="absolute inset-0"
+              >
+                <svg
+                  viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+                  className="h-full w-full"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden
+                >
+                  <defs>{gradientDefs}</defs>
+                  <path
+                    className="logo-path"
+                    stroke={`url(#${id}-paint${i})`}
+                    fill={`url(#${id}-paint${i})`}
+                    d={d}
+                  />
+                </svg>
+              </div>
+            ))}
+
+            {/* the light sweep floats in front of all three shards */}
+            <div ref={sweepLayerRef} className="absolute inset-0">
+              <svg
+                viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
+                className="h-full w-full"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden
+              >
+                <defs>
+                  <clipPath id={`${id}-clip`}>
+                    <path d={PATH_D[0]} />
+                    <path d={PATH_D[1]} />
+                    <path d={PATH_D[2]} />
+                  </clipPath>
+                  <linearGradient
+                    id={`${id}-sweep`}
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="0"
+                  >
+                    <stop offset="0" stopColor="white" stopOpacity="0" />
+                    <stop offset="0.5" stopColor="white" stopOpacity="0.9" />
+                    <stop offset="1" stopColor="white" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <g clipPath={`url(#${id}-clip)`}>
+                  <rect
+                    ref={sweepRectRef}
+                    x="-90"
+                    y="-20"
+                    width="70"
+                    height={VIEWBOX_H + 40}
+                    fill={`url(#${id}-sweep)`}
+                    transform="rotate(14 169 166)"
+                  />
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <h2
           ref={textRef}
-          className="text-[13px] font-medium tracking-[0.42em] text-[#EAEDF7]"
+          className="mt-8 flex overflow-hidden text-[13px] tracking-[0.42em] text-[#EAEDF7]"
         >
-          {BRAND_TEXT}
+          {BRAND_TEXT.split("").map((c, i) => (
+            <span key={i} className="char inline-block">
+              {c === " " ? "\u00A0" : c}
+            </span>
+          ))}
         </h2>
+
         <div
           ref={ruleRef}
           className="mt-4 h-px w-10 origin-center bg-[#5B86FF]/50"
         />
+
         <p
           ref={subRef}
           className="mt-4 text-[11px] font-light tracking-[0.14em] text-slate-500"

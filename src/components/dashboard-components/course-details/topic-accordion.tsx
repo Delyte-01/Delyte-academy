@@ -6,19 +6,31 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TopicCard } from "./topic-card";
 import { Topic } from "@/types/topic";
+import { useEnrollment } from "@/hooks/useEnrollment";
+import { useAuth } from "@/hooks/useAuth";
+
 
 interface TopicAccordionProps {
   topics: Topic[];
   loading?: boolean;
   completedTopics: string[];
+  
 }
 
 export function TopicAccordion({
   completedTopics,
   topics,
   loading = false,
+  
 }: TopicAccordionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const {
+    refresh: refreshEnrollments,
+  } = useEnrollment(user?.id); // Add this line to use the isEnrolled function
+
+
+
 
   useEffect(() => {
     if (topics && topics.length > 0) {
@@ -78,9 +90,10 @@ export function TopicAccordion({
               topicNumber={index + 1}
               isExpanded={expandedId === topic.id}
               isCompleted={completedTopics.includes(topic.id)}
-              onToggle={() =>
-                setExpandedId((prev) => (prev === topic.id ? null : topic.id))
-              }
+              refreshEnrollments={refreshEnrollments}
+              onToggle={() => {
+                setExpandedId((prev) => (prev === topic.id ? null : topic.id));
+              }}
             />
           ))}
         </div>

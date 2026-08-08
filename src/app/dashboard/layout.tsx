@@ -12,6 +12,7 @@ import { authService } from "@/services/auth";
 import { FullPageLoader } from "@/components/loading/Loading";
 
 import { ProfileProvider, useProfile } from "@/context/profile-context";
+import { EnrollmentProvider } from "@/context/enrollment-context";
 
 const display = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -37,6 +38,8 @@ export default function DashboardLayout({
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
+
+  
 
   const displayName = profile?.full_name || "Student";
 
@@ -104,50 +107,54 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return <FullPageLoader />;
   }
 
+  if (!profile) return null;
+
   return (
-    <div
-      className={`${display.variable} ${body.variable} relative flex min-h-screen bg-background text-foreground font-sans antialiased student-theme`}
-    >
-      {/* Ambient gradient aura, fixed to viewport, behind everything */}
+    <EnrollmentProvider studentId={profile.id}>
       <div
-        ref={blobRef}
-        aria-hidden
-        className="pointer-events-none fixed -right-48 -top-48 z-0 h-[700px] w-[700px] rounded-full blur-[140px]"
-        style={{
-          background:
-            "radial-gradient(circle at 30% 30%, rgba(16,185,129,0.55) 0%, rgba(45,212,191,0.30) 26%, rgba(99,102,241,0.16) 54%, rgba(0,0,0,0) 82%)",
-        }}
-      />
-
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -left-44 bottom-[-140px] z-0 h-[560px] w-[560px] rounded-full blur-[140px]"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 50%, rgba(34,197,94,0.40) 0%, rgba(16,185,129,0.24) 34%, rgba(139,92,246,0.12) 64%, rgba(0,0,0,0) 86%)",
-        }}
-      />
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onSignOut={handleSignOut}
-      />
-
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <Header
-          onMenuClick={() => setSidebarOpen(true)}
-          displayName={displayName}
-          displayLevel={displayLevel}
-          avatarUrl={avatarUrl}
+        className={`${display.variable} ${body.variable} relative flex min-h-screen bg-background text-foreground font-sans antialiased student-theme`}
+      >
+        {/* Ambient gradient aura, fixed to viewport, behind everything */}
+        <div
+          ref={blobRef}
+          aria-hidden
+          className="pointer-events-none fixed -right-48 -top-48 z-0 h-[700px] w-[700px] rounded-full blur-[140px]"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 30%, rgba(16,185,129,0.55) 0%, rgba(45,212,191,0.30) 26%, rgba(99,102,241,0.16) 54%, rgba(0,0,0,0) 82%)",
+          }}
         />
 
-        <main
-          ref={contentRef}
-          className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
-        >
-          {children}
-        </main>
+        <div
+          aria-hidden
+          className="pointer-events-none fixed -left-44 bottom-[-140px] z-0 h-[560px] w-[560px] rounded-full blur-[140px]"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 50%, rgba(34,197,94,0.40) 0%, rgba(16,185,129,0.24) 34%, rgba(139,92,246,0.12) 64%, rgba(0,0,0,0) 86%)",
+          }}
+        />
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onSignOut={handleSignOut}
+        />
+
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col">
+          <Header
+            onMenuClick={() => setSidebarOpen(true)}
+            displayName={displayName}
+            displayLevel={displayLevel}
+            avatarUrl={avatarUrl}
+          />
+
+          <main
+            ref={contentRef}
+            className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
+          >
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </EnrollmentProvider>
   );
 }

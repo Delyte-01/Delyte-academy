@@ -13,8 +13,6 @@ import { useTopics } from "@/hooks/useTopic";
 import { useAuth } from "@/hooks/useAuth";
 import { useTopicProgress } from "@/hooks/useTopicProgress";
 
-
-
 export default function CourseDetailPage() {
   const { courseId } = useParams();
   const { user } = useAuth();
@@ -53,9 +51,7 @@ export default function CourseDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: Overview + Topics */}
         <div className="space-y-6 lg:col-span-2">
-          <CourseOverview
-            description={course?.description ?? ""}
-          />
+          <CourseOverview description={course?.description ?? ""} />
 
           <TopicAccordion
             topics={topics}

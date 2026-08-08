@@ -16,12 +16,19 @@ import { cn } from "@/lib/utils";
 import { DifficultyLevel, Topic } from "@/types/topic";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+import { useEnrollment } from "@/context/enrollment-context";
+// import { useEnrollment } from "@/hooks/useEnrollment";
+
 interface TopicCardProps {
   topic: Topic;
   isExpanded: boolean;
   onToggle: () => void;
   topicNumber: number;
   isCompleted: boolean;
+
+  refreshEnrollments: () => void;
+ 
 }
 
 export function TopicCard({
@@ -30,7 +37,14 @@ export function TopicCard({
   onToggle,
   topicNumber,
   isCompleted,
+ 
+  refreshEnrollments,
+ 
 }: TopicCardProps) {
+
+  const { isEnrolled, enroll } = useEnrollment();
+  const locked = !isEnrolled(topic.course_id);
+
   const router = useRouter();
 
   const difficultyStyles: Record<DifficultyLevel, string> = {
@@ -41,25 +55,70 @@ export function TopicCard({
 
   const status = String(topic.status ?? "");
   const isCurrent = status === "current";
-  const isLocked = status === "locked";
+  // const isLocked = status === "locked";
 
   const statusMeta = isCompleted
     ? { icon: CheckCircle, className: "bg-emerald-500/10 text-emerald-600" }
     : isCurrent
       ? { icon: Play, className: "bg-primary/10 text-primary" }
-      : isLocked
+      : locked
         ? { icon: Lock, className: "bg-muted text-muted-foreground" }
         : { icon: BookOpen, className: "bg-muted text-muted-foreground" };
 
   const StatusIcon = statusMeta.icon;
 
-  const handleContentClick = () => {
-    if (isLocked) return;
+const handleToggle = async () => {
+  if (locked) {
+    toast.warning("This topic is locked. Enrolling you in the course...");
+
+    await enroll(topic.course_id);
+
+    // The context updates immediately, so this opens without a refresh
+    onToggle();
+    return;
+  }
+
+  onToggle();
+};
+
+  const handleContentClick = async () => {
+    if (locked) {
+      await toast.promise(
+        (async () => {
+          await enroll(topic.course_id);
+          await refreshEnrollments();
+          onToggle(); // automatically expand after unlock
+        })(),
+        {
+          loading: "Unlocking course...",
+          success: "Course unlocked successfully 🎉",
+          error: "Enrollment failed",
+        },
+      );
+
+      return;
+    }
+
     router.push(`/dashboard/topics/${topic.id}`);
   };
+  const handleQuizClick = async () => {
+    if (locked) {
+      await toast.promise(
+        (async () => {
+          await enroll(topic.course_id);
+          await refreshEnrollments();
+          onToggle();
+        })(),
+        {
+          loading: "Unlocking course...",
+          success: "Course unlocked successfully 🎉",
+          error: "Enrollment failed",
+        },
+      );
 
-  const handleQuizClick = () => {
-    if (isLocked) return;
+      return;
+    }
+
     router.push(`/dashboard/topics/${topic.id}/quiz`);
   };
 
@@ -68,15 +127,14 @@ export function TopicCard({
       className={cn(
         "overflow-hidden border-border/60 transition-all duration-300",
         isExpanded && "shadow-md ring-1 ring-primary/15",
-        isLocked && "opacity-70",
+        locked && "opacity-70",
       )}
     >
       {/* Accordion header */}
       <button
-        onClick={onToggle}
-        disabled={isLocked}
+          onClick={handleToggle}
         className={cn(
-          "flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/30 disabled:cursor-not-allowed sm:gap-4 sm:p-5",
+          "flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/30  sm:gap-4 sm:p-5 cursor-pointer",
         )}
       >
         <div
@@ -118,7 +176,7 @@ export function TopicCard({
           </div>
         </div>
 
-        {isLocked ? (
+        {locked ? (
           <Lock className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
         ) : (
           <ChevronDown
@@ -131,7 +189,7 @@ export function TopicCard({
       </button>
 
       {/* Accordion content */}
-      {isExpanded && !isLocked && (
+      {isExpanded && !locked && (
         <div className="border-t border-border/60 bg-muted/20 p-4 sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             {/* Study Content */}

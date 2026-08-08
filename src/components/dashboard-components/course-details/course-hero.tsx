@@ -6,16 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Course } from "@/types/course";
-import { useEnrollment } from "@/hooks/useEnrollment";
+// import { useEnrollment } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useEnrollment } from "@/context/enrollment-context";
 
 export function CourseHero({ course }: { course: Course }) {
   const { user } = useAuth();
   const router = useRouter();
-  const { enrollments, enroll, saving } = useEnrollment(user?.id);
+  const { enrollments, enroll, saving } = useEnrollment();
   const enrollment = enrollments.find((e) => e.course_id === course.id);
   const isEnrolled = Boolean(enrollment);
   const progress =
