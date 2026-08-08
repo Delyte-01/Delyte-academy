@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
-import { Menu, Search, Bell, Sun, Moon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useTheme } from 'next-themes';
-import { Button } from '../ui/button';
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { Menu, Search, Bell, Sun, Moon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useTheme } from "next-themes";
+import { Button } from "../ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -22,6 +23,7 @@ export default function Header({
   displayLevel,
   avatarUrl,
 }: HeaderProps) {
+  const { user } = useAuth();
   const headerRef = useRef<HTMLElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
   const iconWrapRef = useRef<HTMLSpanElement>(null);
@@ -138,7 +140,15 @@ export default function Header({
           className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-muted"
         >
           <Avatar className="h-9 w-9  ring-2 ring-background shadow-sm ">
-            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarImage
+              src={
+                avatarUrl ||
+                user?.user_metadata?.avatar_url ||
+                user?.user_metadata?.picture ||
+                undefined
+              }
+              alt={displayName}
+            />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <span className="hidden text-left leading-tight md:block">

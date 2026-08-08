@@ -23,6 +23,7 @@ async function signup(
       data: {
         first_name: firstName,
         last_name: lastName,
+        full_name: `${firstName} ${lastName}`.trim(),
       },
     },
   });

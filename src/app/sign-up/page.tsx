@@ -21,6 +21,7 @@ import { authService } from "@/services/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import { EmailVerificationModal } from "@/components/modals/email-verification";
 
 gsap.registerPlugin(useGSAP);
 
@@ -70,6 +71,8 @@ function GoogleIcon() {
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
 
@@ -82,6 +85,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+
 
   const handleGoogleLogin = async () => {
     const { error } = await authService.signInWithGoogle();
@@ -141,6 +145,8 @@ export default function SignupPage() {
       toast.success(
         "Account created! Please check your email to verify your account."
       );
+      setSignupEmail(email);
+      setVerificationOpen(true);
       console.log(data);
     } catch (error) {
       if (error instanceof Error) {
@@ -755,6 +761,12 @@ export default function SignupPage() {
           © {new Date().getFullYear()} Delyte Academy. All rights reserved.
         </p>
       </div>
+
+      <EmailVerificationModal
+        open={verificationOpen}
+        onOpenChange={setVerificationOpen}
+        email={signupEmail}
+      />
     </div>
   );
 }

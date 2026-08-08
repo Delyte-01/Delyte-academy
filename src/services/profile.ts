@@ -39,19 +39,53 @@ async function upsertProfile() {
 
   if (!user) throw new Error("User not found.");
 
-  const { error } = await supabase.from("profiles").upsert({
-    id: user.id,
-    email: user.email,
-    full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
-    role: "student",
-  });
+const fullName =
+  user.user_metadata?.full_name ??
+  [user.user_metadata?.first_name, user.user_metadata?.last_name]
+    .filter(Boolean)
+    .join(" ") ??
+  user.user_metadata?.name ??
+  "";
+
+const username =
+  user.user_metadata?.username ??
+  `${(user.email ?? "student")
+    .split("@")[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")}_${user.id.slice(0, 4)}`;
+
+
+   const avatarUrl =
+     user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null;
+
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      email: user.email,
+      full_name: fullName,
+      username,
+      avatar_url: avatarUrl,
+      role: "student",
+    },
+    { onConflict: "id" },
+  );
 
   if (error) throw error;
 }
 
-
 async function updateProfile(
-  updates: Partial<Pick<Profile, "full_name" | "email"| "username" | "phone" | "country" | "bio" | "avatar_url">>,
+  updates: Partial<
+    Pick<
+      Profile,
+      | "full_name"
+      | "email"
+      | "username"
+      | "phone"
+      | "country"
+      | "bio"
+      | "avatar_url"
+    >
+  >,
 ): Promise<Profile> {
   const supabase = createClient();
 

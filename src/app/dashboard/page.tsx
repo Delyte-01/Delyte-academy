@@ -30,44 +30,44 @@ import { useProfile } from "@/context/profile-context";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { useGSAP } from "@gsap/react";
 
-const recommendedCourses = [
-  {
-    id: "rec-1",
-    title: "Python for Beginners",
-    instructor: "Dr. Alan Smith",
-    image:
-      "https://images.pexels.com/photos/1181271/pexels-photo-1181271.jpeg?auto=compress&cs=tinysrgb&w=400",
-    rating: 4.9,
-    students: 2100,
-  },
-  {
-    id: "rec-2",
-    title: "Data Structures & Algorithms",
-    instructor: "Prof. Rita Patel",
-    image:
-      "https://images.pexels.com/photos/270557/pexels-photo-270557.jpeg?auto=compress&cs=tinysrgb&w=400",
-    rating: 4.8,
-    students: 1800,
-  },
-  {
-    id: "rec-3",
-    title: "Web Development Bootcamp",
-    instructor: "Mr. Kevin Lee",
-    image:
-      "https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&cs=tinysrgb&w=400",
-    rating: 4.7,
-    students: 3200,
-  },
-  {
-    id: "rec-4",
-    title: "Machine Learning Basics",
-    instructor: "Dr. Sophia Chen",
-    image:
-      "https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=400",
-    rating: 4.9,
-    students: 2500,
-  },
-];
+// const recommendedCourses = [
+//   {
+//     id: "rec-1",
+//     title: "Python for Beginners",
+//     instructor: "Dr. Alan Smith",
+//     image:
+//       "https://images.pexels.com/photos/1181271/pexels-photo-1181271.jpeg?auto=compress&cs=tinysrgb&w=400",
+//     rating: 4.9,
+//     students: 2100,
+//   },
+//   {
+//     id: "rec-2",
+//     title: "Data Structures & Algorithms",
+//     instructor: "Prof. Rita Patel",
+//     image:
+//       "https://images.pexels.com/photos/270557/pexels-photo-270557.jpeg?auto=compress&cs=tinysrgb&w=400",
+//     rating: 4.8,
+//     students: 1800,
+//   },
+//   {
+//     id: "rec-3",
+//     title: "Web Development Bootcamp",
+//     instructor: "Mr. Kevin Lee",
+//     image:
+//       "https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&cs=tinysrgb&w=400",
+//     rating: 4.7,
+//     students: 3200,
+//   },
+//   {
+//     id: "rec-4",
+//     title: "Machine Learning Basics",
+//     instructor: "Dr. Sophia Chen",
+//     image:
+//       "https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=400",
+//     rating: 4.9,
+//     students: 2500,
+//   },
+// ];
 
 const prefersReducedMotion = (): boolean =>
   typeof window !== "undefined" &&
@@ -300,7 +300,7 @@ export default function DashboardPage() {
         // enrolledCourses.length,
         activities.length,
         upcomingQuizzes.length,
-        recommendedCourses.length,
+        // recommendedCourses.length,
       ],
     },
   );
@@ -557,7 +557,7 @@ export default function DashboardPage() {
       </div>
 
       {/* SECTION 6: Recommended Courses */}
-      <div>
+      {/* <div>
         <div className="mb-4 flex items-center justify-between">
           <SectionHeading title="Recommended Courses" />
           <Button variant="ghost" size="sm" className="text-xs">
@@ -567,7 +567,7 @@ export default function DashboardPage() {
         </div>
         <div className="relative">
           {/* Edge fades hint that the row scrolls, without a visible scrollbar */}
-          <div
+          {/* <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent"
           />
@@ -601,8 +601,8 @@ export default function DashboardPage() {
                       {course.rating}
                     </span>
                     <span>{course.students.toLocaleString()} students</span>
-                  </div>
-                  <Button variant="outline" size="sm" className="mt-3 w-full">
+                  </div> */}
+                  {/* <Button variant="outline" size="sm" className="mt-3 w-full">
                     Enroll
                   </Button>
                 </CardContent>
@@ -610,7 +610,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */} 
 
       {/* SECTION 7: Achievements */}
       {/* <div>

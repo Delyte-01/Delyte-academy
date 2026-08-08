@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import gsap from "gsap";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/context/profile-context";
+import { useAuth } from "@/hooks/useAuth";
 
 const countries = [
   "Nigeria",
@@ -73,7 +74,7 @@ export function ProfileSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
-
+  const { user } = useAuth();
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { profile, loading, saving, saveProfile } = useProfile();
 
@@ -218,7 +219,12 @@ export function ProfileSection() {
             <div ref={avatarRef}>
               <Avatar className="h-20 w-20 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
                 <AvatarImage
-                  src={profile?.avatar_url ?? undefined}
+                  src={
+                    profile?.avatar_url ||
+                    user?.user_metadata?.avatar_url ||
+                    user?.user_metadata?.picture ||
+                    undefined
+                  }
                   alt="Profile"
                 />
                 <AvatarFallback className="bg-primary text-xl font-bold text-primary-foreground">

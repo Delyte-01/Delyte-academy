@@ -8,6 +8,10 @@ delyte780@gmail.com
 dolcegabana12
 
 
+samlite754@gmail.com
+sammyLite20050@
+
+
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Student';
   const displayLevel = profile?.level || 'SS3 Student';
   const avatarUrl =
