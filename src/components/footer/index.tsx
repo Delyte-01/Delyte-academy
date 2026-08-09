@@ -19,6 +19,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
+import { Input } from "../ui/input";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -73,7 +74,7 @@ export function Footer() {
             ".foot-col",
             ".foot-social",
           ],
-          { clearProps: "all", opacity: 1 }
+          { clearProps: "all", opacity: 1 },
         );
       });
 
@@ -107,7 +108,7 @@ export function Footer() {
               stagger: 0.08,
               ease: "expo.out",
             },
-            "-=0.55"
+            "-=0.55",
           )
           .to(
             ".foot-reveal",
@@ -118,7 +119,7 @@ export function Footer() {
               stagger: 0.08,
               ease: "power3.out",
             },
-            "-=0.5"
+            "-=0.5",
           )
           .to(
             ".foot-social",
@@ -129,7 +130,7 @@ export function Footer() {
               stagger: 0.06,
               ease: "back.out(1.8)",
             },
-            "-=0.5"
+            "-=0.5",
           )
           .to(
             ".foot-col",
@@ -140,7 +141,7 @@ export function Footer() {
               stagger: 0.1,
               ease: "power3.out",
             },
-            "-=0.6"
+            "-=0.6",
           );
 
         // Magnetic subscribe button — same physics as CTAs elsewhere on the page.
@@ -197,7 +198,7 @@ export function Footer() {
 
       return () => mm.revert();
     },
-    { scope: footerRef }
+    { scope: footerRef },
   );
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -208,7 +209,7 @@ export function Footer() {
     gsap.fromTo(
       ".foot-success-icon",
       { scale: 0, rotate: -45 },
-      { scale: 1, rotate: 0, duration: 0.5, ease: "back.out(2.2)" }
+      { scale: 1, rotate: 0, duration: 0.5, ease: "back.out(2.2)" },
     );
   };
 
@@ -280,10 +281,10 @@ export function Footer() {
 
               <form
                 onSubmit={handleSubscribe}
-                className="foot-reveal flex w-full max-w-sm items-center gap-2 rounded-full border p-1.5 pl-5"
+                className="foot-reveal group flex w-full max-w-sm items-center gap-2 rounded-full border p-1.5 pl-5 transition-colors duration-200 focus-within:border-white/40"
                 style={{ background: INPUT_BG, borderColor: HAIRLINE }}
               >
-                <input
+                <Input
                   ref={emailRef}
                   type="email"
                   required
@@ -298,13 +299,13 @@ export function Footer() {
                   type="submit"
                   disabled={submitted}
                   aria-label={submitted ? "Subscribed" : "Subscribe"}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default"
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full font-bold text-white transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default disabled:active:scale-100"
                   style={{ background: submitted ? "#16A34A" : BLUE }}
                 >
                   {submitted ? (
                     <Check className="foot-success-icon h-4 w-4" />
                   ) : (
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-focus-within:translate-x-0.5" />
                   )}
                 </button>
               </form>
@@ -416,7 +417,9 @@ export function Footer() {
           className="mt-6 flex flex-col items-center justify-between gap-4 text-xs sm:flex-row"
           style={{ color: FAINT }}
         >
-          <p>© {new Date().getFullYear()} Delyte Academy. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} Delyte Academy. All rights reserved.
+          </p>
           <div className="flex items-center gap-5">
             <span className="cursor-pointer transition-colors hover:text-white">
               Privacy policy

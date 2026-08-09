@@ -144,21 +144,20 @@
   h6 {
     font-family: var(--font-heading);
   }
-}
+  input,
+  textarea,
+  select {
+    color: var(--foreground);
+    background-color: var(--background);
+  }
 
-input,
-textarea,
-select {
-  color: var(--foreground);
-  background-color: var(--background);
-}
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+  }
 
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted-foreground);
-}
-
-input:disabled,
-textarea:disabled {
-  color: var(--muted-foreground);
+  input:disabled,
+  textarea:disabled {
+    color: var(--muted-foreground);
+  }
 }

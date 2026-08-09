@@ -4,15 +4,16 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, FileText, Calendar, Clock, User } from "lucide-react";
+import { useCourseActivity } from "@/hooks/useCourseActivity";
 
 interface OverviewTabProps {
   description: string;
   code: string;
   status: "draft" | "published";
-  stats: { label: string; value: string }[];
   recentActivity: { action: string; user: string; time: string }[];
   createdAt: string;
   updatedAt: string;
+  id: string;
 }
 
 const avatarPalette = [
@@ -32,13 +33,14 @@ export function OverviewTab({
   description,
   code,
   status,
-  stats,
+  id,
   recentActivity,
   createdAt,
-  updatedAt
+  updatedAt,
 }: OverviewTabProps) {
   const leftColRef = useRef<HTMLDivElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
+  const { activity } = useCourseActivity(id);
 
   const meta = [
     {
@@ -82,27 +84,27 @@ export function OverviewTab({
     const tl = gsap.timeline();
 
     const leftCards = gsap.utils.toArray<HTMLElement>(
-      leftColRef.current?.querySelectorAll("[data-overview-card]") ?? []
+      leftColRef.current?.querySelectorAll("[data-overview-card]") ?? [],
     );
     tl.fromTo(
       leftCards,
       { opacity: 0, y: 14 },
       { opacity: 1, y: 0, duration: 0.4, stagger: 0.08, ease: "power2.out" },
-      0
+      0,
     );
 
     const rightCards = gsap.utils.toArray<HTMLElement>(
-      rightColRef.current?.querySelectorAll("[data-overview-card]") ?? []
+      rightColRef.current?.querySelectorAll("[data-overview-card]") ?? [],
     );
     tl.fromTo(
       rightCards,
       { opacity: 0, x: 12 },
       { opacity: 1, x: 0, duration: 0.4, stagger: 0.08, ease: "power2.out" },
-      0.05
+      0.05,
     );
 
     const glanceTiles = gsap.utils.toArray<HTMLElement>(
-      leftColRef.current?.querySelectorAll("[data-glance-tile]") ?? []
+      leftColRef.current?.querySelectorAll("[data-glance-tile]") ?? [],
     );
     glanceTiles.forEach((tile) => {
       const valueEl = tile.querySelector<HTMLElement>("[data-glance-value]");
@@ -121,22 +123,21 @@ export function OverviewTab({
         ease: "power2.out",
         onUpdate: () => {
           valueEl.textContent = `${prefix}${Math.round(
-            counter.val
+            counter.val,
           ).toLocaleString()}${suffix}`;
         },
       });
     });
 
     const timelineDots = gsap.utils.toArray<HTMLElement>(
-      rightColRef.current?.querySelectorAll("[data-timeline-dot]") ?? []
+      rightColRef.current?.querySelectorAll("[data-timeline-dot]") ?? [],
     );
     tl.fromTo(
       timelineDots,
       { scale: 0 },
       { scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.5)" },
-      0.3
+      0.3,
     );
-    
   }, []);
 
   return (
@@ -156,34 +157,6 @@ export function OverviewTab({
           </CardContent>
         </Card>
 
-        {/* Quick stats */}
-        <Card data-overview-card className="border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-bold">At a glance</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {stats.map(({ label, value }) => (
-              <div
-                key={label}
-                data-glance-tile
-                className="group rounded-xl border border-border/60 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-sm"
-              >
-                <p
-                  data-glance-value
-                  data-raw-value={value}
-                  className="text-2xl font-extrabold tracking-tight tabular-nums text-foreground"
-                >
-                  {value}
-                </p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right column */}
-      <div ref={rightColRef} className="space-y-6">
         {/* Metadata */}
         <Card data-overview-card className="border-border/60">
           <CardHeader className="pb-4">
@@ -209,7 +182,10 @@ export function OverviewTab({
             ))}
           </CardContent>
         </Card>
+      </div>
 
+      {/* Right column */}
+      <div ref={rightColRef} className="space-y-6">
         {/* Recent activity */}
         <Card data-overview-card className="border-border/60">
           <CardHeader className="pb-4">
@@ -218,25 +194,31 @@ export function OverviewTab({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentActivity.map((activity, idx) => {
-              const style = avatarStyleFor(activity.user);
+            {activity.map((item, idx) => {
+              const style = avatarStyleFor(item.name);
+
               return (
-                <div key={idx} className="flex gap-3">
+                <div key={item.id} className="flex gap-3">
                   <div className="relative flex flex-col items-center">
                     <div
                       data-timeline-dot
                       className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
                     >
-                      {activity.user.charAt(0)}
+                      {item.initials}
                     </div>
-                    {idx < recentActivity.length - 1 && (
+
+                    {idx < activity.length - 1 && (
                       <div className="mt-1 w-px flex-1 bg-gradient-to-b from-border to-transparent" />
                     )}
                   </div>
+
                   <div className="pb-1">
-                    <p className="text-sm text-foreground">{activity.action}</p>
+                    <p className="text-sm text-foreground">
+                      <span className="font-semibold">{item.name}</span>{" "}
+                      {item.action}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {activity.user} · {activity.time}
+                      {item.course} • {item.time}
                     </p>
                   </div>
                 </div>

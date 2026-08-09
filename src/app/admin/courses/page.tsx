@@ -16,14 +16,7 @@ import { courseService } from "@/services/course";
 import { toast } from "sonner";
 import { CourseThumbnail } from "@/components/admin/courses/courseThumbnail";
 import Link from "next/link";
-
-
-
-// const categoryStyles: Record<string, { bg: string; icon: string }> = {
-//   Science: { bg: "bg-blue-500/10", icon: "text-blue-600" },
-//   Arts: { bg: "bg-violet-500/10", icon: "text-violet-600" },
-//   "Social Science": { bg: "bg-amber-500/10", icon: "text-amber-600" },
-// };
+import { useAdminStudents } from "@/hooks/useAdminStudents";
 
 const statusStyles: Record<string, string> = {
   published:
@@ -32,12 +25,19 @@ const statusStyles: Record<string, string> = {
     "border-transparent bg-amber-500/10 text-amber-600 hover:bg-amber-500/15",
 };
 
-// const maxQuestions = Math.max(...courses.map((c) => c.questions));
-
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const { students } = useAdminStudents();
 
+const enrolledStudents = students.filter(
+  (student) => student.enrolledCourses > 0,
+).length;
+
+// const notEnrolledStudents = students.filter(
+//   (student) => student.enrolledCourses === 0,
+// ).length;
+  
   console.log(loading)
 
   const fetchCourses = async () => {
@@ -105,7 +105,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     const cards = gsap.utils.toArray<HTMLElement>(
-      gridRef.current?.querySelectorAll("[data-course-card]") ?? []
+      gridRef.current?.querySelectorAll("[data-course-card]") ?? [],
     );
     gsap.fromTo(
       cards,
@@ -117,23 +117,22 @@ export default function CoursesPage() {
         stagger: 0.06,
         ease: "power2.out",
         delay: 0.1,
-      }
+      },
     );
   }, []);
 
-  // const totalStudents = courses.reduce((sum, c) => sum + c.students, 0);
-  // const publishedCount = courses.filter((c) => c.status === "Published").length;
+  const publishedCount = courses.filter((c) => c.status === "published").length;
 
   const stats = [
     { label: "Total Courses", value: courses.length, icon: Layers },
     {
       label: "Enrolled Students",
-      value: 2,
+      value: enrolledStudents,
       icon: GraduationCap,
     },
     {
       label: "Published",
-      value: `${5}/${courses.length}`,
+      value: `${publishedCount}/${courses.length}`,
       icon: Sparkles,
     },
   ];
@@ -204,7 +203,7 @@ export default function CoursesPage() {
                         <CardTitle className="truncate text-sm font-bold mt-1">
                           {course.title}
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-2 truncate">
                           {course.description}
                         </p>
                       </div>
@@ -214,7 +213,7 @@ export default function CoursesPage() {
                       <Badge
                         className={cn(
                           "text-[10px] font-semibold",
-                          statusStyles[course.status]
+                          statusStyles[course.status],
                         )}
                       >
                         {course.status}

@@ -71,7 +71,7 @@ export function WorkspaceTabs({ tabs, value, onChange }: WorkspaceTabsProps) {
     gsap.fromTo(
       rootRef.current,
       { opacity: 0, y: -6 },
-      { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }
+      { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
     );
   }, []);
 
@@ -99,7 +99,7 @@ export function WorkspaceTabs({ tabs, value, onChange }: WorkspaceTabsProps) {
                 className={cn(
                   "relative z-10 flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground transition-colors duration-200",
                   "data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none",
-                  "hover:text-foreground"
+                  "hover:text-foreground",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -116,8 +116,7 @@ export function WorkspaceTabs({ tabs, value, onChange }: WorkspaceTabsProps) {
 export const courseTabs: WorkspaceTabItem[] = [
   { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "topics", label: "Topics", icon: FolderTree },
-  { value: "resources", label: "Resources", icon: FileText },
-  { value: "practice", label: "Practice Sets", icon: ClipboardList },
+
   { value: "students", label: "Students", icon: Users },
   { value: "analytics", label: "Analytics", icon: BarChart3 },
   { value: "settings", label: "Settings", icon: Settings },

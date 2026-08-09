@@ -428,9 +428,10 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/dashboard/courses/math-101/test"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-7 py-3.5 text-[15px] font-semibold transition-colors hover:border-blue-300 hover:bg-blue-50 active:scale-[0.97]"
+                href="/dashboard/courses"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-7 py-3.5 text-[15px] font-semibold transition-colors hover:border-blue-300 hover:bg-blue-50 active:scale-[0.97] disabled:cursor-not-allowed"
                 style={{ color: INK }}
+                
               >
                 <PlayCircle className="h-4 w-4" style={{ color: BLUE }} />
                 Try a mock test

@@ -2,10 +2,21 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Star, Video, ArrowRight } from "lucide-react";
+import {
+  Star,
+  Video,
+  ArrowRight,
+  BookOpen,
+  HelpCircle,
+  Users,
+} from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useCourse } from "@/hooks/useCourse";
+import { useStudentCourses } from "@/hooks/useStudentCourses";
+import Image from "next/image";
+import { useFeaturedCourses } from "@/hooks/useFeaturedHooks";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -44,17 +55,6 @@ const EASE_PREMIUM = cubicBezier(0.16, 1, 0.3, 1);
 const EASE_SNAP = cubicBezier(0.65, 0, 0.35, 1);
 
 // ── Data ───────────────────────────────────────────────────────
-type Course = {
-  title: string;
-  image: string;
-  category: string;
-  badge: string;
-  rating: number;
-  reviews: number;
-  videos: number;
-  price: number;
-  discountPercent: number;
-};
 
 const BADGE_PALETTE = [
   { bg: "#FFF3D6", text: "#8A5A00" }, // amber
@@ -64,26 +64,82 @@ const BADGE_PALETTE = [
   { bg: "#FFE9DE", text: "#B14A16" }, // peach
 ];
 
-export function CoursesSection({ courses }: { courses: Course[] }) {
+function CourseCardSkeleton() {
+  return (
+    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-900/[0.03]">
+      {/* Accent bar */}
+      <div className="h-1 w-full shrink-0 bg-slate-200" />
+
+      {/* Image area */}
+      <div className="relative h-44 shrink-0 overflow-hidden bg-slate-200 animate-pulse">
+        <div className="absolute bottom-3 left-3">
+          <div className="h-6 w-24 rounded-full bg-white/60" />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        {/* Title (2 lines) */}
+        <div className="mb-3 min-h-[2.6rem] space-y-2">
+          <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+        </div>
+
+        {/* Topics / quizzes row */}
+        <div
+          className="mb-5 flex items-center gap-4 border-t pt-3"
+          style={{ borderColor: "#F1F5F9" }}
+        >
+          <div className="h-3.5 w-16 animate-pulse rounded bg-slate-200" />
+          <div className="h-3.5 w-16 animate-pulse rounded bg-slate-200" />
+        </div>
+
+        {/* Button */}
+        <div className="mt-auto">
+          <div className="h-10 w-full animate-pulse rounded-lg bg-slate-200" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseCardSkeletonGrid({ count = 3 }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <CourseCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+export function CoursesSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLAnchorElement>(null);
 
-  const categories = useMemo(
-    () => [
-      "All courses",
-      ...Array.from(new Set(courses.map((c) => c.category))),
-    ],
-    [courses]
+  const { courses, loading } = useFeaturedCourses(3);
+
+  const publishedCourses = useMemo(
+    () => courses.filter((c) => c.status?.toLowerCase() === "published"),
+    [courses],
   );
-  const [activeCategory, setActiveCategory] = useState("All courses");
-  const filtered = useMemo(
-    () =>
-      activeCategory === "All courses"
-        ? courses
-        : courses.filter((c) => c.category === activeCategory),
-    [courses, activeCategory]
-  );
+
+  console.log(publishedCourses, "publish ");
+
+  // const categories = useMemo(
+  //   () => [
+  //     "All courses",
+  //     ...Array.from(new Set(courses.map((c) => c.category))),
+  //   ],
+  //   [courses],
+  // );
+  // const [activeCategory, setActiveCategory] = useState("All courses");
+  // const filtered = useMemo(
+  //   () =>
+  //     activeCategory === "All courses"
+  //       ? courses
+  //       : courses.filter((c) => c.category === activeCategory),
+  //   [courses, activeCategory],
+  // );
 
   // ── Entrance: header + first grid paint ──
   useGSAP(
@@ -99,7 +155,7 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
             ".courses-tabs",
             ".course-card",
           ],
-          { clearProps: "all", opacity: 1 }
+          { clearProps: "all", opacity: 1 },
         );
         gsap.set(".course-card-image", { clipPath: "inset(0% 0% 0% 0%)" });
       });
@@ -135,17 +191,12 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
               stagger: 0.1,
               ease: EASE_PREMIUM,
             },
-            "-=0.3"
+            "-=0.3",
           )
           .to(
             ".courses-copy",
             { y: 0, opacity: 1, duration: 0.6, ease: EASE_PREMIUM },
-            "-=0.55"
-          )
-          .to(
-            ".courses-tabs",
-            { y: 0, opacity: 1, duration: 0.5, ease: EASE_PREMIUM },
-            "-=0.4"
+            "-=0.55",
           );
 
         const cards = gsap.utils.toArray<HTMLElement>(".course-card");
@@ -178,7 +229,7 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
                     duration: 1.1,
                     ease: EASE_PREMIUM,
                   },
-                  "-=0.55"
+                  "-=0.55",
                 )
                 .to(
                   badge,
@@ -188,7 +239,7 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
                     duration: 0.4,
                     ease: "back.out(1.7)",
                   },
-                  "-=0.7"
+                  "-=0.7",
                 );
             });
           },
@@ -306,7 +357,7 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
 
       return () => mm.revert();
     },
-    { scope: sectionRef }
+    { scope: sectionRef },
   );
 
   // ── Tab switch: crossfade + re-stagger the grid ──
@@ -317,24 +368,24 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
       gsap.fromTo(
         cards,
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: EASE_SNAP }
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: EASE_SNAP },
       );
     },
-    { dependencies: [activeCategory], scope: gridRef }
+    { scope: gridRef },
   );
 
-  const handleTabClick = (cat: string) => {
-    if (cat === activeCategory) return;
-    const cards = gsap.utils.toArray<HTMLElement>(".course-card");
-    gsap.to(cards, {
-      opacity: 0,
-      y: -10,
-      duration: 0.25,
-      ease: EASE_SNAP,
-      stagger: 0.02,
-      onComplete: () => setActiveCategory(cat),
-    });
-  };
+  // const handleTabClick = (cat: string) => {
+  //   if (cat === activeCategory) return;
+  //   const cards = gsap.utils.toArray<HTMLElement>(".course-card");
+  //   gsap.to(cards, {
+  //     opacity: 0,
+  //     y: -10,
+  //     duration: 0.25,
+  //     ease: EASE_SNAP,
+  //     stagger: 0.02,
+  //     onComplete: () => setActiveCategory(cat),
+  //   });
+  // };
 
   return (
     <section ref={sectionRef} className="bg-white py-20 sm:py-28">
@@ -372,144 +423,100 @@ export function CoursesSection({ courses }: { courses: Course[] }) {
           </p>
         </div>
 
-        {/* ── Filter tabs ── */}
-        <div className="courses-tabs mb-10 flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-slate-100 pb-4">
-          {categories.map((cat) => {
-            const isActive = cat === activeCategory;
-            return (
-              <button
-                key={cat}
-                onClick={() => handleTabClick(cat)}
-                className="relative pb-3 text-sm font-semibold transition-colors duration-200"
-                style={{ color: isActive ? BLUE : SLATE }}
-              >
-                {cat}
-                {isActive && (
-                  <span
-                    className="absolute -bottom-[1px] left-0 h-[2px] w-full rounded-full"
-                    style={{ background: BLUE }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
         {/* ── Grid ── */}
         <div ref={gridRef} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((course, i) => {
-            const palette = BADGE_PALETTE[i % BADGE_PALETTE.length];
-            return (
-              <Link
-                href="/dashboard/courses/math-101"
-                key={course.title}
-                className="course-card group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-900/[0.03] transition-shadow duration-300 hover:shadow-2xl hover:shadow-slate-900/10"
-                style={{
-                  transformStyle: "preserve-3d",
-                  willChange: "transform",
-                }}
-              >
-                <div className="relative h-44 overflow-hidden">
-                  <img
-                    src={course.image}
-                    alt={course.title}
-                    className="course-card-image h-full w-full object-cover"
-                    style={{ willChange: "transform" }}
-                  />
-                  <div className="absolute right-3 top-3">
-                    <span
-                      className="course-badge inline-block rounded-full px-3 py-1 text-xs font-bold"
-                      style={{ background: palette.bg, color: palette.text }}
-                    >
-                      {course.badge}
-                    </span>
-                  </div>
-                </div>
+          {loading ? (
+            <CourseCardSkeletonGrid count={3} />
+          ) : (
+            courses.map((course, i) => {
+              const palette = BADGE_PALETTE[i % BADGE_PALETTE.length];
 
-                <div className="p-5">
+              return (
+                <Link
+                  href={`/dashboard/courses/${course.id}`}
+                  key={course.title}
+                  className="course-card group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-900/[0.03] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10"
+                  style={{
+                    transformStyle: "preserve-3d",
+                    willChange: "transform",
+                  }}
+                >
+                  {/* Accent bar — quietly color-codes each card, echoes the badge palette */}
                   <div
-                    className="mb-3 flex items-center justify-between text-xs font-medium"
-                    style={{ color: SLATE }}
-                  >
-                    <span>{course.category}</span>
-                    <span className="flex items-center gap-1.5">
-                      <Video className="h-3.5 w-3.5" />
-                      {course.videos} videos
-                    </span>
-                  </div>
+                    className="h-1 w-full shrink-0"
+                    style={{ background: palette.text }}
+                  />
 
-                  <h3
-                    className="mb-4 min-h-[2.6rem] font-bold leading-snug"
-                    style={{ color: INK }}
-                  >
-                    {course.title}
-                  </h3>
+                  <div className="relative h-44 shrink-0 overflow-hidden">
+                    <Image
+                      src={course.thumbnail || "/images/course-placeholder.jpg"}
+                      alt={course.title}
+                      className="course-card-image h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      style={{ willChange: "transform" }}
+                      width={500}
+                      height={200}
+                    />
+                    {/* Legibility gradient so the enrollment chip always reads clean */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-black/0" />
 
-                  <div className="mb-4 flex items-end justify-between">
-                    <div>
-                      <p
-                        className="text-[11px] font-medium"
-                        style={{ color: SLATE }}
+                    <div className="absolute bottom-3 left-3">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold backdrop-blur-sm"
+                        style={{ color: INK }}
                       >
-                        Price
-                      </p>
-                      <p className="flex items-baseline gap-1.5">
-                        <span
-                          className="text-lg font-extrabold"
-                          style={{ color: INK }}
-                        >
-                          ${course.price}
-                        </span>
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: SLATE }}
-                        >
-                          {course.discountPercent}% off
-                        </span>
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, s) => (
-                          <Star
-                            key={s}
-                            className="h-3 w-3 fill-current"
-                            style={{ color: "#F5A623" }}
-                          />
-                        ))}
-                      </div>
-                      <p
-                        className="mt-0.5 text-[11px] font-medium"
-                        style={{ color: SLATE }}
-                      >
-                        {course.rating.toFixed(1)} (
-                        {course.reviews.toLocaleString()} reviews)
-                      </p>
+                        <Users className="h-3 w-3" style={{ color: BLUE }} />
+                        {course.enrollmentsCount.toLocaleString()} enrolled
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="course-btn flex-1 rounded-lg border-2 py-2.5 text-center text-xs font-bold transition-colors"
-                      style={{
-                        borderColor: BLUE,
-                        color: BLUE,
-                        background: "transparent",
-                      }}
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3
+                      className="mb-3 min-h-[2.6rem] font-bold leading-snug"
+                      style={{ color: INK }}
                     >
-                      Enrol course
-                    </span>
-                    <span
-                      className="course-arrow flex items-center gap-1 text-xs font-semibold opacity-0"
-                      style={{ color: BLUE, transform: "translateX(-6px)" }}
+                      {course.title}
+                    </h3>
+
+                    {/* Content breakdown — real structure, not decoration */}
+                    <div
+                      className="mb-5 flex items-center gap-4 border-t pt-3 text-xs font-medium"
+                      style={{ borderColor: "#F1F5F9", color: SLATE }}
                     >
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
+                      <span className="flex items-center gap-1.5">
+                        <BookOpen
+                          className="h-3.5 w-3.5"
+                          style={{ color: palette.text }}
+                        />
+                        {course.topicsCount} topics
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <HelpCircle
+                          className="h-3.5 w-3.5"
+                          style={{ color: palette.text }}
+                        />
+                        {course.quizzesCount} quizzes
+                      </span>
+                    </div>
+
+                    <div className="mt-auto flex items-center gap-2">
+                      <span
+                        className="course-btn flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 py-2.5 text-center text-xs font-bold transition-all duration-300 group-hover:gap-2.5"
+                        style={{
+                          borderColor: BLUE,
+                          color: BLUE,
+                          background: "transparent",
+                        }}
+                      >
+                        Enrol course
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })
+          )}
         </div>
 
         <div className="mt-12 text-center">

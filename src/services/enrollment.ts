@@ -81,6 +81,28 @@ class EnrollmentService {
 
     return !!data;
   }
+
+  async getCourseEnrollments(courseId: string) {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("enrollments")
+      .select(
+        `
+      *,
+      profiles!enrollments_student_profile_fkey(
+        id,
+        full_name,
+        email,
+        avatar_url
+      )
+    `,
+      )
+      .eq("course_id", courseId);
+
+    if (error) throw error;
+    return data;
+  }
 }
 
 export const enrollmentService = new EnrollmentService();
