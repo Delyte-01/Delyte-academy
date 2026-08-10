@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -80,31 +80,7 @@ export function AdminStudentsTable({
     }
   };
 
-  // const handleSuspend = async (student: AdminStudent) => {
-  //   try {
-  //     await updateStudent(student.id, { status: "suspended" });
 
-  //     // Update immediately in the table
-  //     updateStudentLocal(student.id, { status: "suspended" });
-
-  //     toast.success("Account suspended");
-  //   } catch (err) {
-  //     toast.error(err instanceof Error ? err.message : "Failed");
-  //   }
-  // };
-
-  // const handleReactivate = async (student: AdminStudent) => {
-  //   try {
-  //     await updateStudent(student.id, { status: "active" });
-
-  //     // Update immediately in the table
-  //     updateStudentLocal(student.id, { status: "active" });
-
-  //     toast.success("Account reactivated");
-  //   } catch (err) {
-  //     toast.error(err instanceof Error ? err.message : "Failed");
-  //   }
-  // };
   return (
     <Card>
       <CardContent className="p-0">
@@ -163,8 +139,12 @@ export function AdminStudentsTable({
                   >
                     <TableCell className="pl-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarFallback className="bg-primary/10 text-[11px] font-bold text-primary">
+                        <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/15">
+                          <AvatarImage
+                            src={student.avatar_url ?? undefined}
+                            alt={student.full_name}
+                          />
+                          <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
                             {student.initials}
                           </AvatarFallback>
                         </Avatar>

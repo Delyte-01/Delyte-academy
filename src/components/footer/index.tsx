@@ -421,15 +421,19 @@ export function Footer() {
             © {new Date().getFullYear()} Delyte Academy. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
-            <span className="cursor-pointer transition-colors hover:text-white">
-              Privacy policy
-            </span>
-            <span className="cursor-pointer transition-colors hover:text-white">
-              Terms of service
-            </span>
-            <span className="cursor-pointer transition-colors hover:text-white">
-              Cookie policy
-            </span>
+            <Link href={"/privacy-policy"}>
+              {" "}
+              <span className="cursor-pointer transition-colors hover:text-white">
+                Privacy policy
+              </span>
+            </Link>
+
+            <Link href="/terms-of-service">
+              {" "}
+              <span className="cursor-pointer transition-colors hover:text-white">
+                Terms of service
+              </span>
+            </Link>
           </div>
         </div>
       </div>

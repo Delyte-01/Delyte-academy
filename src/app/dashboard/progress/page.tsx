@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
+
 
 import { OverviewStats } from "@/components/dashboard-components/progress/overview-stats";
 import { StreakCard } from "@/components/dashboard-components/progress/streak-card";
 import { CourseProgressSection } from "@/components/dashboard-components/progress/course-progress-section";
 import { ActivityTimeline } from "@/components/dashboard-components/progress/activity-timeline";
 import { QuizAnalyticsCard } from "@/components/dashboard-components/progress/quiz-analytic-card";
-import { ConsistencyHeatmap } from "@/components/dashboard-components/progress/consistency-heatmap";
+
 import { AchievementsGrid } from "@/components/dashboard-components/progress/achievements-grid";
 import { WeakAreasCard } from "@/components/dashboard-components/progress/weak-area-card";
 
@@ -83,8 +83,7 @@ export default function ProgressPage() {
       {/* Quiz analytics */}
       <QuizAnalyticsCard data={quizAnalytics} />
 
-      {/* Consistency heatmap */}
-      <ConsistencyHeatmap />
+    
 
       {/* Achievements */}
       <AchievementsGrid achievements={achievements} />

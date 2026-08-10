@@ -14,6 +14,14 @@ export interface Enrollment {
   enrolled_at: string;
 
   course?: Course;
+
+  profiles?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    username?: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 export interface EnrollStudentData {

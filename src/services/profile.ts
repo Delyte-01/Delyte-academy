@@ -39,24 +39,30 @@ async function upsertProfile() {
 
   if (!user) throw new Error("User not found.");
 
-const fullName =
-  user.user_metadata?.full_name ??
-  [user.user_metadata?.first_name, user.user_metadata?.last_name]
-    .filter(Boolean)
-    .join(" ") ??
-  user.user_metadata?.name ??
-  "";
+  const fullName =
+    user.user_metadata?.full_name ??
+    [user.user_metadata?.first_name, user.user_metadata?.last_name]
+      .filter(Boolean)
+      .join(" ") ??
+    user.user_metadata?.name ??
+    "";
 
-const username =
-  user.user_metadata?.username ??
-  `${(user.email ?? "student")
-    .split("@")[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")}_${user.id.slice(0, 4)}`;
+  const username =
+    user.user_metadata?.username ??
+    `${(user.email ?? "student")
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "_")}_${user.id.slice(0, 4)}`;
 
+  const googleAvatar =
+    user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null;
 
-   const avatarUrl =
-     user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null;
+  // Check existing profile so we don't overwrite a custom uploaded avatar
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
 
   const { error } = await supabase.from("profiles").upsert(
     {
@@ -64,7 +70,7 @@ const username =
       email: user.email,
       full_name: fullName,
       username,
-      avatar_url: avatarUrl,
+      avatar_url: existingProfile?.avatar_url || googleAvatar,
       role: "student",
     },
     { onConflict: "id" },

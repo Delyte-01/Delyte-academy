@@ -62,6 +62,14 @@ export function QuizAnalyticsCard({ data }: QuizAnalyticsCardProps) {
     },
   ];
 
+
+  const scores = data.scoreTrend.map((d) => d.score);
+  const minScore = Math.min(...scores);
+  const maxScore = Math.max(...scores);
+
+
+  
+
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -112,18 +120,24 @@ export function QuizAnalyticsCard({ data }: QuizAnalyticsCardProps) {
                 stroke="hsl(var(--border))"
               />
               <XAxis
-                dataKey="quiz"
+                dataKey="date"
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })
+                }
                 tickLine={false}
                 axisLine={false}
                 tick={{ fontSize: 11 }}
-                stroke="hsl(var(--muted-foreground))"
               />
               <YAxis
-                domain={[0, 100]}
+                domain={[
+                  Math.max(0, minScore - 2),
+                  Math.min(100, maxScore + 2),
+                ]}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11 }}
-                stroke="hsl(var(--muted-foreground))"
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area

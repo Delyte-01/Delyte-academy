@@ -29,7 +29,7 @@ export interface AdminStudent {
   progress: number;
   averageScore: number;
   streak: number;
-
+  lastLoginAt: string;
   lastActive: string;
   created_at: string;
 }
@@ -164,6 +164,7 @@ export function useAdminStudents() {
           streak: 0,
 
           lastActive: formatRelative(p.updated_at || p.created_at),
+          lastLoginAt: p.updated_at || p.created_at,
           created_at: new Date(p.created_at).toLocaleDateString(),
         };
       });

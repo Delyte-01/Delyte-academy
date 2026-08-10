@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Mail,
@@ -29,6 +29,7 @@ import {
   MessageSquare,
   Ban,
   Trash2,
+  ClipboardCheck,
 } from "lucide-react";
 import type {
   AdminStudent as Student,
@@ -36,6 +37,13 @@ import type {
 } from "@/hooks/useAdminStudents";
 import { toast } from "sonner";
 import { deleteStudent, updateStudent } from "@/services/admin-students";
+import { formatRelative } from "@/hooks/useAdminAnalytics";
+import { useEffect, useState } from "react";
+import { enrollmentService } from "@/services/enrollment";
+import { Enrollment } from "@/types/enrollment";
+import Image from "next/image";
+import { getRecentActivity, RecentActivityItem } from "@/services/dashboard";
+import { useRecentActivity } from "@/hooks/useRecentActivity";
 
 const statusConfig: Record<StudentStatus, { className: string }> = {
   active: {
@@ -50,28 +58,31 @@ const statusConfig: Record<StudentStatus, { className: string }> = {
   },
 };
 
-const activityIcon = {
-  enrolled: {
-    icon: UserPlus,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
-  },
-  topic: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-  },
-  quiz: {
-    icon: HelpCircle,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-  },
-  finished: {
-    icon: Trophy,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
-  },
-} as const;
+const activityIcon = (type: RecentActivityItem["type"]) => {
+  switch (type) {
+    case "enrollment":
+      return <BookOpen className="h-4 w-4" />;
+    case "topic_completed":
+      return <CheckCircle2 className="h-4 w-4" />;
+    case "quiz_completed":
+      return <ClipboardCheck className="h-4 w-4" />;
+    default:
+      return <Clock className="h-4 w-4" />;
+  }
+};
+
+const activityStyle = (type: RecentActivityItem["type"]) => {
+  switch (type) {
+    case "enrollment":
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
+    case "topic_completed":
+      return "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300";
+    case "quiz_completed":
+      return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+};
 
 interface StudentDetailSheetProps {
   student: Student | null;
@@ -88,6 +99,36 @@ export function StudentDetailSheet({
   onStudentUpdated,
   onStudentDeleted,
 }: StudentDetailSheetProps) {
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+
+  // const [loadingActivity, setLoadingActivity] = useState(false);
+  const { activities, loading: loadingActivity } = useRecentActivity(
+    student?.id,
+  );
+
+  useEffect(() => {
+    if (!student || !open) return;
+
+    const load = async () => {
+      try {
+        setLoadingEnrollments(true);
+        const data = await enrollmentService.getStudentCourses(student.id);
+        setEnrollments(data ?? []);
+      } catch (err) {
+        console.error(err);
+        toast.error("Unable to load enrollments");
+      } finally {
+        setLoadingEnrollments(false);
+      }
+    };
+
+    load();
+  }, [student, open]);
+
+  console.log(enrollments, "enrolme");
+
+  console.log(activities, "activities");
   if (!student) return null;
 
   const stats = [
@@ -180,13 +221,18 @@ export function StudentDetailSheet({
       toast.error(err instanceof Error ? err.message : "Failed");
     }
   };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex h-screen w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         {/* Header with profile */}
         <SheetHeader className="flex-shrink-0 space-y-0 border-b p-6">
           <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16 flex-shrink-0">
+            <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/15">
+              <AvatarImage
+                src={student.avatar_url ?? undefined}
+                alt={student.full_name}
+              />
               <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
                 {student.initials}
               </AvatarFallback>
@@ -232,18 +278,7 @@ export function StudentDetailSheet({
                     {student.email}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Phone className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <span className="text-foreground">
-                    {student.phone ?? "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 text-sm">
-                  <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <span className="text-foreground">
-                    {student.country ?? "N/A"}
-                  </span>
-                </div>
+
                 <div className="flex items-center gap-2.5 text-sm">
                   <Calendar className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   <span className="text-foreground">
@@ -253,7 +288,17 @@ export function StudentDetailSheet({
                 <div className="flex items-center gap-2.5 text-sm">
                   <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   <span className="text-foreground">
-                    Last login {student.lastActive}
+                    Last login {student.lastActive} (
+                    {new Date(student.lastLoginAt).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: true,
+                    })}
+                    )
                   </span>
                 </div>
                 {student.bio && (
@@ -292,17 +337,148 @@ export function StudentDetailSheet({
             </section>
 
             {/* Current enrollments */}
-            <div className="rounded-2xl border p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Enrollment details will be connected to Supabase next.
-              </p>
+            <div className="rounded-2xl border p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">
+                  Current enrollments
+                </h3>
+                <Badge variant="outline">{enrollments.length} courses</Badge>
+              </div>
+
+              {loadingEnrollments ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded-xl bg-muted"
+                    />
+                  ))}
+                </div>
+              ) : enrollments.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    This student is not enrolled in any courses yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {enrollments.map((enrollment) => (
+                    <div
+                      key={enrollment.id}
+                      className="flex items-center gap-3 rounded-xl border border-border/60 p-3"
+                    >
+                      <Image
+                        src={
+                          enrollment.course?.thumbnail ||
+                          "/placeholder-course.png"
+                        }
+                        alt={enrollment.course?.title ?? ""}
+                        width={500}
+                        height={200}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate font-medium text-foreground">
+                            {enrollment.course?.title}
+                          </p>
+                          {enrollment.completed ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                              Completed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">In progress</Badge>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                          {enrollment.course?.course_code || "Course"} •
+                          Enrolled {formatRelative(enrollment.enrolled_at)}
+                        </p>
+
+                        {!enrollment.completed &&
+                          typeof enrollment.progress === "number" && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                                <div
+                                  className="h-full rounded-full bg-primary transition-all"
+                                  style={{
+                                    width: `${Math.min(
+                                      100,
+                                      Math.max(0, enrollment.progress),
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="shrink-0 text-xs text-muted-foreground">
+                                {Math.round(enrollment.progress)}%
+                              </span>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             {/* Recent activity timeline */}
-            <div className="rounded-2xl border p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Recent activity will be loaded from quiz attempts and topic
-                progress.
-              </p>
+            <div className="rounded-2xl border p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">
+                  Recent activity
+                </h3>
+                <Badge variant="outline">{activities.length} events</Badge>
+              </div>
+
+              {loadingActivity ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                        <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : activities.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No recent activity available yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activities.map((item, idx) => (
+                    <div key={item.id} className="flex gap-3">
+                      <div className="relative flex flex-col items-center">
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full ${activityStyle(item.type)}`}
+                        >
+                          {activityIcon(item.type)}
+                        </div>
+
+                        {idx < activities.length - 1 && (
+                          <div className="mt-1 h-full w-px bg-gradient-to-b from-border to-transparent" />
+                        )}
+                      </div>
+
+                      <div className="pb-2">
+                        <p className="text-sm font-medium text-foreground">
+                          {item.text}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.course}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {item.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Admin controls */}

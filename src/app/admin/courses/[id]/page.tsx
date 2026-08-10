@@ -31,6 +31,7 @@ import { Quiz } from "@/types/quiz";
 import { Enrollment } from "@/types/enrollment";
 import { QuizService } from "@/services/quiz";
 import { enrollmentService } from "@/services/enrollment";
+import { CourseStudentsTab } from "@/components/admin/course-workspace/course-students-tab";
 
 const recentActivity = [
   {
@@ -133,6 +134,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
  const totalQuizzes = quizzes.length;
  const totalStudents = enrollments.length;
 
+
+
   const stats = [
     {
       label: "Topics",
@@ -196,13 +199,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
         )}
 
         {activeTab === "students" && (
-          <PlaceholderTab
-            icon={Users}
-            title="Enrolled students"
-            description="View and manage students enrolled in this course, track their progress."
-            actionLabel="View Students"
-            iconColor="text-amber-600"
-            iconBg="bg-amber-500/10"
+          <CourseStudentsTab
+            students={enrollments}
           />
         )}
         {activeTab === "analytics" && (

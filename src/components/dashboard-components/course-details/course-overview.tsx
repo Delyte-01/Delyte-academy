@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CheckCircle2, GraduationCap, Target } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CourseOverviewProps {
