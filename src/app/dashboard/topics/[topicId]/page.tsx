@@ -21,6 +21,7 @@ import { useEnrollment } from "@/hooks/useEnrollment";
 import { useTopics } from "@/hooks/useTopic";
 import { useTopicProgress } from "@/hooks/useTopicProgress";
 import { useTopic } from "@/hooks/useTopics";
+import { studentNotificationService } from "@/services/student-notification";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -33,7 +34,7 @@ export default function TopicContentPage() {
   const { attachments } = useAttachments(topicId as string);
   const { user } = useAuth();
 
-  const { enrollments, updateProgress, isEnrolled } = useEnrollment(user?.id);
+  const { enrollments, updateProgress } = useEnrollment(user?.id);
 
   const enrollment = enrollments.find((e) => e.course_id === topic?.course_id);
 
@@ -58,6 +59,14 @@ export default function TopicContentPage() {
     await updateProgress(enrollment.id, progress, progress === 100);
 
     toast.success("Topic completed!");
+    await studentNotificationService.createStudentNotification({
+      studentId: user.id,
+      type: "course_completed",
+      title: "Course completed",
+      message: `Congratulations! You completed ${course?.title}.`,
+      courseId: course?.id,
+      link: `/dashboard/courses/${course?.id}`,
+    });
   };
 
   const currentIndex = topics.findIndex((t) => t.id === topic?.id);

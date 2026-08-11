@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "./notifications-components/notification-bell";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -119,19 +120,8 @@ export default function Header({
             )}
           </span>
         </Button>
-        <button
-          className="relative rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-muted"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2 top-2 flex h-2 w-2">
-            <span
-              ref={dotRef}
-              className="absolute inline-flex h-full w-full rounded-full bg-pink-400"
-            />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-pink-500" />
-          </span>
-        </button>
+        {/* Notifications */}
+        <NotificationBell />
 
         <div className="hidden h-8 w-px bg-border sm:block" />
 

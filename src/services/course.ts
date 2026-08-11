@@ -1,6 +1,8 @@
 import { TABLES } from "@/constants/database";
 import { createClient } from "@/lib/supabase/client";
 import { Course, CreateCourseData, UpdateCourseData } from "@/types/course";
+import { notificationService } from "./notification";
+import { studentNotificationService } from "./student-notification";
 
 async function createCourse({
   title,
@@ -111,16 +113,34 @@ async function deleteCourse(id: string) {
   if (error) throw error;
 }
 
-async function publishCourse(id: string) {
+async function publishCourse(courseId: string) {
   const supabase = createClient();
-  const { error } = await supabase
-    .from(TABLES.COURSES)
-    .update({
-      status: "published",
-    })
-    .eq("id", id);
+
+  const { data: course, error } = await supabase
+    .from("courses")
+    .update({ status: "published" })
+    .eq("id", courseId)
+    .select()
+    .single();
 
   if (error) throw error;
+
+  await notificationService.createAdminNotification({
+    type: "course_published",
+    title: "Course published",
+    message: `${course.title} has been published successfully.`,
+    courseId: course.id,
+    link: `/admin/courses/${course.id}`,
+  });
+
+  await studentNotificationService.notifyEnrolledStudents({
+  courseId: course.id,
+  type: "course_published",
+  title: "Course published",
+  message: `${course.title} is now available to study.`,
+  link: `/dashboard/courses/${course.id}`,
+});
+  return course;
 }
 
 async function unpublishCourse(id: string) {
@@ -135,7 +155,6 @@ async function unpublishCourse(id: string) {
   if (error) throw error;
 }
 
-
 async function getPublishedCourses() {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -149,7 +168,6 @@ async function getPublishedCourses() {
   return data as Course[];
 }
 
-
 async function searchPublishedCourses(search: string) {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -157,7 +175,7 @@ async function searchPublishedCourses(search: string) {
     .select("*")
     .eq("status", "published")
     .or(
-      `title.ilike.%${search}%,description.ilike.%${search}%,code.ilike.%${search}%`
+      `title.ilike.%${search}%,description.ilike.%${search}%,code.ilike.%${search}%`,
     )
     .order("created_at", { ascending: false });
 
@@ -176,5 +194,4 @@ export const courseService = {
   unpublishCourse,
   getPublishedCourses,
   searchPublishedCourses,
-
 };

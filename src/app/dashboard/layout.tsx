@@ -13,6 +13,7 @@ import { FullPageLoader } from "@/components/loading/Loading";
 
 import { ProfileProvider, useProfile } from "@/context/profile-context";
 import { EnrollmentProvider } from "@/context/enrollment-context";
+import { NotificationProvider } from "@/components/dashboard-components/notifications-components/notification-context";
 
 const display = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -31,7 +32,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ProfileProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <NotificationProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </NotificationProvider>
     </ProfileProvider>
   );
 }

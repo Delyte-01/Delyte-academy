@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { useAdminNotifications } from "@/hooks/useAdminNotification";
 
 interface AdminTopbarProps {
   onOpenMobile: () => void;
@@ -33,6 +33,9 @@ export default function AdminTopbar({
   const headerRef = useRef<HTMLElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const iconWrapRef = useRef<HTMLSpanElement>(null);
+
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } =
+    useAdminNotifications();
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
@@ -135,51 +138,85 @@ export default function AdminTopbar({
         </Button>
 
         {/* Notifications */}
+        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              ref={bellRef}
-              variant="ghost"
-              size="icon"
-              className="relative"
-            >
+            <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive/60" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />
-              </span>
+
+              {unreadCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
+
+          <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               Notifications
-              <Badge  className="text-[10px]">
-                3 new
-              </Badge>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-primary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void markAllAsRead();
+                  }}
+                >
+                  Mark all as read
+                </Button>
+              )}
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-0.5 py-2">
-              <span className="text-sm font-medium">New student enrolled</span>
-              <span className="text-xs text-muted-foreground">
-                Adaora N. joined Biology
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-0.5 py-2">
-              <span className="text-sm font-medium">
-                Course submitted for review
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Chemistry in Depth
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-0.5 py-2">
-              <span className="text-sm font-medium">
-                Practice set published
-              </span>
-              <span className="text-xs text-muted-foreground">
-                JAMB Math Mock #4
-              </span>
-            </DropdownMenuItem>
+
+            {loading ? (
+              <div className="space-y-2 p-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-12 animate-pulse rounded-lg bg-muted"
+                  />
+                ))}
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                You&apos;re all caught up.
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className="flex cursor-pointer flex-col items-start gap-0.5 py-3"
+                  onClick={() => void markAsRead(notification.id)}
+                >
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <span className="text-sm font-medium">
+                      {notification.title}
+                    </span>
+
+                    {!notification.read && (
+                      <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </div>
+
+                  <span className="text-xs text-muted-foreground">
+                    {notification.message}
+                  </span>
+
+                  <span className="text-[11px] text-muted-foreground/80">
+                    {new Date(notification.created_at).toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </DropdownMenuItem>
+              ))
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 

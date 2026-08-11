@@ -25,6 +25,7 @@ import {
   submitQuizAttemptAnswers,
 } from "@/services/quiz-attempt";
 import { useProfile } from "@/context/profile-context";
+import { studentNotificationService } from "@/services/student-notification";
 
 const letters = ["A", "B", "C", "D", "E", "F"];
 
@@ -146,6 +147,14 @@ export default function QuizPlayerPage() {
       router.push(
         `/dashboard/topics/${topicId}/quiz/result?attempt=${attempt.id}&auto=${auto}`,
       );
+      await studentNotificationService.createStudentNotification({
+        studentId: profile.id,
+        type: "quiz_result",
+        title: "Quiz completed",
+        message: `You scored ${score}% on ${quiz.title}.`,
+        courseId: course?.id,
+        link: `/dashboard/courses/${course?.id}`,
+      });
     } catch (error) {
       console.error(error);
       setSubmitted(false);

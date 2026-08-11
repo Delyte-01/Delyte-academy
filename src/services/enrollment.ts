@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { TABLES } from "@/constants/database";
 import { Enrollment, EnrollStudentData } from "@/types/enrollment";
+import { notificationService } from "./notification";
 
 const supabase = createClient();
 
@@ -39,6 +40,31 @@ class EnrollmentService {
 
     if (error) throw error;
 
+
+     // Get student and course info for the notification
+  const [{ data: profile }, { data: course }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", studentId)
+      .single(),
+    supabase
+      .from("courses")
+      .select("title")
+      .eq("id", courseId)
+      .single(),
+  ]);
+
+  const studentName =
+    profile?.full_name || profile?.email || "A student";
+
+  await notificationService.createAdminNotification({
+    type: "enrollment",
+    title: "New student enrolled",
+    message: `${studentName} enrolled in ${course?.title ?? "a course"}`,
+    courseId,
+    link: `/admin/courses/${courseId}`,
+  });
     return data as Enrollment;
   }
 

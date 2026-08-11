@@ -1,8 +1,15 @@
 import { TABLES } from "@/constants/database";
 import { createClient } from "@/lib/supabase/client";
 
-import { CreateTopicData, Topic, TopicStatus, UpdateTopicData } from "@/types/topic";
+import {
+  CreateTopicData,
+  Topic,
+  TopicStatus,
+  UpdateTopicData,
+} from "@/types/topic";
 import slugify from "slugify";
+import { notificationService } from "./notification";
+import { studentNotificationService } from "./student-notification";
 
 const supabase = createClient();
 
@@ -32,7 +39,7 @@ async function createTopic({
     throw new Error("Unauthorized");
   }
 
-  const { data, error } = await supabase
+  const { data: topic, error } = await supabase
     .from(TABLES.TOPICS)
     .insert({
       course_id: courseId,
@@ -46,17 +53,11 @@ async function createTopic({
       estimated_time: estimatedTime,
       status,
       content: content ?? "",
-
       summary: summary ?? "",
-
       objectives: objectives ?? [],
-
       prerequisites: prerequisites ?? [],
-
       video_url: video_url ?? "",
-
       external_links: external_links ?? [],
-
       attachments: attachments ?? [],
     })
     .select()
@@ -64,7 +65,34 @@ async function createTopic({
 
   if (error) throw error;
 
-  return data;
+  // Create admin notification (do not fail topic creation if notification fails)
+  try {
+    const { data: course } = await supabase
+      .from(TABLES.COURSES)
+      .select("title")
+      .eq("id", courseId)
+      .single();
+
+    await notificationService.createAdminNotification({
+      type: "topic_added",
+      title: "New topic added",
+      message: `${topic.title} was added to ${course?.title ?? "a course"}.`,
+      courseId,
+      link: `/admin/courses/${courseId}?tab=content`,
+    });
+
+    await studentNotificationService.notifyEnrolledStudents({
+      courseId,
+      type: "topic_added",
+      title: "New topic added",
+      message: `${topic.title} has been added to ${course?.title ?? "your course"}.`,
+      link: `/dashboard/courses/${courseId}`,
+    });
+  } catch (notificationError) {
+    console.error("Failed to create admin notification:", notificationError);
+  }
+
+  return topic;
 }
 
 async function getTopicsByCourse(courseId: string) {

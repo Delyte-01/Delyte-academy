@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/client";
 import { TABLES } from "@/constants/database";
 
 import type { Quiz, CreateQuizData, UpdateQuizData } from "@/types/quiz";
+import { notificationService } from "./notification";
+import { studentNotificationService } from "./student-notification";
 
 const supabase = createClient();
 
@@ -22,27 +24,16 @@ async function createQuiz(data: CreateQuizData) {
     .from(TABLES.QUIZZES)
     .insert({
       topic_id: data.topicId,
-
       title: data.title,
-
       description: data.description,
-
       instructions: data.instructions,
-
       passing_score: data.passingScore,
-
       time_limit: data.timeLimit,
-
       attempt_limit: data.attemptLimit,
-
       shuffle_questions: data.shuffleQuestions,
-
       shuffle_options: data.shuffleOptions,
-
       show_results: data.showResults,
-
       require_passing_score: data.requirePassingScore,
-
       status: data.status,
     })
     .select()
@@ -50,9 +41,35 @@ async function createQuiz(data: CreateQuizData) {
 
   if (error) throw error;
 
+  // Create admin notification (do not fail quiz creation if notification fails)
+  try {
+    const { data: topic } = await supabase
+      .from(TABLES.TOPICS)
+      .select("title, course_id")
+      .eq("id", data.topicId)
+      .single();
+
+    await notificationService.createAdminNotification({
+      type: "quiz_added",
+      title: "New quiz added",
+      message: `${quiz.title} was added to ${topic?.title ?? "a topic"}.`,
+      courseId: topic?.course_id ?? null,
+      link: `/admin/topics/${data.topicId}/quiz`,
+    });
+
+    await studentNotificationService.notifyEnrolledStudents({
+      courseId: topic?.course_id,
+      type: "quiz_added",
+      title: "New quiz available",
+      message: `${quiz.title} is now available in ${topic?.title}.`,
+      link: `/dashboard/courses/${topic?.course_id}`,
+    });
+  } catch (notificationError) {
+    console.error("Failed to create admin notification:", notificationError);
+  }
+
   return quiz as Quiz;
 }
-
 async function updateQuiz(data: UpdateQuizData) {
   const { data: quiz, error } = await supabase
     .from(TABLES.QUIZZES)
