@@ -34,11 +34,7 @@ const FEATURES: Feature[] = [
     title: "Personalized learning paths",
     desc: "Courses and study materials tailored to your specific exam type, level, and learning style.",
   },
-  {
-    icon: PlayCircle,
-    title: "Live sessions & webinars",
-    desc: "Join expert-led live study sessions and interactive webinars for key subjects.",
-  },
+
   {
     icon: BarChart2,
     title: "Student dashboard",
@@ -75,7 +71,7 @@ export function FeaturesSection() {
             improvementRef.current,
             successRef.current,
           ],
-          { clearProps: "all", opacity: 1 }
+          { clearProps: "all", opacity: 1 },
         );
         gsap.set(successBarRef.current, { scaleX: 1 });
         if (improvementValueRef.current)
@@ -139,7 +135,7 @@ export function FeaturesSection() {
         tl.to(
           ".feat-eyebrow",
           { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
-          "-=0.9"
+          "-=0.9",
         )
           .to(
             ".feat-line",
@@ -150,12 +146,12 @@ export function FeaturesSection() {
               stagger: 0.1,
               ease: "expo.out",
             },
-            "-=0.35"
+            "-=0.35",
           )
           .to(
             ".feat-copy",
             { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
-            "-=0.55"
+            "-=0.55",
           )
           .to(
             ".feat-item",
@@ -166,12 +162,12 @@ export function FeaturesSection() {
               stagger: 0.12,
               ease: "power3.out",
             },
-            "-=0.4"
+            "-=0.4",
           )
           .to(
             ".feat-icon-chip",
             { scale: 1, duration: 0.45, stagger: 0.12, ease: "back.out(1.8)" },
-            "-=0.7"
+            "-=0.7",
           );
 
         // ---- Floating stat cards: pop in, then idle float, then count up ----
@@ -179,11 +175,11 @@ export function FeaturesSection() {
           tl.to(
             improvementRef.current,
             { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" },
-            "-=0.9"
+            "-=0.9",
           ).to(
             successRef.current,
             { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" },
-            "-=0.45"
+            "-=0.45",
           );
         } else {
           tl.to(
@@ -195,7 +191,7 @@ export function FeaturesSection() {
               stagger: 0.1,
               ease: "power3.out",
             },
-            "-=0.3"
+            "-=0.3",
           );
         }
 
@@ -209,7 +205,7 @@ export function FeaturesSection() {
             onUpdate: () => {
               if (improvementValueRef.current) {
                 improvementValueRef.current.textContent = `+${counter.val.toFixed(
-                  1
+                  1,
                 )}%`;
               }
             },
@@ -231,7 +227,7 @@ export function FeaturesSection() {
             onUpdate: () => {
               if (successCopyRef.current) {
                 successCopyRef.current.textContent = `${Math.round(
-                  successCounter.val
+                  successCounter.val,
                 )}% above average`;
               }
             },
@@ -317,7 +313,7 @@ export function FeaturesSection() {
 
       return () => mm.revert();
     },
-    { scope: sectionRef }
+    { scope: sectionRef },
   );
 
   return (
@@ -423,8 +419,8 @@ export function FeaturesSection() {
                 className="feat-copy mt-3 text-sm leading-relaxed"
                 style={{ color: SLATE }}
               >
-                Delyte Academy brings together everything you need for exam success in
-                one seamless platform.
+                Delyte Academy brings together everything you need for exam
+                success in one seamless platform.
               </p>
             </div>
 

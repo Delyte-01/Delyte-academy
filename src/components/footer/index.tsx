@@ -36,20 +36,20 @@ const HAIRLINE = "rgba(255,255,255,0.08)";
 
 const QUICK_LINKS: [string, string][] = [
   ["/", "Home"],
-  ["/dashboard", "Courses"],
-  ["/dashboard/progress", "Progress tracker"],
-  ["/admin", "Admin panel"],
+  ["/dashboard", "Dashboard"],
+  ["/dashboard/courses", "Courses"],
+  ["/dashboard/progress", "Progress"],
   ["/login", "Sign in"],
-  ["/signup", "Register"],
+  ["/signup", "Create account"],
 ];
 
 const SUBJECTS = [
-  "Mathematics",
-  "English language",
-  "Biology",
-  "Physics",
-  "Chemistry",
-  "Economics",
+  "Introduction to Internet",
+  "Mathematics Fundamentals",
+  "English Language",
+  "Biology Basics",
+  "Physics Essentials",
+  "Chemistry Foundations",
 ];
 
 // const SOCIALS = [Twitter, Facebook, Instagram, Linkedin, Youtube];
@@ -245,7 +245,7 @@ export function Footer() {
                 className="flex items-center gap-2 text-sm font-semibold text-white transition-colors hover:text-blue-400"
               >
                 <Phone className="h-3.5 w-3.5" style={{ color: BLUE }} />
-                +234 701 234 5678
+                +234 8139760048
               </a>
               <a
                 href="mailto:delyte780@gmail.com"
@@ -262,23 +262,20 @@ export function Footer() {
               <h2 className="max-w-sm text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
                 <span className="block overflow-hidden">
                   <span className="foot-line inline-block">
-                    Start your exam prep
+                    Learn smarter with
                   </span>
                 </span>
                 <span className="block overflow-hidden">
-                  <span className="foot-line inline-block">
-                    journey <span style={{ color: BLUE }}>today</span>
-                  </span>
+                  <span className="foot-line inline-block">Delyte Academy</span>
                 </span>
               </h2>
               <p
                 className="foot-reveal max-w-xs text-sm leading-relaxed"
                 style={{ color: MUTED }}
               >
-                Get study tips, new course drops, and exam-prep resources —
-                straight to your inbox.
+                Get updates on new courses, quizzes, announcements, and learning
+                resources delivered directly to your inbox.
               </p>
-
               <form
                 onSubmit={handleSubscribe}
                 className="foot-reveal group flex w-full max-w-sm items-center gap-2 rounded-full border p-1.5 pl-5 transition-colors duration-200 focus-within:border-white/40"
@@ -355,8 +352,9 @@ export function Footer() {
               className="max-w-xs text-sm leading-relaxed"
               style={{ color: MUTED }}
             >
-              A cutting-edge learning platform offering comprehensive study
-              tools to help students gain skills, pass exams, and achieve more.
+              Delyte Academy is a web-based learning platform that helps
+              students study smarter through structured courses, CBT-style
+              quizzes, progress tracking, and personalized learning tools.
             </p>
             <div
               className="flex items-start gap-2 text-sm"
@@ -366,7 +364,7 @@ export function Footer() {
                 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0"
                 style={{ color: BLUE }}
               />
-              <span>123 Education Avenue, Lagos, Nigeria</span>
+              <span>Lagos, Nigeria (Remote-first)</span>
             </div>
           </div>
 
@@ -398,7 +396,7 @@ export function Footer() {
               {SUBJECTS.map((s) => (
                 <li key={s}>
                   <Link
-                    href="/dashboard/courses/math-101"
+                    href="/dashboard/courses"
                     className="group flex items-center gap-2 transition-colors hover:text-white"
                     style={{ color: MUTED }}
                   >

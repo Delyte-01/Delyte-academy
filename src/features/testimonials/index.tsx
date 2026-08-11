@@ -16,53 +16,53 @@ const GOLD = "#F5A623";
 
 const TESTIMONIALS = [
   {
-    name: "Chiamaka O.",
-    role: "WAEC Candidate",
+    name: "Chiamaka Okeke",
+    role: "SS3 Student, Enugu",
     quote:
-      "Delyte Academy helped me score 8 A1s in WAEC. The past questions and study guides are incredibly detailed and easy to understand.",
+      "The lessons are broken down in a way that is easy to follow, and the practice questions helped me study more consistently. I especially liked being able to learn topic by topic instead of feeling overwhelmed.",
     avatar:
       "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
   },
   {
-    name: "David A.",
-    role: "JAMB Aspirant",
+    name: "David Adebayo",
+    role: "JAMB Candidate, Lagos",
     quote:
-      "The CBT mock tests are exactly like the real JAMB exam. I improved my score by 50+ points, genuinely life-changing for exam prep.",
+      "The CBT mock tests felt very similar to what I expected from the actual exam. The timed practice sessions helped me improve my speed and confidence before writing my exam.",
     avatar:
       "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=100",
   },
   {
-    name: "Fatima M.",
-    role: "University Student",
+    name: "Fatima Musa",
+    role: "100-Level Student, Abuja",
     quote:
-      "The progress tracking feature helped me see exactly where I was weak and focus my time. This platform inspired me to love learning.",
+      "I used Delyte Academy to revise foundational topics before resuming at the university. The progress tracking made it easy to see what I had completed and what I still needed to work on.",
     avatar:
       "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100",
   },
-  {
-    name: "Emeka N.",
-    role: "SS3 Student",
-    quote:
-      "I never thought I could keep up with revision on my own, but the study guides gave me the structure and confidence to take exams head-on.",
-    avatar:
-      "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100",
-  },
-  {
-    name: "Amara L.",
-    role: "NECO Candidate",
-    quote:
-      "The past questions bank gave me exactly what I needed to prepare properly. Thoughtful and practical from day one.",
-    avatar:
-      "https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=100",
-  },
-  {
-    name: "Kemi S.",
-    role: "University 200L",
-    quote:
-      "This platform didn't just help me pass — it changed how I study. I actually look forward to revision now.",
-    avatar:
-      "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
-  },
+  // {
+  //   name: "Emeka N.",
+  //   role: "SS3 Student",
+  //   quote:
+  //     "I never thought I could keep up with revision on my own, but the study guides gave me the structure and confidence to take exams head-on.",
+  //   avatar:
+  //     "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100",
+  // },
+  // {
+  //   name: "Amara L.",
+  //   role: "NECO Candidate",
+  //   quote:
+  //     "The past questions bank gave me exactly what I needed to prepare properly. Thoughtful and practical from day one.",
+  //   avatar:
+  //     "https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=100",
+  // },
+  // {
+  //   name: "Kemi S.",
+  //   role: "University 200L",
+  //   quote:
+  //     "This platform didn't just help me pass — it changed how I study. I actually look forward to revision now.",
+  //   avatar:
+  //     "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
+  // },
 ];
 
 export function Testimonials() {

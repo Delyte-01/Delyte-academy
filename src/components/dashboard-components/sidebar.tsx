@@ -203,7 +203,7 @@ export default function Sidebar({ isOpen, onClose, onSignOut }: SidebarProps) {
         {/* Logo */}
         <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border/60 px-4">
           <Link
-            href="/admin"
+            href="/dashboard"
             className="group flex items-center gap-2.5 overflow-hidden"
           >
             <div>

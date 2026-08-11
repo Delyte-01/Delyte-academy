@@ -86,7 +86,7 @@ function ProgressRing({ percent, label }: { percent: number; label: string }) {
   );
 }
 
-export function Hero() {
+export function Hero({ loaderFinished }: { loaderFinished: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
@@ -98,6 +98,8 @@ export function Hero() {
 
   useGSAP(
     () => {
+      if (!loaderFinished) return;
+
       const mm = gsap.matchMedia();
       let safetyTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -180,7 +182,7 @@ export function Hero() {
                   ...ctaChildren,
                   socialRef.current,
                 ],
-                { clearProps: "transform,opacity" }
+                { clearProps: "transform,opacity" },
               );
             },
           });
@@ -195,22 +197,22 @@ export function Hero() {
                 stagger: 0.12,
                 ease: "expo.out",
               },
-              "-=0.3"
+              "-=0.3",
             )
             .to(
               paragraphRef.current,
               { y: 0, opacity: 1, duration: 0.7 },
-              "-=0.55"
+              "-=0.55",
             )
             .to(
               ctaChildren,
               { y: 0, opacity: 1, duration: 0.6, stagger: 0.1 },
-              "-=0.45"
+              "-=0.45",
             )
             .to(
               socialRef.current,
               { y: 0, opacity: 1, duration: 0.6 },
-              "-=0.35"
+              "-=0.35",
             );
 
           if (isDesktop) {
@@ -224,17 +226,17 @@ export function Hero() {
                 duration: 1.4,
                 ease: "expo.inOut",
               },
-              "-=0.6"
+              "-=0.6",
             )
               .to(
                 ringWrapRef.current,
                 { scale: 1, opacity: 1, duration: 0.7, ease: "back.out(1.7)" },
-                "-=0.55"
+                "-=0.55",
               )
               .to(
                 flameWrapRef.current,
                 { scale: 1, opacity: 1, duration: 0.7, ease: "back.out(1.7)" },
-                "-=0.5"
+                "-=0.5",
               );
 
             // Idle float loop, started only after landing so it never fights the entrance.
@@ -258,13 +260,13 @@ export function Hero() {
             // Magnetic CTAs.
             const buttons = ctaRef.current
               ? (Array.from(
-                  ctaRef.current.querySelectorAll("a")
+                  ctaRef.current.querySelectorAll("a"),
                 ) as HTMLElement[])
               : [];
-           const cleanups: Array<() => void> = [
-             () => floatRing.kill(),
-             () => floatFlame.kill(),
-           ];
+            const cleanups: Array<() => void> = [
+              () => floatRing.kill(),
+              () => floatFlame.kill(),
+            ];
 
             buttons.forEach((btn) => {
               const xTo = gsap.quickTo(btn, "x", {
@@ -339,13 +341,13 @@ export function Hero() {
           tl.to(
             imageCardRef.current,
             { y: 0, opacity: 1, duration: 0.6 },
-            "-=0.3"
+            "-=0.3",
           ).to(
             ringWrapRef.current,
             { y: 0, opacity: 1, duration: 0.5 },
-            "-=0.35"
+            "-=0.35",
           );
-        }
+        },
       );
 
       return () => {
@@ -353,7 +355,7 @@ export function Hero() {
         mm.revert();
       };
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [loaderFinished] },
   );
 
   return (
@@ -431,7 +433,6 @@ export function Hero() {
                 href="/dashboard/courses"
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-7 py-3.5 text-[15px] font-semibold transition-colors hover:border-blue-300 hover:bg-blue-50 active:scale-[0.97] disabled:cursor-not-allowed"
                 style={{ color: INK }}
-                
               >
                 <PlayCircle className="h-4 w-4" style={{ color: BLUE }} />
                 Try a mock test

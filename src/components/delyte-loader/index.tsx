@@ -287,12 +287,22 @@ export default function DelyteLoaderDepth({ onComplete }: DelyteLoaderProps) {
           .to(glow, { opacity: 0, duration: 0.9, ease: easeSmooth }, "exit")
           .to(
             curtainTop,
-            { yPercent: -100, duration: 1.05, ease: easeIn },
+            {
+              yPercent: -100,
+              duration: 1.05,
+              ease: easeIn,
+              onComplete: onComplete,
+            },
             "exit+=0.35",
           )
           .to(
             curtainBottom,
-            { yPercent: 100, duration: 1.05, ease: easeIn },
+            {
+              yPercent: 100,
+              duration: 1.05,
+              ease: easeIn,
+              onComplete: onComplete,
+            },
             "exit+=0.35",
           );
 

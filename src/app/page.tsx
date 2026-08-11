@@ -14,16 +14,15 @@ import { Testimonials } from "@/features/testimonials";
 import { useState } from "react";
 
 export default function Home() {
-const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(false);
   return (
     <>
-  
-      {loading && <DelyteLoader onComplete={() => setLoading(false)} />}
+      {!loading && <DelyteLoader onComplete={() => setLoading(true)} />}
       <main className="overflow-x-hidden">
         <Navbar />
-        <Hero />
+        <Hero loaderFinished={loading} />
         <StatsStrip />
-        <CoursesSection  />
+        <CoursesSection />
         <FeaturesSection />
         <Testimonials />
         <FAQ />

@@ -16,28 +16,32 @@ const TINT = "#F8FAFC";
 
 const FAQS = [
   {
-    q: "Is Delyte Academy really free to use?",
-    a: "Yes. Every course, study guide, past question, and CBT mock test is free — no card required. We may introduce optional premium features later, but the core platform stays free for students.",
+    q: "Is Delyte Academy free to use?",
+    a: "Yes. Students can create an account, enroll in available courses, study topics, and take quizzes for free. We may introduce optional premium features in the future, but the current learning experience is free.",
   },
   {
-    q: "Which exams does Delyte Academy cover?",
-    a: "We cover WAEC, NECO, and JAMB prep, along with university-level course support. New subjects and past question sets are added regularly based on what students request most.",
+    q: "What can I do on Delyte Academy right now?",
+    a: "You can enroll in courses, study organized topics, take quizzes, track your progress, and receive notifications when new learning content becomes available.",
   },
   {
     q: "How does progress tracking work?",
-    a: "Every test you take is scored automatically and saved to your profile. You can see your score history per course, spot which topics you're weakest in, and track improvement over time.",
+    a: "Your quiz attempts and learning activity are saved to your account. You can monitor completed topics, quiz scores, and overall progress within each enrolled course from your dashboard.",
   },
   {
-    q: "Are the CBT tests similar to the real exam?",
-    a: "Yes — our CBT tests mirror the timing, format, and question style of the real JAMB and WAEC computer-based tests, so you build familiarity with the actual exam experience, not just the content.",
+    q: "Can I practice CBT-style quizzes?",
+    a: "Yes. Quizzes are delivered in a computer-based testing format with timed attempts and automatic scoring, helping you build familiarity with digital exam environments.",
   },
   {
-    q: "Can I access Delyte Academy on my phone?",
-    a: "Yes, Delyte Academy works on any device with a browser — phone, tablet, or laptop. There's nothing to install, and your progress stays synced to your account either way.",
+    q: "Will I receive updates when new content is added?",
+    a: "Yes. When instructors publish new courses, topics, quizzes, or announcements, enrolled students receive notifications directly in their dashboard so they don't miss important updates.",
   },
   {
-    q: "Do I need an account to start practicing?",
-    a: "You can browse study guides without one, but you'll need a free account to take CBT tests and save your progress — that's how we track your scores over time.",
+    q: "Can I use Delyte Academy on my phone?",
+    a: "Absolutely. Delyte Academy is designed to work in any modern web browser, so you can study from your phone, tablet, or laptop without installing an app.",
+  },
+  {
+    q: "Do I need an account to start learning?",
+    a: "Yes. A free account is required to enroll in courses, take quizzes, save your progress, and receive personalized notifications and performance tracking.",
   },
 ];
 

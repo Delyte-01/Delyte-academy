@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Play, BookOpen, Users, Star } from "lucide-react";
+import { ArrowLeft,  BookOpen, Users, Star, BookCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,8 +142,8 @@ export function CourseHero({ course }: { course: Course }) {
               className="w-full bg-white text-emerald-700 hover:bg-emerald-50"
               size="lg"
             >
-              <Play className="mr-2 h-4 w-4" />
-              Continue Learning
+              <BookCheck className="mr-2 h-4 w-4" />
+              Course Enrolled
             </Button>
           ) : (
             <Button
