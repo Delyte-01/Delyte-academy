@@ -105,18 +105,14 @@ export function CourseHero({ course }: { course: Course }) {
           <div className="flex flex-wrap gap-5 text-sm text-emerald-100">
             <span className="flex items-center gap-1.5">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-white">3</span> rating
+              <span className="font-semibold text-white">4.5</span> rating
             </span>
             <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
               {/* {course.studentsCount.toLocaleString()} */}
               100 students
             </span>
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4" />
-              {/* {course.totalTopics} */}
-              topics
-            </span>
+           
           </div>
         </div>
 

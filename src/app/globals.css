@@ -76,7 +76,7 @@
   --secondary-foreground: oklch(0.94 0.008 165);
 
   --muted: oklch(0.19 0.018 165);
-  --muted-foreground: oklch(0.72 0.02 165);
+    --muted-foreground: oklch(0.84 0.015 165);
 
   /* Accent for hover states */
   --accent: oklch(0.255 0.03 165);
@@ -144,20 +144,53 @@
   h6 {
     font-family: var(--font-heading);
   }
-  input,
+  /* Better global input styling */
+   input,
   textarea,
   select {
     color: var(--foreground);
     background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.75rem 0.875rem;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
   }
 
   input::placeholder,
   textarea::placeholder {
     color: var(--muted-foreground);
+    /* opacity: 1; */
+  }
+
+  input:hover,
+  textarea:hover,
+  select:hover {
+    border-color: var(--ring);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 25%, transparent);
   }
 
   input:disabled,
-  textarea:disabled {
+  textarea:disabled,
+  select:disabled {
     color: var(--muted-foreground);
+    background-color: var(--muted);
+    border-color: var(--border);
+    cursor: not-allowed;
+  }
+
+  input:-webkit-autofill,
+  textarea:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    transition: background-color 9999s ease-in-out 0s;
   }
 }
