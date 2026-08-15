@@ -7,14 +7,14 @@ import gsap from "gsap";
 import {
   LayoutDashboard,
   BookOpen,
-  ListTree,
-  ClipboardList,
-  HelpCircle,
-  FileText,
+  // ListTree,
+  // ClipboardList,
+  // HelpCircle,
+  // FileText,
   Users,
-  Megaphone,
-  BarChart3,
-  User,
+  // Megaphone,
+  // BarChart3,
+  // User,
   Settings,
   ChevronLeft,
   GraduationCap,
@@ -24,18 +24,17 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-
 export const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  { href: "/admin/topics", label: "Topics", icon: ListTree },
-  { href: "/admin/practice-sets", label: "Practice Sets", icon: ClipboardList },
-  { href: "/admin/questions", label: "Questions", icon: HelpCircle },
-  { href: "/admin/resources", label: "Resources (PDFs)", icon: FileText },
+  // { href: "/admin/topics", label: "Topics", icon: ListTree },
+  // { href: "/admin/practice-sets", label: "Practice Sets", icon: ClipboardList },
+  // { href: "/admin/questions", label: "Questions", icon: HelpCircle },
+  // { href: "/admin/resources", label: "Resources (PDFs)", icon: FileText },
   { href: "/admin/students", label: "Students", icon: Users },
-  { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/profile", label: "Profile", icon: User },
+  // { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  // { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  // { href: "/admin/profile", label: "Profile", icon: User },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -52,7 +51,7 @@ export default function AdminSidebar({
   mobileOpen,
   onCloseMobile,
   onToggleCollapse,
-  handleSignOut
+  handleSignOut,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
@@ -92,7 +91,7 @@ export default function AdminSidebar({
   // Staggered entrance for nav items on first mount
   useEffect(() => {
     const items = gsap.utils.toArray<HTMLElement>(
-      navRef.current?.querySelectorAll("[data-nav-item]") ?? []
+      navRef.current?.querySelectorAll("[data-nav-item]") ?? [],
     );
     gsap.fromTo(
       items,
@@ -104,7 +103,7 @@ export default function AdminSidebar({
         stagger: 0.035,
         ease: "power2.out",
         delay: 0.05,
-      }
+      },
     );
   }, []);
 
@@ -140,7 +139,7 @@ export default function AdminSidebar({
           collapsed ? "lg:w-[76px]" : "lg:w-[268px]",
           mobileOpen
             ? "w-[268px] translate-x-0 shadow-2xl"
-            : "-translate-x-full w-[268px] lg:translate-x-0"
+            : "-translate-x-full w-[268px] lg:translate-x-0",
         )}
       >
         {/* Brand */}
@@ -234,13 +233,13 @@ export default function AdminSidebar({
                   active
                     ? "text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
-                  collapsed && "lg:justify-center lg:px-0"
+                  collapsed && "lg:justify-center lg:px-0",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] flex-shrink-0 transition-transform duration-200",
-                    active && "scale-110"
+                    active && "scale-110",
                   )}
                 />
                 {!collapsed && <span className="truncate">{label}</span>}
@@ -260,7 +259,7 @@ export default function AdminSidebar({
             href="/dashboard"
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground",
-              collapsed && "lg:justify-center lg:px-0"
+              collapsed && "lg:justify-center lg:px-0",
             )}
             title={collapsed ? "Student View" : undefined}
           >
@@ -271,13 +270,12 @@ export default function AdminSidebar({
             onClick={handleSignOut}
             className={cn(
               "mt-1 flex items-center gap-3 border w-full justify-center rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive",
-              collapsed && "lg:justify-center lg:px-0"
+              collapsed && "lg:justify-center lg:px-0",
             )}
             title={collapsed ? "Logout" : undefined}
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
-
           </button>
         </div>
 

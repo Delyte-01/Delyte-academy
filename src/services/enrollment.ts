@@ -40,31 +40,36 @@ class EnrollmentService {
 
     if (error) throw error;
 
+    // Fire-and-forget admin notification.
+    // Enrollment should never fail because a notification fails.
+    (async () => {
+      try {
+        const [{ data: profile }, { data: course }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", studentId)
+            .single(),
+          supabase.from("courses").select("title").eq("id", courseId).single(),
+        ]);
 
-     // Get student and course info for the notification
-  const [{ data: profile }, { data: course }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", studentId)
-      .single(),
-    supabase
-      .from("courses")
-      .select("title")
-      .eq("id", courseId)
-      .single(),
-  ]);
+        const studentName = profile?.full_name || profile?.email || "A student";
 
-  const studentName =
-    profile?.full_name || profile?.email || "A student";
+        await notificationService.createAdminNotification({
+          type: "enrollment",
+          title: "New student enrolled",
+          message: `${studentName} enrolled in ${course?.title ?? "a course"}`,
+          courseId,
+          link: `/admin/courses/${courseId}`,
+        });
+      } catch (notificationError) {
+        console.error(
+          "Admin notification failed after successful enrollment:",
+          notificationError,
+        );
+      }
+    })();
 
-  await notificationService.createAdminNotification({
-    type: "enrollment",
-    title: "New student enrolled",
-    message: `${studentName} enrolled in ${course?.title ?? "a course"}`,
-    courseId,
-    link: `/admin/courses/${courseId}`,
-  });
     return data as Enrollment;
   }
 

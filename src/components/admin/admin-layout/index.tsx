@@ -8,32 +8,29 @@ import AdminTopbar from "@/components/admin/admin-topbar";
 import { authService } from "@/services/auth";
 import { toast } from "sonner";
 
-
 export default function AdminLayoutClient({
   children,
 }: {
   children: React.ReactNode;
-  }) {
-  
+}) {
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    try {
+      const { error } = await authService.logout();
 
-    const handleSignOut = async () => {
-      try {
-        const { error } = await authService.logout();
+      if (error) throw error;
 
-        if (error) throw error;
+      toast.success("Logged out successfully.");
 
-        toast.success("Logged out successfully.");
-
-        router.replace("/login");
-        router.refresh();
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to log out."
-        );
-      }
-    };
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to log out.",
+      );
+    }
+  };
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,7 +55,7 @@ export default function AdminLayoutClient({
         y: 0,
         duration: 0.4,
         ease: "power2.out",
-      }
+      },
     );
   }, [pathname]);
 

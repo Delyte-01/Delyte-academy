@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft,  BookOpen, Users, Star, BookCheck } from "lucide-react";
+import { ArrowLeft, Users, Star, BookCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import { useEnrollment } from "@/context/enrollment-context";
 export function CourseHero({ course }: { course: Course }) {
   const { user } = useAuth();
   const router = useRouter();
-  const { enrollments, enroll, saving } = useEnrollment();
+  const { enrollments, enroll, saving, refresh } = useEnrollment();
   const enrollment = enrollments.find((e) => e.course_id === course.id);
   const isEnrolled = Boolean(enrollment);
   const progress =
@@ -31,13 +31,11 @@ export function CourseHero({ course }: { course: Course }) {
 
     try {
       await enroll(course.id);
+      await refresh();
 
       toast.success("You are now enrolled in this course!");
 
-      // Redirect directly into the course after enrollment
       router.push(linkHref);
-
-      console.log("Current user:", user);
     } catch (error) {
       console.error(error);
       toast.error("Unable to enroll in this course.");
@@ -112,7 +110,6 @@ export function CourseHero({ course }: { course: Course }) {
               {/* {course.studentsCount.toLocaleString()} */}
               100 students
             </span>
-           
           </div>
         </div>
 
