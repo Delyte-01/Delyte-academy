@@ -50,7 +50,19 @@ async function getCourses() {
 
   const { data, error } = await supabase
     .from(TABLES.COURSES)
-    .select("*")
+    .select(
+      `
+      *,
+      creator:profiles!courses_created_by_fkey (
+        id,
+        full_name,
+        email,
+        username,
+        avatar_url,
+        role
+      )
+    `,
+    )
     .order("created_at", {
       ascending: false,
     });
@@ -65,7 +77,19 @@ async function getCourseById(id: string) {
 
   const { data, error } = await supabase
     .from(TABLES.COURSES)
-    .select("*")
+    .select(
+      `
+      *,
+      creator:profiles!courses_created_by_fkey (
+        id,
+        full_name,
+        email,
+        username,
+        avatar_url,
+        role
+      )
+    `,
+    )
     .eq("id", id)
     .single();
 
@@ -134,12 +158,12 @@ async function publishCourse(courseId: string) {
   });
 
   await studentNotificationService.notifyEnrolledStudents({
-  courseId: course.id,
-  type: "course_published",
-  title: "Course published",
-  message: `${course.title} is now available to study.`,
-  link: `/dashboard/courses/${course.id}`,
-});
+    courseId: course.id,
+    type: "course_published",
+    title: "Course published",
+    message: `${course.title} is now available to study.`,
+    link: `/dashboard/courses/${course.id}`,
+  });
   return course;
 }
 

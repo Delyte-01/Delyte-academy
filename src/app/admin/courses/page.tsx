@@ -30,15 +30,12 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const { students } = useAdminStudents();
 
-const enrolledStudents = students.filter(
-  (student) => student.enrolledCourses > 0,
-).length;
+  const enrolledStudents = students.filter(
+    (student) => student.enrolledCourses > 0,
+  ).length;
 
-// const notEnrolledStudents = students.filter(
-//   (student) => student.enrolledCourses === 0,
-// ).length;
   
-  console.log(loading)
+  console.log(loading);
 
   const fetchCourses = async () => {
     try {
@@ -173,51 +170,71 @@ const enrolledStudents = students.filter(
           actionLabel="New Course"
         />
       ) : (
-        <div ref={gridRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => {
-            // const category =
-            //   categoryStyles[course.category] ?? categoryStyles.Science;
-            // const progress = Math.round(
-            //   (course.questions / maxQuestions) * 100
-            // );
-
-            return (
-              <Link
-                key={course.id}
-                href={`/admin/courses/${course.id}`}
-                className="block"
+        <div ref={gridRef} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {courses.map((course) => (
+            <Link
+              key={course.id}
+              href={`/admin/courses/${course.id}`}
+              className="block"
+            >
+              <Card
+                data-course-card
+                className="group relative overflow-hidden border-border/50 transition-colors duration-150 hover:border-primary/40"
               >
-                <Card
-                  // key={course.title}
-                  data-course-card
-                  className="group cursor-pointer overflow-hidden border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 capitalize"
-                >
-                  <CourseThumbnail src={course.thumbnail} alt={course.title} />
+                <CourseThumbnail src={course.thumbnail} alt={course.title} />
 
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="min-w-0">
-                        <h2 className="uppercase extra-bold">
-                          {course.course_code}
-                        </h2>
-                        <CardTitle className="truncate text-sm font-bold mt-1">
-                          {course.title}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-2 truncate">
-                          {course.description}
-                        </p>
-                      </div>
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {course.course_code}
+                    </p>
+                    <CardTitle className="mt-0.5 truncate text-sm font-bold">
+                      {course.title}
+                    </CardTitle>
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {course.description}
+                    </p>
+
+                    <div className="mt-4 flex items-center gap-2">
+                      {course.creator?.avatar_url ? (
+                        <img
+                          src={course.creator.avatar_url}
+                          alt={course.creator.full_name || "Course creator"}
+                          className="h-6 w-6 rounded-full object-cover ring-1 ring-border"
+                        />
+                      ) : (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                          {(course.creator?.full_name ||
+                            course.creator?.email ||
+                            "A")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <p className="truncate text-xs text-muted-foreground">
+                        <span className="text-foreground/80">
+                          {course.creator?.full_name ||
+                            course.creator?.username ||
+                            course.creator?.email ||
+                            "Unknown admin"}
+                        </span>
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="flex flex-shrink-0 items-center gap-1.5">
-                      <Badge
-                        className={cn(
-                          "text-[10px] font-semibold",
-                          statusStyles[course.status],
-                        )}
-                      >
-                        {course.status}
-                      </Badge>
+                  <div className="flex flex-shrink-0 items-center gap-1.5">
+                    <Badge
+                      className={cn(
+                        "text-[10px] font-semibold",
+                        statusStyles[course.status],
+                      )}
+                    >
+                      {course.status}
+                    </Badge>
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
                       <CourseCardMenu
                         status={course.status}
                         onEdit={() =>
@@ -231,16 +248,11 @@ const enrolledStudents = students.filter(
                         }
                       />
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-[width] duration-500" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+                  </div>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
         </div>
       )}
     </AdminPageShell>

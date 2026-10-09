@@ -7,14 +7,7 @@ import gsap from "gsap";
 import {
   LayoutDashboard,
   BookOpen,
-  // ListTree,
-  // ClipboardList,
-  // HelpCircle,
-  // FileText,
   Users,
-  // Megaphone,
-  // BarChart3,
-  // User,
   Settings,
   ChevronLeft,
   GraduationCap,
@@ -23,6 +16,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useProfile } from "@/hooks/useProfile";
+// import { useProfile } from "@/context/profile-context";
 
 export const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -32,6 +27,7 @@ export const navItems = [
   // { href: "/admin/questions", label: "Questions", icon: HelpCircle },
   // { href: "/admin/resources", label: "Resources (PDFs)", icon: FileText },
   { href: "/admin/students", label: "Students", icon: Users },
+  { href: "/admin/admins", label: "Admins", icon: Users },
   // { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   // { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   // { href: "/admin/profile", label: "Profile", icon: User },
@@ -60,12 +56,22 @@ export default function AdminSidebar({
   const chevronRef = useRef<SVGSVGElement>(null);
   const hasAnimatedPill = useRef(false);
 
+  const { profile } = useProfile();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.href === "/admin/students" || item.href === "/admin/admins") {
+      return profile?.role === "super_admin";
+    }
+
+    return true;
+  });
+
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };
 
-  const activeItem = navItems.find((n) => isActive(n.href));
+  const activeItem = visibleNavItems.find((n) => isActive(n.href));
 
   // Track the active nav item with a sliding gradient pill (signature element)
   useLayoutEffect(() => {
@@ -216,7 +222,7 @@ export default function AdminSidebar({
               Management
             </p>
           )}
-          {navItems.map(({ href, label, icon: Icon }) => {
+          {visibleNavItems.map(({ href, label, icon: Icon }) => {
             const active = isActive(href);
             return (
               <Link

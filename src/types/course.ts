@@ -12,6 +12,14 @@ export interface Course {
 
   banner: string | null;
   thumbnail: string | null;
+  creator?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    role: string;
+  };
 }
 
 export interface CreateCourseData {

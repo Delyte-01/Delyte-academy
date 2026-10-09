@@ -1,14 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import {
-  BookOpen,
-  
-  ClipboardList,
-
-  Users,
-  FileBarChart,
-} from "lucide-react";
+import { BookOpen, ClipboardList, Users, FileBarChart } from "lucide-react";
 import gsap from "gsap";
 import { CourseWorkspaceHeader } from "@/components/admin/course-workspace/workspace-header";
 import { StatsBar } from "@/components/admin/course-workspace/stats-bar";
@@ -24,7 +17,7 @@ import { Topic } from "@/types/topic";
 import { courseService } from "@/services/course";
 import { TopicService } from "@/services/topic";
 import { toast } from "sonner";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatReadableDate } from "@/constants/date-format";
 import FullPageLoader from "@/components/loading/Loading";
 import { Quiz } from "@/types/quiz";
@@ -61,17 +54,17 @@ export default function CourseDetailsPage({ params }: PageProps) {
   // Now you can safely access the id
   const id = resolvedParams.id;
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tab = searchParams.get("tab") ?? "overview";
   const [activeTab, setActiveTab] = useState(tab);
   const tabContentRef = useRef<HTMLDivElement>(null);
+  
 
   const [course, setCourse] = useState<Course | null>(null);
 
   const [topics, setTopics] = useState<Topic[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-
- 
 
   const [loading, setLoading] = useState(true);
   const loadData = useCallback(async () => {
@@ -102,9 +95,11 @@ export default function CourseDetailsPage({ params }: PageProps) {
     } catch (error) {
       console.error(error);
       toast.error("Unable to load course");
+       router.replace("/admin/courses");
     } finally {
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -130,11 +125,9 @@ export default function CourseDetailsPage({ params }: PageProps) {
     return null;
   }
 
- const totalTopics = topics.length;
- const totalQuizzes = quizzes.length;
- const totalStudents = enrollments.length;
-
-
+  const totalTopics = topics.length;
+  const totalQuizzes = quizzes.length;
+  const totalStudents = enrollments.length;
 
   const stats = [
     {
@@ -147,7 +140,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
     {
       label: "Quiz Questions",
-      value:totalQuizzes,
+      value: totalQuizzes,
       icon: ClipboardList,
       color: "text-emerald-600",
       bgColor: "bg-emerald-500/10",
@@ -155,13 +148,12 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
     {
       label: "Students",
-      value:totalStudents,
+      value: totalStudents,
       icon: Users,
       color: "text-amber-600",
       bgColor: "bg-amber-500/10",
     },
   ];
-
 
   return (
     <div className="space-y-6">
@@ -192,6 +184,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
             createdAt={formatReadableDate(course.created_at)}
             updatedAt={formatReadableDate(course.updated_at)}
             id={course.id}
+            creator={course.creator}
           />
         )}
         {activeTab === "topics" && (
@@ -199,9 +192,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
         )}
 
         {activeTab === "students" && (
-          <CourseStudentsTab
-            students={enrollments}
-          />
+          <CourseStudentsTab students={enrollments} />
         )}
         {activeTab === "analytics" && (
           <PlaceholderTab

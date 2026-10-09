@@ -42,7 +42,7 @@ import { useEffect, useState } from "react";
 import { enrollmentService } from "@/services/enrollment";
 import { Enrollment } from "@/types/enrollment";
 import Image from "next/image";
-import { getRecentActivity, RecentActivityItem } from "@/services/dashboard";
+import {  RecentActivityItem } from "@/services/dashboard";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 
 const statusConfig: Record<StudentStatus, { className: string }> = {
@@ -301,6 +301,20 @@ export function StudentDetailSheet({
                     )
                   </span>
                 </div>
+                <div className="space-y-3">
+                  <InfoRow
+                    icon={<Phone className="h-4 w-4" />}
+                    label="Phone"
+                    value={student.phone || "Not provided"}
+                  />
+
+                  <InfoRow
+                    icon={<MapPin className="h-4 w-4" />}
+                    label="Country"
+                    value={student.country || "Not provided"}
+                  />
+                </div>
+
                 {student.bio && (
                   <p className="border-t pt-2.5 text-sm text-muted-foreground">
                     {student.bio}
@@ -542,5 +556,27 @@ export function StudentDetailSheet({
         </ScrollArea>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border bg-background p-3">
+      <div className="mt-0.5 text-muted-foreground">{icon}</div>
+
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+
+        <p className="mt-0.5 break-words text-sm font-medium">{value}</p>
+      </div>
+    </div>
   );
 }

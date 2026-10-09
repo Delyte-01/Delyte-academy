@@ -50,8 +50,6 @@ export function useAdminStudents() {
     setStudents((prev) => prev.filter((student) => student.id !== id));
   };
 
-
-
   useEffect(() => {
     const supabase = createClient();
 
@@ -62,7 +60,19 @@ export function useAdminStudents() {
         const { data: profiles, error: profilesError } = await supabase
           .from(TABLES.Profiles)
           .select(
-            "id, full_name, username, email, avatar_url, role, created_at, updated_at",
+            ` id,
+
+ full_name,
+  username,
+  email,
+  avatar_url,
+  role,
+  phone,
+  country,
+  bio,
+  status,
+  created_at,
+  updated_at`,
           )
           .eq("role", "student");
         console.log("PROFILES:", profiles);
@@ -128,46 +138,46 @@ export function useAdminStudents() {
           );
         }
 
-      const rows: AdminStudent[] = (profiles ?? []).map((p: any) => {
-        const enroll = enrollmentMap.get(p.id);
+        const rows: AdminStudent[] = (profiles ?? []).map((p: any) => {
+          const enroll = enrollmentMap.get(p.id);
 
-        const name = p.full_name || "Student";
+          const name = p.full_name || "Student";
 
-        const initials = name
-          .split(" ")
-          .map((n: string) => n[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase();
+          const initials = name
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
 
-        return {
-          id: p.id,
-          full_name: name,
-          username: p.username || "student",
-          email: p.email || "",
-          avatar_url: p.avatar_url,
-          role: p.role,
+          return {
+            id: p.id,
+            full_name: name,
+            username: p.username || "student",
+            email: p.email || "",
+            avatar_url: p.avatar_url,
+            role: p.role,
 
-          phone: p.phone || "",
-          country: p.country || "",
-          bio: p.bio || "",
-          initials,
+            phone: p.phone || "",
+            country: p.country || "",
+            bio: p.bio || "",
+            initials,
 
-          status: "active",
+            status: p.status as StudentStatus,
 
-          enrolledCourses: enroll?.enrolled ?? 0,
-          completedCourses: enroll?.completed ?? 0,
-          progress: enroll?.enrolled
-            ? Math.round((enroll.progress ?? 0) / enroll.enrolled)
-            : 0,
-          averageScore: quizMap.get(p.id) ?? 0,
-          streak: 0,
+            enrolledCourses: enroll?.enrolled ?? 0,
+            completedCourses: enroll?.completed ?? 0,
+            progress: enroll?.enrolled
+              ? Math.round((enroll.progress ?? 0) / enroll.enrolled)
+              : 0,
+            averageScore: quizMap.get(p.id) ?? 0,
+            streak: 0,
 
-          lastActive: formatRelative(p.updated_at || p.created_at),
-          lastLoginAt: p.updated_at || p.created_at,
-          created_at: new Date(p.created_at).toLocaleDateString(),
-        };
-      });
+            lastActive: formatRelative(p.updated_at || p.created_at),
+            lastLoginAt: p.updated_at || p.created_at,
+            created_at: new Date(p.created_at).toLocaleDateString(),
+          };
+        });
 
         setStudents(rows);
       } catch (err) {
@@ -180,5 +190,5 @@ export function useAdminStudents() {
     load();
   }, []);
 
-  return { students, loading, updateStudentLocal, removeStudentLocal, };
+  return { students, loading, updateStudentLocal, removeStudentLocal };
 }

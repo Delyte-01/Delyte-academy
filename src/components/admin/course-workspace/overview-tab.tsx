@@ -14,6 +14,14 @@ interface OverviewTabProps {
   createdAt: string;
   updatedAt: string;
   id: string;
+  creator?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    role: string;
+  };
 }
 
 const avatarPalette = [
@@ -34,7 +42,7 @@ export function OverviewTab({
   code,
   status,
   id,
-  recentActivity,
+  creator,
   createdAt,
   updatedAt,
 }: OverviewTabProps) {
@@ -74,7 +82,8 @@ export function OverviewTab({
     {
       icon: User,
       label: "Created By",
-      value: "Super Admin",
+      value:
+        creator?.full_name || creator?.username || creator?.email || "Unknown",
       color: "text-rose-600",
       bg: "bg-rose-500/10",
     },
