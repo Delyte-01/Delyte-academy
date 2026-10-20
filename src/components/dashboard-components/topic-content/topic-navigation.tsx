@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ClipboardCheck, BookOpen } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ClipboardCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Topic } from "@/types/topic";
 
 interface TopicNavigationProps {
@@ -10,6 +17,9 @@ interface TopicNavigationProps {
   previousTopic: Topic | null;
   nextTopic: Topic | null;
   hasQuiz?: boolean;
+  isCompleted: boolean;
+  completing: boolean;
+  onComplete: () => void;
 }
 
 export function TopicNavigation({
@@ -17,81 +27,119 @@ export function TopicNavigation({
   previousTopic,
   nextTopic,
   hasQuiz = true,
+  isCompleted,
+  completing,
+  onComplete,
 }: TopicNavigationProps) {
   return (
-    <div className="mb-3 flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4">
-      {/* Prev / Next — 2-up grid on mobile, inline on desktop */}
-      <div className="order-1 grid grid-cols-2 gap-2 sm:order-none sm:flex sm:w-auto sm:gap-3">
-        {previousTopic ? (
-          <Button variant="outline" className="w-full sm:w-auto" asChild>
-            <Link href={`/dashboard/topics/${previousTopic.id}`}>
-              <ArrowLeft className="mr-1.5 h-4 w-4 flex-shrink-0" />
-              <span className="truncate">Previous</span>
-            </Link>
-          </Button>
-        ) : (
-          <Button variant="outline" className="w-full sm:w-auto" disabled>
-            <ArrowLeft className="mr-1.5 h-4 w-4 flex-shrink-0" />
-            Previous
-          </Button>
-        )}
-
-        {nextTopic ? (
-          <Button variant="outline" className="w-full sm:hidden" asChild>
-            <Link href={`/dashboard/topics/${nextTopic.id}`}>
-              <span className="truncate">Next</span>
-              <ArrowRight className="ml-1.5 h-4 w-4 flex-shrink-0" />
-            </Link>
-          </Button>
-        ) : (
-          <Button variant="outline" className="w-full sm:hidden" disabled>
-            Next
-            <ArrowRight className="ml-1.5 h-4 w-4 flex-shrink-0" />
-          </Button>
-        )}
-      </div>
-
-      {/* Center actions */}
-      <div className="order-3 flex flex-col gap-2 sm:order-none sm:flex-row">
-        <Button variant="ghost" className="w-full sm:w-auto" asChild>
-          <Link href={`/dashboard/courses/${topic.course_id}`}>
-            <BookOpen className="mr-1.5 h-4 w-4" />
-            Back to Course
-          </Link>
-        </Button>
-        {hasQuiz && (
-          <Button
-            size="lg"
-            className="w-full shadow-sm transition-transform hover:scale-[1.02] sm:w-auto"
-            asChild
+    <div className="space-y-5 border-t border-border/60 pt-8">
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex items-start gap-3">
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
+              isCompleted
+                ? "bg-emerald-500 text-white"
+                : "bg-muted text-muted-foreground",
+            )}
           >
-            <Link
-              href={`/dashboard/topics/${topic.id}/quiz`}
-              className="flex items-center justify-center gap-2"
-            >
-              <ClipboardCheck className="h-4 w-4" />
-              Take Quiz
-            </Link>
-          </Button>
-        )}
-      </div>
+            <Check className="size-5" strokeWidth={2.5} />
+          </span>
+          <div className="space-y-0.5">
+            <h2 className="font-semibold">
+              {isCompleted ? "Topic completed" : "Finished this topic?"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isCompleted
+                ? "Nice work. Your course progress is up to date."
+                : "Mark it complete to update your course progress."}
+            </p>
+          </div>
+        </div>
 
-      {/* Next — desktop only (mobile version lives in the grid above) */}
-      <div className="order-2 hidden sm:order-none sm:block">
-        {nextTopic ? (
-          <Button variant="outline" asChild>
-            <Link href={`/dashboard/topics/${nextTopic.id}`}>
-              Next Topic
-              <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Link>
-          </Button>
-        ) : (
-          <Button variant="outline" disabled>
-            Next Topic
-            <ArrowRight className="ml-1.5 h-4 w-4" />
-          </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {hasQuiz && (
+            <Button variant="outline" asChild>
+              <Link href={`/dashboard/topics/${topic.id}/quiz`}>
+                <ClipboardCheck className="mr-2 size-4" />
+                Take quiz
+              </Link>
+            </Button>
+          )}
+          {!isCompleted && (
+            <Button
+              onClick={onComplete}
+              disabled={completing}
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
+            >
+              {completing ? "Saving…" : "Mark as complete"}
+            </Button>
+          )}
+        </div>
+      </section>
+
+      <nav aria-label="Topic navigation" className="grid gap-3 sm:grid-cols-2">
+        {previousTopic && (
+          <NavCard
+            href={`/dashboard/topics/${previousTopic.id}`}
+            label="Previous topic"
+            title={previousTopic.title}
+            dir="prev"
+          />
         )}
-      </div>
+        {nextTopic ? (
+          <NavCard
+            href={`/dashboard/topics/${nextTopic.id}`}
+            label="Next topic"
+            title={nextTopic.title}
+            dir="next"
+            className="sm:col-start-2"
+          />
+        ) : (
+          <NavCard
+            href={`/dashboard/courses/${topic.course_id}`}
+            label="You've reached the end"
+            title="Back to course"
+            dir="end"
+            className="sm:col-start-2"
+          />
+        )}
+      </nav>
     </div>
+  );
+}
+
+function NavCard({
+  href,
+  label,
+  title,
+  dir,
+  className,
+}: {
+  href: string;
+  label: string;
+  title: string;
+  dir: "prev" | "next" | "end";
+  className?: string;
+}) {
+  const Icon =
+    dir === "prev" ? ArrowLeft : dir === "next" ? ArrowRight : BookOpen;
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
+        dir !== "prev" && "flex-row-reverse text-right",
+        className,
+      )}
+    >
+      <Icon className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-emerald-600" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs text-muted-foreground">{label}</span>
+        <span className="block truncate text-sm font-semibold capitalize">
+          {title}
+        </span>
+      </span>
+    </Link>
   );
 }

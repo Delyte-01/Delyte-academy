@@ -1,721 +1,282 @@
 /* =========================================================
-   DELYTE ACADEMY — STUDENT READING EXPERIENCE
-   Modern textbook-style content viewer
+   LESSON READING STYLES
+   Sits directly on the page (no card), ~68-75 characters per line.
+   Everything uses theme tokens, so light and dark mode follow automatically.
    ========================================================= */
 
 .study-reading-shell {
   width: 100%;
-  background: var(--card);
 }
 
-/* Comfortable reading column */
 .study-reading-content {
   width: 100%;
-  max-width: 820px;
-  margin: 0 auto;
-
-  padding: 2rem 1.25rem 3rem;
-
   color: var(--foreground);
-
   font-family: var(--font-sans), system-ui, sans-serif;
-
-  font-size: 1rem;
-  line-height: 1.85;
-
-  letter-spacing: 0.005em;
-
-  overflow-wrap: anywhere;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  overflow-wrap: break-word;
 }
 
-/* =========================================================
-   HEADINGS
-   ========================================================= */
+.study-reading-content > :first-child {
+  margin-top: 0;
+}
 
+/* Headings */
 .study-reading-content h1,
 .study-reading-content h2,
 .study-reading-content h3,
 .study-reading-content h4 {
   color: var(--foreground);
-
-  font-family: var(--font-heading), system-ui, sans-serif;
-
-  font-weight: 800;
-
-  letter-spacing: -0.025em;
-
-  scroll-margin-top: 100px;
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  scroll-margin-top: 96px; /* clears the sticky offset when jumping from "On this page" */
 }
 
 .study-reading-content h1 {
-  margin-top: 2.75rem;
-  margin-bottom: 1rem;
-
-  font-size: clamp(1.75rem, 5vw, 2.35rem);
-
+  margin: 3rem 0 1rem;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
   line-height: 1.2;
 }
-
 .study-reading-content h2 {
-  margin-top: 2.5rem;
-  margin-bottom: 0.85rem;
-
-  font-size: clamp(1.4rem, 4vw, 1.8rem);
-
+  margin: 2.75rem 0 0.9rem;
+  font-size: clamp(1.4rem, 4vw, 1.75rem);
   line-height: 1.3;
-
-  padding-bottom: 0.5rem;
-
-  border-bottom: 1px solid var(--border);
 }
-
 .study-reading-content h3 {
-  margin-top: 2rem;
-  margin-bottom: 0.7rem;
-
-  font-size: clamp(1.2rem, 3.5vw, 1.45rem);
-
+  margin: 2rem 0 0.6rem;
+  font-size: clamp(1.15rem, 3.5vw, 1.35rem);
   line-height: 1.35;
 }
-
 .study-reading-content h4 {
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-
+  margin: 1.5rem 0 0.5rem;
   font-size: 1.05rem;
-
   line-height: 1.4;
 }
 
-/* First heading should not have huge top spacing */
-.study-reading-content > h1:first-child,
-.study-reading-content > h2:first-child,
-.study-reading-content > h3:first-child {
-  margin-top: 0;
-}
-
-/* =========================================================
-   PARAGRAPHS
-   ========================================================= */
-
+/* Text */
 .study-reading-content p {
-  margin-top: 0;
-  margin-bottom: 1.25rem;
-
-  color: var(--foreground);
-
-  line-height: 1.85;
+  margin: 0 0 1.25rem;
 }
-
-/* Give consecutive paragraphs breathing room */
-.study-reading-content p + p {
-  margin-top: 0.25rem;
-}
-
-/* =========================================================
-   STRONG / EMPHASIS
-   ========================================================= */
-
 .study-reading-content strong,
 .study-reading-content b {
-  color: var(--foreground);
-  font-weight: 750;
+  font-weight: 700;
 }
-
-.study-reading-content em,
-.study-reading-content i {
-  color: var(--foreground);
-}
-
-/* =========================================================
-   LINKS
-   ========================================================= */
 
 .study-reading-content a {
   color: var(--primary);
-
-  font-weight: 650;
-
+  font-weight: 600;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-
-  transition:
-    color 0.2s ease,
-    opacity 0.2s ease;
 }
-
 .study-reading-content a:hover {
   opacity: 0.8;
 }
 
-/* =========================================================
-   LISTS
-   ========================================================= */
-
+/* Lists */
 .study-reading-content ul,
 .study-reading-content ol {
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-
+  margin: 1rem 0 1.5rem;
   padding-left: 1.5rem;
 }
-
 .study-reading-content ul {
-  list-style-type: disc;
+  list-style: disc;
 }
-
 .study-reading-content ol {
-  list-style-type: decimal;
+  list-style: decimal;
 }
-
 .study-reading-content li {
-  margin-bottom: 0.55rem;
-
+  margin-bottom: 0.5rem;
   padding-left: 0.25rem;
-
-  line-height: 1.8;
-
-  color: var(--foreground);
 }
-
 .study-reading-content li::marker {
   color: var(--primary);
   font-weight: 700;
 }
-
-/* Nested lists */
 .study-reading-content li > ul,
 .study-reading-content li > ol {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0.5rem 0;
 }
 
-/* =========================================================
-   BLOCKQUOTE
-   ========================================================= */
-
+/* Quote */
 .study-reading-content blockquote {
   margin: 1.75rem 0;
-
   padding: 1rem 1.25rem;
-
   border-left: 4px solid var(--primary);
-
   border-radius: 0 0.75rem 0.75rem 0;
-
   background: color-mix(in oklch, var(--primary) 8%, var(--card));
-
-  color: var(--foreground);
-
-  font-size: 1rem;
   font-style: italic;
-
-  line-height: 1.75;
 }
-
-.study-reading-content blockquote p {
+.study-reading-content blockquote p:last-child {
   margin-bottom: 0;
 }
 
-/* =========================================================
-   HORIZONTAL RULE
-   ========================================================= */
-
 .study-reading-content hr {
-  margin: 2.25rem 0;
-
+  margin: 2.5rem 0;
   border: 0;
-
   border-top: 1px solid var(--border);
 }
 
-/* =========================================================
-   IMAGES
-   ========================================================= */
-
+/* Media */
 .study-reading-content img {
   display: block;
-
   max-width: 100%;
   height: auto;
-
   margin: 2rem auto;
-
-  border-radius: 1rem;
-
   border: 1px solid var(--border);
-
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-
-  object-fit: contain;
+  border-radius: 0.875rem;
+}
+.study-reading-content figure {
+  margin: 2rem 0;
+}
+.study-reading-content figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  text-align: center;
 }
 
-/* =========================================================
-   TABLES
-   ========================================================= */
-
-/*
-   Important for mobile:
-   tables scroll horizontally instead of breaking the page.
-*/
-
+/* Tables scroll sideways instead of breaking the page on mobile */
 .study-reading-content table {
   display: block;
-
   width: 100%;
-
   margin: 1.75rem 0;
-
   overflow-x: auto;
-
   border-collapse: collapse;
-
   -webkit-overflow-scrolling: touch;
 }
-
 .study-reading-content th,
 .study-reading-content td {
   min-width: 120px;
-
-  padding: 0.75rem 0.9rem;
-
+  padding: 0.7rem 0.9rem;
   border: 1px solid var(--border);
-
   text-align: left;
-
   vertical-align: top;
-
   line-height: 1.6;
 }
-
 .study-reading-content th {
   background: var(--muted);
-
-  color: var(--foreground);
-
-  font-weight: 750;
+  font-weight: 700;
 }
-
-.study-reading-content td {
-  background: var(--card);
-
-  color: var(--foreground);
-}
-
 .study-reading-content tr:nth-child(even) td {
   background: color-mix(in oklch, var(--muted) 35%, var(--card));
 }
 
-/* =========================================================
-   INLINE CODE
-   ========================================================= */
-
-.study-reading-content code {
-  padding: 0.15rem 0.4rem;
-
-  border-radius: 0.4rem;
-
-  background: var(--muted);
-
-  color: var(--foreground);
-
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  font-size: 0.9em;
-}
-
-/* =========================================================
-   CODE BLOCKS — DELYTE ACADEMY
-   ========================================================= */
-
-.study-reading-content pre {
-  position: relative;
-
-  margin: 2rem 0;
-
-  padding: 0;
-
-  overflow-x: auto;
-
-  border: 1px solid var(--border);
-
-  border-radius: 1rem;
-
-  background: #0f172a;
-
-  color: #e2e8f0;
-
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-
-  -webkit-overflow-scrolling: touch;
-
-  scrollbar-width: thin;
-}
-
-/* Top code-bar */
-.study-reading-content pre::before {
-  content: "";
-
-  display: block;
-
-  height: 42px;
-
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-
-  background: #111827;
-}
-
-/* macOS-style dots */
-.study-reading-content pre::after {
-  content: "●  ●  ●";
-
-  position: absolute;
-
-  top: 12px;
-  left: 16px;
-
-  font-size: 9px;
-
-  letter-spacing: 4px;
-
-  color: #64748b;
-
-  pointer-events: none;
-}
-
-/* Actual code */
-.study-reading-content pre code {
-  display: block;
-
-  padding: 1.25rem 1.35rem 1.4rem;
-
-  background: transparent;
-
-  color: #e2e8f0;
-
-  border: 0;
-
-  border-radius: 0;
-
-  font-family:
-    "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular", Consolas,
-    "Liberation Mono", monospace;
-
-  font-size: 0.875rem;
-
-  line-height: 1.75;
-
-  letter-spacing: 0;
-
-  white-space: pre;
-
-  tab-size: 2;
-
-  -webkit-font-smoothing: antialiased;
-}
-
-/* =========================================================
-   INLINE CODE
-   ========================================================= */
-
+/* Code */
 .study-reading-content :not(pre) > code {
-  display: inline;
-
-  padding: 0.18rem 0.4rem;
-
+  padding: 0.15rem 0.4rem;
   border: 1px solid var(--border);
-
   border-radius: 0.4rem;
-
   background: var(--muted);
-
   color: var(--primary);
-
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
-
+  font-family:
+    "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
   font-size: 0.88em;
-
   font-weight: 600;
 }
 
-/* =========================================================
-   CODE SELECTION
-   ========================================================= */
-
-.study-reading-content pre code::selection,
-.study-reading-content pre::selection {
-  background: rgba(52, 211, 153, 0.25);
-  color: #ffffff;
+.study-reading-content pre {
+  margin: 2rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.study-reading-content pre code {
+  display: block;
+  padding: 1.1rem 1.25rem;
+  background: transparent;
+  color: inherit;
+  font-family:
+    "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre;
+  tab-size: 2;
+}
+.study-reading-content pre::selection,
+.study-reading-content pre code::selection {
+  background: rgba(52, 211, 153, 0.3);
+  color: #fff;
 }
 
-/* =========================================================
-   CODE SCROLLBAR
-   ========================================================= */
-
-.study-reading-content pre::-webkit-scrollbar {
-  height: 8px;
-}
-
-.study-reading-content pre::-webkit-scrollbar-track {
-  background: #0b1220;
-}
-
-.study-reading-content pre::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-
-  background: #334155;
-}
-
-.study-reading-content pre::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 640px) {
-  .study-reading-content pre {
-    margin: 1.5rem -0.25rem;
-
-    border-radius: 0.85rem;
-  }
-
-  .study-reading-content pre::before {
-    height: 38px;
-  }
-
-  .study-reading-content pre::after {
-    top: 11px;
-    left: 13px;
-
-    font-size: 8px;
-  }
-
-  .study-reading-content pre code {
-    padding: 1rem 0.9rem 1.15rem;
-
-    font-size: 0.78rem;
-
-    line-height: 1.7;
-  }
-}
-
-/* =========================================================
-   MARK / HIGHLIGHT
-   ========================================================= */
-
+/* Misc */
 .study-reading-content mark {
   padding: 0.1rem 0.25rem;
-
   border-radius: 0.25rem;
-
   background: color-mix(in oklch, var(--primary) 22%, var(--card));
-
   color: var(--foreground);
 }
-
-/* =========================================================
-   SUB / SUP
-   ========================================================= */
-
 .study-reading-content sup,
 .study-reading-content sub {
   line-height: 0;
 }
 
-/* =========================================================
-   MATH
-   ========================================================= */
-
+/* Math */
 .study-reading-content .katex {
   color: var(--foreground);
 }
-
 .study-reading-content .katex-display {
   overflow-x: auto;
-
   margin: 0;
-
   padding: 0.5rem 0;
-
-  -webkit-overflow-scrolling: touch;
 }
-
-/* Math block container */
 .study-block-math {
   width: 100%;
-
   margin: 2rem 0;
-
-  padding: 1.25rem 1rem;
-
+  padding: 1.1rem 1rem;
   overflow-x: auto;
-
   border: 1px solid var(--border);
-
-  border-radius: 1rem;
-
+  border-radius: 0.875rem;
   background: color-mix(in oklch, var(--primary) 5%, var(--card));
-
-  color: var(--foreground);
-
-  text-align: center;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-/* =========================================================
-   FIGURES / CAPTIONS
-   ========================================================= */
-
-.study-reading-content figure {
-  margin: 2rem 0;
-}
-
-.study-reading-content figcaption {
-  margin-top: 0.65rem;
-
-  color: var(--muted-foreground);
-
-  font-size: 0.85rem;
-
-  line-height: 1.5;
-
   text-align: center;
 }
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
+.dark .study-reading-content pre {
+  background: color-mix(in oklch, black 25%, var(--card));
+}
 
+/* Mobile */
 @media (max-width: 640px) {
   .study-reading-content {
-    padding: 1.5rem 1rem 2.5rem;
-
     font-size: 1rem;
-
-    line-height: 1.8;
+    line-height: 1.75;
   }
-
   .study-reading-content h1 {
-    margin-top: 2rem;
-
-    font-size: 1.75rem;
+    margin-top: 2.25rem;
   }
-
   .study-reading-content h2 {
-    margin-top: 2rem;
-
-    font-size: 1.4rem;
+    margin-top: 2.25rem;
   }
-
-  .study-reading-content h3 {
-    margin-top: 1.6rem;
-
-    font-size: 1.2rem;
-  }
-
-  .study-reading-content p {
-    margin-bottom: 1.1rem;
-
-    line-height: 1.8;
-  }
-
   .study-reading-content ul,
   .study-reading-content ol {
     padding-left: 1.25rem;
   }
-
   .study-reading-content blockquote {
     margin: 1.5rem 0;
-
     padding: 0.9rem 1rem;
   }
-
   .study-reading-content img {
     margin: 1.5rem auto;
-
-    border-radius: 0.8rem;
+    border-radius: 0.75rem;
   }
-
   .study-reading-content pre {
-    margin: 1.5rem -0.25rem;
-
-    border-radius: 0.8rem;
+    margin: 1.5rem 0;
+    border-radius: 0.75rem;
   }
-
+  .study-reading-content pre code {
+    padding: 1rem 0.9rem;
+    font-size: 0.8rem;
+  }
   .study-block-math {
     margin: 1.5rem 0;
-
     padding: 1rem 0.75rem;
-  }
-}
-
-/* =========================================================
-   DARK MODE REFINEMENT
-   ========================================================= */
-
-.dark .study-reading-content {
-  color: var(--foreground);
-}
-
-.dark .study-reading-content p,
-.dark .study-reading-content li,
-.dark .study-reading-content td,
-.dark .study-reading-content th {
-  color: var(--foreground);
-}
-
-.dark .study-reading-content blockquote {
-  background: color-mix(in oklch, var(--primary) 10%, var(--card));
-}
-
-.dark .study-reading-content pre {
-  background: color-mix(in oklch, black 18%, var(--card));
-}
-
-/* =========================================================
-   STUDENT EMERALD DARK THEME
-   ========================================================= */
-
-.dark .student-theme .study-reading-content {
-  color: var(--foreground);
-}
-
-.dark .student-theme .study-reading-content p,
-.dark .student-theme .study-reading-content li {
-  color: var(--foreground);
-}
-
-.dark .student-theme .study-reading-content h1,
-.dark .student-theme .study-reading-content h2,
-.dark .student-theme .study-reading-content h3,
-.dark .student-theme .study-reading-content h4 {
-  color: var(--foreground);
-}
-
-.dark .student-theme .study-reading-content blockquote {
-  background: color-mix(in oklch, var(--primary) 9%, var(--card));
-
-  border-left-color: var(--primary);
-}
-
-.dark .student-theme .study-block-math {
-  background: color-mix(in oklch, var(--primary) 7%, var(--card));
-
-  border-color: var(--border);
-}
-
-/* =========================================================
-   ACCESSIBILITY
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .study-reading-content a,
-  .study-reading-content * {
-    scroll-behavior: auto;
-    transition: none !important;
   }
 }

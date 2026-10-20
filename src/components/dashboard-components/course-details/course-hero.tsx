@@ -1,155 +1,95 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, Users, Star, BookCheck } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Clock, Layers, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Course } from "@/types/course";
-// import { useEnrollment } from "@/hooks/useEnrollment";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { useEnrollment } from "@/context/enrollment-context";
+import { formatDuration } from "@/actions/use-course";
 
-export function CourseHero({ course }: { course: Course }) {
-  const { user } = useAuth();
-  const router = useRouter();
-  const { enrollments, enroll, saving, refresh } = useEnrollment();
-  const enrollment = enrollments.find((e) => e.course_id === course.id);
-  const isEnrolled = Boolean(enrollment);
-  const progress =
-    enrollments.find((e) => e.course_id === course.id)?.progress ?? 0;
-  const linkHref = `/dashboard/courses/${course.id}`;
+interface CourseHeroProps {
+  course: Course;
+  topicCount?: number;
+  totalMinutes?: number;
+  rating?: number;
+  students?: number;
+}
 
-  const handleEnroll = async () => {
-    if (!course || !user) {
-      toast.error("Please sign in to enroll.");
-      return;
-    }
-
-    try {
-      await enroll(course.id);
-      await refresh();
-
-      toast.success("You are now enrolled in this course!");
-
-      router.push(linkHref);
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to enroll in this course.");
-    }
-  };
+export function CourseHero({
+  course,
+  topicCount,
+  totalMinutes,
+  rating,
+  students,
+}: CourseHeroProps) {
+  const meta = [
+    rating != null && {
+      icon: <Star className="size-4 fill-amber-400 text-amber-400" />,
+      label: (
+        <>
+          <span className="font-semibold text-white">{rating.toFixed(1)}</span>{" "}
+          rating
+        </>
+      ),
+    },
+    students != null && {
+      icon: <Users className="size-4" />,
+      label: `${students.toLocaleString()} students`,
+    },
+    !!topicCount && {
+      icon: <Layers className="size-4" />,
+      label: `${topicCount} ${topicCount === 1 ? "topic" : "topics"}`,
+    },
+    !!totalMinutes && {
+      icon: <Clock className="size-4" />,
+      label: formatDuration(totalMinutes),
+    },
+  ].filter(Boolean) as { icon: React.ReactNode; label: React.ReactNode }[];
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 via-emerald-950/80 to-emerald-900/50 text-white shadow-xl">
-      <div className="absolute inset-0 opacity-10">
-        {course.banner && (
-          <Image
-            src={course.banner}
-            alt={course.title}
-            width={1920}
-            height={1080}
-            priority
-            quality={100}
-            className="h-full w-full object-cover"
-          />
+    <section className="relative isolate overflow-hidden rounded-2xl bg-slate-950 text-white ring-1 ring-white/10 sm:rounded-3xl">
+      {course.banner && (
+        <Image
+          src={course.banner}
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 1100px, 100vw"
+          className="-z-20 object-cover opacity-40"
+        />
+      )}
+      {/* Legibility scrim: darkest where the text sits */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/30" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
+
+      <div className="flex min-h-[240px] flex-col justify-end gap-4 p-5 sm:min-h-[300px] sm:p-8 lg:min-h-[340px] lg:p-10">
+        <Badge
+          variant="outline"
+          className="w-fit border-emerald-400/30 bg-emerald-400/10 font-medium text-emerald-200"
+        >
+          {course.course_code}
+        </Badge>
+
+        <h1 className="max-w-3xl text-balance text-2xl font-semibold leading-tight tracking-tight sm:text-4xl">
+          {course.title}
+        </h1>
+
+        {course.description && (
+          <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
+            {course.description}
+          </p>
+        )}
+
+        {meta.length > 0 && (
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-sm text-slate-300">
+            {meta.map((m, i) => (
+              <li key={i} className="flex items-center gap-1.5">
+                {m.icon}
+                <span>{m.label}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      <CardContent className="relative grid gap-8 p-6 lg:grid-cols-3 lg:p-10">
-        <div className="space-y-5 lg:col-span-2">
-          <Link
-            href="/dashboard/courses"
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-200 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Courses
-          </Link>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            {course.thumbnail && (
-              <Image
-                src={course?.thumbnail}
-                alt={course?.title ?? ""}
-                width={400}
-                height={200}
-                className="h-28 w-44 flex-shrink-0 rounded-xl object-cover shadow-lg ring-1 ring-white/20"
-              />
-            )}
-
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-white/20 bg-white/10 text-white"
-                >
-                  {course.course_code}
-                </Badge>
-                {/* <Badge variant="outline" className={`border ${difficultyStyles[course.difficulty]}`}>
-                  <Signal className="mr-1 h-3 w-3" />
-                  {course.difficulty}
-                </Badge> */}
-              </div>
-              <h1 className="text-2xl font-extrabold tracking-tight lg:text-3xl">
-                {course.title}
-              </h1>
-              <p className="max-w-xl text-sm leading-relaxed text-emerald-100">
-                {course.description}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-5 text-sm text-emerald-100">
-            <span className="flex items-center gap-1.5">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-white">4.5</span> rating
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {/* {course.studentsCount.toLocaleString()} */}
-              100 students
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
-            <div className="mb-2 flex items-center justify-between text-xs text-emerald-100">
-              <span>Overall Progress</span>
-              <span className="font-bold text-white">{progress}%</span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-white/20">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-300 transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            {/* <p className="mt-2 text-[11px] text-emerald-200">
-              {enrollments?.find((e) => e.course_id === course.id)?.completedTopics ?? 0} of {course.totalTopics} topics completed
-            </p> */}
-          </div>
-
-          {isEnrolled ? (
-            <Button
-              className="w-full bg-white text-emerald-700 hover:bg-emerald-50"
-              size="lg"
-            >
-              <BookCheck className="mr-2 h-4 w-4" />
-              Course Enrolled
-            </Button>
-          ) : (
-            <Button
-              onClick={handleEnroll}
-              disabled={saving}
-              className="w-full bg-white text-emerald-700 hover:bg-emerald-50"
-              size="lg"
-            >
-              {saving ? "Enrolling..." : "Enroll Now"}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    </section>
   );
 }

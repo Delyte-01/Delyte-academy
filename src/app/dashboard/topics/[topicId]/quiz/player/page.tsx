@@ -1,38 +1,54 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Bookmark, Clock, Send } from "lucide-react";
-import gsap from "gsap";
+import { ArrowLeft, ArrowRight, Clock, Send } from "lucide-react";
+import { toast } from "sonner";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 import { useQuiz } from "@/hooks/useQuiz";
 import { useQuestion } from "@/hooks/useQuestion";
-import { QuizProgress } from "@/components/dashboard-components/Quiz-component/quiz-progress";
-import { QuestionCard } from "@/components/dashboard-components/Quiz-component/question-card";
-import { OptionCard } from "@/components/dashboard-components/Quiz-component/option-card";
-import { QuizSidebar } from "@/components/dashboard-components/Quiz-component/quiz-sidebar";
-import { QuizHeader } from "@/components/dashboard-components/Quiz-component/quiz-header";
-import FullPageLoader from "@/components/loading/Loading";
-import { QuizOption } from "@/types/quiz";
 import { useCourse } from "@/hooks/useCourse";
 import { useTopic } from "@/hooks/useTopics";
-import { QuestionState } from "@/components/dashboard-components/Quiz-component/question-navigator";
+import { useProfile } from "@/context/profile-context";
+import { QuizOption } from "@/types/quiz";
 import {
   submitQuizAttempt,
   submitQuizAttemptAnswers,
 } from "@/services/quiz-attempt";
-import { useProfile } from "@/context/profile-context";
 import { studentNotificationService } from "@/services/student-notification";
 
-const letters = ["A", "B", "C", "D", "E", "F"];
+import FullPageLoader from "@/components/loading/Loading";
+import { EmptyQuizState } from "@/components/dashboard-components/Quiz-component/empty-quiz-state";
+import { OptionCard } from "@/components/dashboard-components/Quiz-component/option-card";
+import { QuestionCard } from "@/components/dashboard-components/Quiz-component/question-card";
+import { NavItem } from "@/components/dashboard-components/Quiz-component/question-navigator";
+import { QuizHeader } from "@/components/dashboard-components/Quiz-component/quiz-header";
+import { QuizProgress } from "@/components/dashboard-components/Quiz-component/quiz-progress";
+import { QuizSidebar } from "@/components/dashboard-components/Quiz-component/quiz-sidebar";
 
-// Respect users who've asked their OS to reduce motion.
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
+const STALE_AFTER_MS = 30 * 60 * 1000; // an abandoned session older than this starts fresh
+
+type Session = {
+  startedAt: number;
+  answers: Record<string, string>;
+  marked: string[];
+  current: number;
+};
+
+const formatTime = (seconds: number) =>
+  `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
 export default function QuizPlayerPage() {
   const { topicId } = useParams();
@@ -41,52 +57,22 @@ export default function QuizPlayerPage() {
 
   const { quiz, loading: quizLoading } = useQuiz(topicId as string);
   const { questions, loading: questionLoading } = useQuestion(quiz?.id ?? "");
-
   const { topic } = useTopic(topicId as string);
-
   const { course } = useCourse(topic?.course_id as string);
 
   const [current, setCurrent] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<string, string>
-  >({});
-  const [markedForReview, setMarkedForReview] = useState<Set<string>>(
-    new Set(),
-  );
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [marked, setMarked] = useState<Set<string>>(new Set());
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const submittingRef = useRef(false);
+  const autoTriedRef = useRef(false);
+  const submitRef = useRef<(auto?: boolean) => Promise<void>>(async () => {});
 
-  // --- Animation refs ---
-  const headerRowRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const questionSectionRef = useRef<HTMLDivElement>(null);
-  const optionsListRef = useRef<HTMLDivElement>(null);
-  const footerCardRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const timerBadgeRef = useRef<HTMLDivElement>(null);
-  const hasMountedRef = useRef(false);
-  const hasAnimatedInRef = useRef(false);
-
-  useEffect(() => {
-    if (!quiz) return;
-
-    // convert minutes to seconds
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTimeLeft(quiz.time_limit * 60);
-  }, [quiz]);
-
-  useEffect(() => {
-    if ((timeLeft !== null && timeLeft <= 0) || submitted) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => (prev ?? 0) - 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [timeLeft, submitted]);
-
-  const mappedQuestions = useMemo(
+  const mapped = useMemo(
     () =>
       questions.map((q, index) => ({
         id: q.id,
@@ -98,38 +84,122 @@ export default function QuizPlayerPage() {
         options: (q.options ?? []).map((opt: QuizOption) => ({
           id: opt.id,
           text: opt.option_text ?? "",
-          isCorrect: opt.is_correct ?? "",
+          isCorrect: Boolean(opt.is_correct),
         })),
         explanation: q.explanation,
       })),
     [questions],
   );
-  const handleSubmit = async (auto = false) => {
-    if (submitted || !quiz || !profile) return;
 
-    setSubmitted(true);
+  const timeLimitSec = (quiz?.time_limit ?? 0) * 60;
+  const timed = timeLimitSec > 0;
+  const storageKey =
+    quiz && profile ? `quiz-session:${quiz.id}:${profile.id}` : null;
+
+  /* ---- Start or resume. The clock is a start timestamp, so it survives refreshes and throttled tabs. ---- */
+  useEffect(() => {
+    if (!storageKey || mapped.length === 0 || startedAt !== null) return;
+
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const s = JSON.parse(raw) as Session;
+        const expiredFor = timed
+          ? Date.now() - (s.startedAt + timeLimitSec * 1000)
+          : 0;
+        const tooOld = timed
+          ? expiredFor > STALE_AFTER_MS
+          : Date.now() - s.startedAt > 24 * 60 * 60 * 1000;
+
+        if (!tooOld) {
+          const ids = new Set(mapped.map((q) => q.id));
+          setAnswers(
+            Object.fromEntries(
+              Object.entries(s.answers ?? {}).filter(([id]) => ids.has(id)),
+            ),
+          );
+          setMarked(new Set((s.marked ?? []).filter((id) => ids.has(id))));
+          setCurrent(Math.min(Math.max(s.current ?? 0, 0), mapped.length - 1));
+          setStartedAt(s.startedAt);
+          toast.message("Welcome back", {
+            description: timed
+              ? "Your answers were restored. The timer kept running."
+              : "Your answers were restored.",
+          });
+          return;
+        }
+        localStorage.removeItem(storageKey);
+      }
+    } catch {
+      /* storage unavailable: start a plain session */
+    }
+    setStartedAt(Date.now());
+  }, [storageKey, mapped, startedAt, timed, timeLimitSec]);
+
+  /* ---- Save progress on every change ---- */
+  useEffect(() => {
+    if (!storageKey || startedAt === null || submittingRef.current) return;
+    try {
+      const session: Session = {
+        startedAt,
+        answers,
+        marked: [...marked],
+        current,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(session));
+    } catch {
+      /* ignore */
+    }
+  }, [storageKey, startedAt, answers, marked, current]);
+
+  /* ---- Clock ---- */
+  useEffect(() => {
+    if (!timed || startedAt === null) return;
+    const tick = () => setNowSec(Math.floor(Date.now() / 1000));
+    tick();
+    const id = setInterval(tick, 500);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [timed, startedAt]);
+
+  const timeLeft =
+    timed && startedAt !== null
+      ? Math.max(
+          0,
+          timeLimitSec - Math.max(0, nowSec - Math.floor(startedAt / 1000)),
+        )
+      : null;
+
+  /* ---- Submit ---- */
+  const handleSubmit = async (auto = false) => {
+    if (
+      submittingRef.current ||
+      !quiz ||
+      !profile ||
+      mapped.length === 0 ||
+      startedAt === null
+    )
+      return;
+
+    submittingRef.current = true;
+    setSubmitting(true);
+    setConfirmOpen(false);
 
     let correctAnswers = 0;
-
-    const answerRows = mappedQuestions.map((q) => {
-      const selected = selectedAnswers[q.id] ?? null;
-
-      const correct = q.options.find((o) => o.isCorrect)?.id ?? null;
-
-      const isCorrect = selected === correct;
-
+    const answerRows = mapped.map((q) => {
+      const selected = answers[q.id] ?? null;
+      const correctId = q.options.find((o) => o.isCorrect)?.id ?? null;
+      const isCorrect = selected !== null && selected === correctId;
       if (isCorrect) correctAnswers++;
-
-      return {
-        questionId: q.id,
-        selectedOptionId: selected,
-        isCorrect,
-      };
+      return { questionId: q.id, selectedOptionId: selected, isCorrect };
     });
 
-    const score = Math.round((correctAnswers / mappedQuestions.length) * 100);
-
-    const timeSpent = quiz.time_limit * 60 - (timeLeft ?? 0);
+    const score = Math.round((correctAnswers / mapped.length) * 100);
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    const timeSpent = timed ? Math.min(timeLimitSec, elapsed) : elapsed;
 
     try {
       const attempt = await submitQuizAttempt({
@@ -137,189 +207,130 @@ export default function QuizPlayerPage() {
         studentId: profile.id,
         score,
         correctAnswers,
-        totalQuestions: mappedQuestions.length,
+        totalQuestions: mapped.length,
         timeSpent,
-        attemptNumber: 1,
+        attemptNumber: 1, // TODO: derive from the student's previous attempts
       });
-
       await submitQuizAttemptAnswers(attempt.id, answerRows);
 
+      try {
+        await studentNotificationService.createStudentNotification({
+          studentId: profile.id,
+          type: "quiz_result",
+          title: "Quiz completed",
+          message: `You scored ${score}% on ${quiz.title}.`,
+          courseId: course?.id,
+          link: `/dashboard/courses/${course?.id}`,
+        });
+      } catch (error) {
+        console.error(error); // a failed notification must not block the result
+      }
+
+      if (storageKey) localStorage.removeItem(storageKey);
       router.push(
         `/dashboard/topics/${topicId}/quiz/result?attempt=${attempt.id}&auto=${auto}`,
       );
-      await studentNotificationService.createStudentNotification({
-        studentId: profile.id,
-        type: "quiz_result",
-        title: "Quiz completed",
-        message: `You scored ${score}% on ${quiz.title}.`,
-        courseId: course?.id,
-        link: `/dashboard/courses/${course?.id}`,
-      });
     } catch (error) {
       console.error(error);
-      setSubmitted(false);
-    }
-  };
-
-  useEffect(() => {
-    if (timeLeft === 0 && !submitted && quiz) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      handleSubmit(true);
-    }
-  }, [timeLeft, submitted, quiz]);
-
-  const formatTime = (seconds: number | null) => {
-    if (seconds === null) return "--:--";
-
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
-
-  // --- Entrance animation: runs once, when the quiz + questions are ready ---
-  useEffect(() => {
-    if (quizLoading || questionLoading) return;
-    if (!quiz || mappedQuestions.length === 0) return;
-    if (hasAnimatedInRef.current) return;
-    hasAnimatedInRef.current = true;
-
-    if (prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      tl.from(headerRowRef.current, { y: -14, opacity: 0, duration: 0.45 })
-        .from(progressRef.current, { opacity: 0, duration: 0.35 }, "-=0.2")
-        .from(
-          questionSectionRef.current,
-          { y: 14, opacity: 0, duration: 0.45 },
-          "-=0.15",
-        )
-        .from(
-          optionsListRef.current ? optionsListRef.current.children : [],
-          { y: 10, duration: 0.35, stagger: 0.06 },
-          "-=0.25",
-        )
-        .from(
-          footerCardRef.current,
-          { y: 10, opacity: 0, duration: 0.35 },
-          "-=0.2",
-        )
-        .from(
-          sidebarRef.current,
-          { x: 16, opacity: 0, duration: 0.45 },
-          "-=0.5",
-        );
-    });
-
-    return () => ctx.revert();
-  }, [quizLoading, questionLoading, quiz, mappedQuestions.length]);
-
-  // --- Transition animation: plays each time the active question changes ---
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-    if (prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        questionSectionRef.current,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
+      submittingRef.current = false;
+      setSubmitting(false);
+      toast.error(
+        "Couldn't submit your quiz. Your answers are saved, so try again.",
       );
-      if (optionsListRef.current) {
-        gsap.fromTo(
-          optionsListRef.current.children,
-          { opacity: 0, y: 8 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.3,
-            stagger: 0.05,
-            ease: "power2.out",
-          },
-        );
-      }
-    });
-
-    return () => ctx.revert();
-  }, [current]);
-
-  // --- Subtle pulse on the timer badge once time is running low ---
-  useEffect(() => {
-    const isCritical = timeLeft !== null && timeLeft <= 60 && timeLeft > 0;
-
-    if (!isCritical || submitted || prefersReducedMotion()) {
-      if (timerBadgeRef.current) gsap.set(timerBadgeRef.current, { scale: 1 });
-      return;
     }
+  };
 
-    const tween = gsap.to(timerBadgeRef.current, {
-      scale: 1.04,
-      duration: 0.55,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-
-    return () => {
-      tween.kill();
-      if (timerBadgeRef.current) gsap.set(timerBadgeRef.current, { scale: 1 });
-    };
-  }, [timeLeft !== null && timeLeft <= 60 && timeLeft > 0, submitted]);
-
-  if (quizLoading || questionLoading) {
-    return <FullPageLoader />;
-  }
-
-  if (!quiz || mappedQuestions.length === 0) {
-    return <div className="p-8">No questions found.</div>;
-  }
-
-  const total = mappedQuestions.length;
-  const question = mappedQuestions[current];
-
-  const states: QuestionState[] = mappedQuestions.map((q, i) => {
-    if (i === current) return "current";
-    if (markedForReview.has(q.id)) return "marked";
-    if (selectedAnswers[q.id]) return "answered";
-    return "unanswered";
+  useEffect(() => {
+    submitRef.current = handleSubmit;
   });
 
-  const answeredCount = Object.keys(selectedAnswers).length;
-  const markedCount = markedForReview.size;
-  const isTimeCritical = timeLeft !== null && timeLeft <= 60;
+  // Time is up: submit once automatically. If it fails the student can retry by hand.
+  useEffect(() => {
+    if (timeLeft === 0 && startedAt !== null && !autoTriedRef.current) {
+      autoTriedRef.current = true;
+      void submitRef.current(true);
+    }
+  }, [timeLeft, startedAt]);
 
-  const handleSelectOption = (optionId: string) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [question.id]: optionId,
-    }));
-  };
+  /* ---- Keyboard: A–F answer, ← → move, M mark ---- */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (confirmOpen || submitting || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.isContentEditable)
+      )
+        return;
 
-  const toggleMarkForReview = () => {
-    setMarkedForReview((prev) => {
-      const next = new Set(prev);
+      const q = mapped[current];
+      if (!q) return;
+      const key = e.key.toLowerCase();
+      const idx = LETTERS.findIndex((l) => l.toLowerCase() === key);
 
-      if (next.has(question.id)) {
-        next.delete(question.id);
-      } else {
-        next.add(question.id);
+      if (idx >= 0 && idx < q.options.length) {
+        setAnswers((prev) => ({ ...prev, [q.id]: q.options[idx].id }));
+      } else if (e.key === "ArrowRight") {
+        setCurrent((c) => Math.min(mapped.length - 1, c + 1));
+      } else if (e.key === "ArrowLeft") {
+        setCurrent((c) => Math.max(0, c - 1));
+      } else if (key === "m") {
+        setMarked((prev) => {
+          const next = new Set(prev);
+          if (next.has(q.id)) next.delete(q.id);
+          else next.add(q.id);
+          return next;
+        });
       }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmOpen, submitting, mapped, current]);
 
+  /* ---- Render ---- */
+  if (quizLoading || questionLoading) return <FullPageLoader />;
+  if (!quiz || mapped.length === 0)
+    return <EmptyQuizState topicId={topicId as string} />;
+  if (startedAt === null) return <FullPageLoader />;
+
+  const total = mapped.length;
+  const question = mapped[current];
+  const isLast = current === total - 1;
+
+  const items: NavItem[] = mapped.map((q) => ({
+    answered: Boolean(answers[q.id]),
+    marked: marked.has(q.id),
+  }));
+  const answeredCount = items.filter((i) => i.answered).length;
+  const markedCount = items.filter((i) => i.marked).length;
+  const unansweredCount = total - answeredCount;
+  const firstUnanswered = items.findIndex((i) => !i.answered);
+
+  const critical = timeLeft !== null && timeLeft <= 60;
+  const announce =
+    timeLeft === 300
+      ? "5 minutes remaining"
+      : timeLeft === 60
+        ? "1 minute remaining"
+        : "";
+
+  const select = (optionId: string) =>
+    setAnswers((prev) => ({ ...prev, [question.id]: optionId }));
+  const toggleMark = () =>
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (next.has(question.id)) next.delete(question.id);
+      else next.add(question.id);
       return next;
     });
-  };
-
-  const handleNavigatorSelect = (index: number) => {
-    setCurrent(index);
-  };
+  const next = () => setCurrent((c) => Math.min(total - 1, c + 1));
+  const prev = () => setCurrent((c) => Math.max(0, c - 1));
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="mx-auto w-full max-w-6xl pb-28 lg:pb-10">
       <QuizHeader
         courseName={course?.title ?? "Course"}
         courseId={course?.id ?? ""}
@@ -328,133 +339,159 @@ export default function QuizPlayerPage() {
         quizTitle={quiz.title}
       />
 
-      {/* Sticky title + timer strip so the countdown stays visible while scrolling on mobile */}
-      <div className="sticky top-0 z-20 -mx-4 space-y-4 border-b border-border/60 bg-background/85 px-4 pb-4 pt-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:mx-0 sm:border-none sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:backdrop-blur-none">
-        <div
-          ref={headerRowRef}
-          className="flex items-center justify-between gap-4"
-        >
-          <h1 className="truncate text-lg font-extrabold tracking-tight text-foreground sm:text-xl">
+      {/* Title, timer and progress stay in view while scrolling */}
+      <div className="sticky top-0 z-20 -mx-4 mt-4 space-y-3 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="truncate text-base font-semibold sm:text-lg">
             {quiz.title}
           </h1>
 
-          <div
-            ref={timerBadgeRef}
-            className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition-colors duration-300 ${
-              isTimeCritical
-                ? "border-red-500/60 bg-red-500/10 shadow-red-500/10"
-                : "border-border bg-muted/40"
-            }`}
-          >
-            <Clock
-              className={`h-4 w-4 ${
-                isTimeCritical ? "text-red-600" : "text-muted-foreground"
-              }`}
-            />
-            <span
-              className={`font-mono text-sm font-bold tabular-nums ${
-                isTimeCritical ? "text-red-600" : "text-foreground"
-              }`}
+          {timeLeft !== null && (
+            <div
+              role="timer"
+              className={cn(
+                "flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 transition-colors",
+                critical
+                  ? "border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                  : "border-border bg-muted/40",
+              )}
             >
-              {formatTime(timeLeft)}
-            </span>
-          </div>
+              <Clock
+                className={cn(
+                  "size-4",
+                  critical && "motion-safe:animate-pulse",
+                )}
+              />
+              <span className="font-mono text-sm font-semibold tabular-nums">
+                {formatTime(timeLeft)}
+              </span>
+              <span className="sr-only" aria-live="polite">
+                {announce}
+              </span>
+            </div>
+          )}
         </div>
-
-        <div ref={progressRef}>
-          <QuizProgress current={current + 1} total={total} />
-        </div>
+        <QuizProgress
+          current={current + 1}
+          total={total}
+          answered={answeredCount}
+        />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-10 lg:items-start">
-        <div className="space-y-4 lg:col-span-7">
-          <div ref={questionSectionRef}>
-            <QuestionCard question={question} />
-          </div>
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+        <div className="space-y-6">
+          <QuestionCard
+            question={question}
+            marked={marked.has(question.id)}
+            onToggleMark={toggleMark}
+          />
 
-          <div ref={optionsListRef} className="space-y-3 ">
+          <div
+            role="radiogroup"
+            aria-labelledby="current-question"
+            className="space-y-3"
+          >
             {question.options.map((option, i) => (
               <OptionCard
                 key={option.id}
                 option={option}
-                letter={letters[i]}
-                selected={selectedAnswers[question.id] === option.id}
-                onSelect={() => handleSelectOption(option.id)}
+                letter={LETTERS[i]}
+                selected={answers[question.id] === option.id}
+                onSelect={() => select(option.id)}
               />
             ))}
           </div>
 
-          <Card
-            ref={footerCardRef}
-            className="border-border/70 shadow-sm transition-shadow duration-300 hover:shadow-md"
-          >
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="rounded-xl transition-transform duration-150 active:scale-95"
-                  disabled={current === 0}
-                  onClick={() => setCurrent((c) => Math.max(0, c - 1))}
-                >
-                  <ArrowLeft className="mr-1.5 h-4 w-4" />
-                  <span className="hidden sm:inline">Previous</span>
-                  <span className="sm:hidden">Prev</span>
-                </Button>
+          <div className="hidden items-center justify-between lg:flex">
+            <Button variant="outline" onClick={prev} disabled={current === 0}>
+              <ArrowLeft className="mr-2 size-4" />
+              Previous
+            </Button>
+            {isLast ? (
+              <Button
+                className="bg-emerald-600 text-white hover:bg-emerald-500"
+                onClick={() => setConfirmOpen(true)}
+                disabled={submitting}
+              >
+                <Send className="mr-2 size-4" />
+                {submitting ? "Submitting…" : "Finish quiz"}
+              </Button>
+            ) : (
+              <Button onClick={next}>
+                Next
+                <ArrowRight className="ml-2 size-4" />
+              </Button>
+            )}
+          </div>
 
-                <Button
-                  variant="outline"
-                  className="rounded-xl transition-transform duration-150 active:scale-95"
-                  onClick={toggleMarkForReview}
-                >
-                  <Bookmark
-                    className={`mr-1.5 h-4 w-4 transition-colors duration-200 ${
-                      markedForReview.has(question.id)
-                        ? "fill-amber-400 text-amber-500"
-                        : ""
-                    }`}
-                  />
-                  {markedForReview.has(question.id)
-                    ? "Marked"
-                    : "Mark for Review"}
-                </Button>
-              </div>
-
-              <div className="flex gap-2">
-                {current < total - 1 ? (
-                  <Button
-                    className="rounded-xl transition-transform duration-150 hover:-translate-y-0.5 active:scale-95"
-                    onClick={() =>
-                      setCurrent((c) => Math.min(total - 1, c + 1))
-                    }
-                  >
-                    Next
-                    <ArrowRight className="ml-1.5 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md shadow-emerald-600/20 transition-transform duration-150 hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-600 active:scale-95"
-                    onClick={() => handleSubmit()}
-                  >
-                    <Send className="mr-1.5 h-4 w-4" />
-                    Submit Quiz
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <p className="hidden text-xs text-muted-foreground lg:block">
+            Shortcuts: {LETTERS[0]}–{LETTERS[question.options.length - 1]} to
+            answer, ← → to move, M to mark.
+          </p>
         </div>
 
-        <div ref={sidebarRef} className="lg:sticky lg:top-24 lg:col-span-3">
-          <QuizSidebar
-            total={total}
-            states={states}
-            current={current}
-            onSelect={handleNavigatorSelect}
-            answeredCount={answeredCount}
-            markedCount={markedCount}
-          />
-        </div>
+        <QuizSidebar
+          total={total}
+          items={items}
+          current={current}
+          onSelect={setCurrent}
+          answeredCount={answeredCount}
+          markedCount={markedCount}
+          onPrev={prev}
+          onNext={next}
+          onFinish={() => setConfirmOpen(true)}
+          isLast={isLast}
+          busy={submitting}
+        />
       </div>
+
+      <Sheet open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <SheetContent
+          side="bottom"
+          className="mx-auto w-full max-w-md rounded-t-2xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        >
+          <SheetHeader className="px-0 text-left">
+            <SheetTitle>Submit your quiz?</SheetTitle>
+            <SheetDescription>
+              {unansweredCount > 0
+                ? `${unansweredCount} ${unansweredCount === 1 ? "question is" : "questions are"} still unanswered.`
+                : "You've answered every question."}
+              {markedCount > 0 && ` ${markedCount} marked for review.`}
+              {" You can't change answers after submitting."}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-5 flex flex-col gap-2">
+            <Button
+              size="lg"
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
+              onClick={() => handleSubmit()}
+              disabled={submitting}
+            >
+              {submitting ? "Submitting…" : "Submit quiz"}
+            </Button>
+            {unansweredCount > 0 && firstUnanswered >= 0 && (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  setCurrent(firstUnanswered);
+                  setConfirmOpen(false);
+                }}
+              >
+                Go to first unanswered
+              </Button>
+            )}
+            <Button
+              size="lg"
+              variant="ghost"
+              onClick={() => setConfirmOpen(false)}
+            >
+              Keep working
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

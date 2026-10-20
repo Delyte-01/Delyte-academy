@@ -1,176 +1,187 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  BookOpen,
-  ClipboardCheck,
-  Clock,
-  Signal,
-  Paperclip,
-  Download,
-  FileText,
-  Inbox,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, ChevronDown, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Topic } from "@/types/topic";
-import { TopicAttachment } from "@/types/attachment";
+import type { Heading } from "./richcontent-viewer";
+
+function useActiveHeading(headings: Heading[]) {
+  const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (headings.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-96px 0px -65% 0px" },
+    );
+    headings.forEach((h) => {
+      const el = document.getElementById(h.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [headings]);
+
+  return active ?? headings[0]?.id ?? null;
+}
+
+function scrollToHeading(id: string) {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(id)?.scrollIntoView({
+    behavior: reduce ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
+function OutlineList({
+  headings,
+  onSelect,
+}: {
+  headings: Heading[];
+  onSelect?: () => void;
+}) {
+  const active = useActiveHeading(headings);
+
+  return (
+    <ol className="border-l border-border">
+      {headings.map((h) => (
+        <li key={h.id}>
+          <a
+            href={`#${h.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToHeading(h.id);
+              onSelect?.();
+            }}
+            aria-current={active === h.id ? "location" : undefined}
+            className={cn(
+              "-ml-px block border-l-2 py-1.5 pr-2 text-sm leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
+              h.level === 3 ? "pl-6" : "pl-3",
+              active === h.id
+                ? "border-emerald-500 font-medium text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {h.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/* Mobile: collapsible outline at the top of the lesson */
+export function MobileOutline({ headings }: { headings: Heading[] }) {
+  const [open, setOpen] = useState(false);
+  if (headings.length < 3) return null;
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-card lg:hidden">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+      >
+        On this page
+        <ChevronDown
+          className={cn(
+            "size-4 text-muted-foreground transition-transform motion-reduce:transition-none",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-border/60 px-4 py-3">
+          <OutlineList headings={headings} onSelect={() => setOpen(false)} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TopicSidebarProps {
   topic: Topic;
-  attachments: TopicAttachment[];
-  hasQuiz?: boolean;
+  headings: Heading[];
+  progress: number;
+  completedCount: number;
+  totalTopics: number;
 }
 
-const difficultyStyles: Record<string, string> = {
-  beginner: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700",
-  intermediate: "border-amber-500/30 bg-amber-500/10 text-amber-700",
-  advanced: "border-rose-500/30 bg-rose-500/10 text-rose-700",
-};
-
+/* Desktop: sticky rail */
 export function TopicSidebar({
   topic,
-  attachments,
-  hasQuiz = true,
+  headings,
+  progress,
+  completedCount,
+  totalTopics,
 }: TopicSidebarProps) {
-  const handleDownload = (resource: TopicAttachment) => {
-    const link = document.createElement("a");
-
-    link.href = resource.file_url;
-    link.download = resource.file_name || resource.title;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const difficultyClass =
-    difficultyStyles[topic.difficulty?.toLowerCase?.()] ??
-    "border-border bg-muted text-foreground";
-
   return (
-    <div className="hidden space-y-5 lg:sticky lg:top-6 md:block">
-      {/* Topic Information */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold">Topic Information</CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-2.5 p-4 pt-0">
-          <div className="flex items-center justify-between rounded-xl border border-border/60 p-3 transition-colors hover:bg-muted/40">
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="h-4 w-4 text-primary" />
-              Estimated Time
-            </span>
-            <span className="text-sm font-bold text-foreground">
-              {topic.estimated_time} min
+    <aside className="hidden lg:block">
+      <div className="sticky top-6 max-h-[calc(100vh-3rem)] space-y-5 overflow-y-auto pb-2">
+        <section className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold">Your progress</h2>
+            <span className="text-sm font-semibold tabular-nums">
+              {progress}%
             </span>
           </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-border/60 p-3 transition-colors hover:bg-muted/40">
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Signal className="h-4 w-4 text-amber-600" />
-              Difficulty
-            </span>
-            <Badge
-              variant="outline"
-              className={`capitalize ${difficultyClass}`}
-            >
-              {topic.difficulty}
-            </Badge>
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Course progress"
+          >
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-[width] duration-700 motion-reduce:transition-none"
+              style={{ width: `${progress}%` }}
+            />
           </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-border/60 p-3 transition-colors hover:bg-muted/40">
-            <span className="text-xs text-muted-foreground">Topic</span>
-            <span className="text-sm font-bold text-foreground">
-              {topic.order_index}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Resources */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="hidden pb-3 md:flex">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold">
-            <Paperclip className="h-4 w-4 text-primary" />
-            Resources
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-2 p-4 pt-0">
-          {attachments.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-muted-foreground/25 py-6 text-center">
-              <Inbox className="h-5 w-5 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
-                No resources available for this topic.
-              </p>
-            </div>
-          ) : (
-            attachments.map((resource) => (
-              <div
-                key={resource.id}
-                className="group flex items-center justify-between gap-2 rounded-xl border border-border/60 p-3 transition-colors hover:border-primary/30 hover:bg-primary/[0.03]"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-transform group-hover:scale-105">
-                    <FileText className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium text-foreground">
-                      {resource.title}
-                    </p>
-                    <p className="truncate text-[11px] text-muted-foreground">
-                      {resource.file_type} ·{" "}
-                      {(resource.file_size / 1024 / 1024).toFixed(1)} MB
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex-shrink-0 group-hover:bg-primary/10 group-hover:text-primary"
-                  onClick={() => handleDownload(resource)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold">Quick Actions</CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-2 p-4 pt-0">
-          <Button variant="outline" className="w-full justify-start" asChild>
+          <p className="text-sm text-muted-foreground">
+            {completedCount} of {totalTopics} topics done
+          </p>
+          <Button variant="outline" className="w-full" asChild>
             <Link href={`/dashboard/courses/${topic.course_id}`}>
-              <BookOpen className="mr-2 h-4 w-4" />
-              Back to Course
+              <BookOpen className="mr-2 size-4" />
+              Back to course
             </Link>
           </Button>
+        </section>
 
-          {hasQuiz && (
-            <Button
-              className="w-full justify-start shadow-sm transition-transform hover:scale-[1.01]"
-              asChild
-            >
-              <Link href={`/dashboard/topics/${topic.id}/quiz`}>
-                <ClipboardCheck className="mr-2 h-4 w-4" />
-                Take Quiz
-              </Link>
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        {headings.length >= 2 && (
+          <nav aria-label="On this page" className="space-y-3 px-1">
+            <h2 className="text-sm font-semibold">On this page</h2>
+            <OutlineList headings={headings} />
+          </nav>
+        )}
+
+        <section className="space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold">Test yourself</h2>
+            <p className="text-sm text-muted-foreground">
+              Check what you&apos;ve learned with a short quiz.
+            </p>
+          </div>
+          <Button
+            className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
+            asChild
+          >
+            <Link href={`/dashboard/topics/${topic.id}/quiz`}>
+              <ClipboardCheck className="mr-2 size-4" />
+              Take quiz
+            </Link>
+          </Button>
+        </section>
+      </div>
+    </aside>
   );
 }

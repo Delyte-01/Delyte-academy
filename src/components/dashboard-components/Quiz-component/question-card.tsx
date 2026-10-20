@@ -1,67 +1,72 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { Bookmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-// import type { QuizQuestion } from "./types";
+import { Button } from "@/components/ui/button";
 import { MathRenderer } from "@/components/common/math-renderer";
 import { QuizPlayerQuestion } from "@/types/quiz";
-
+import { cn } from "@/lib/utils";
 
 interface QuestionCardProps {
   question: QuizPlayerQuestion;
+  marked: boolean;
+  onToggleMark: () => void;
 }
 
 const difficultyStyles: Record<string, string> = {
-  Easy: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  Easy: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   Medium:
-    "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  Hard: "border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-400",
+    "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  Hard: "border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400",
 };
 
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-export function QuestionCard({ question }: QuestionCardProps) {
-  const badgeRef = useRef<HTMLDivElement>(null);
-
-  // A tiny pop on the difficulty badge whenever a new question loads in.
-  useEffect(() => {
-    if (!badgeRef.current || prefersReducedMotion()) return;
-
-    gsap.fromTo(
-      badgeRef.current,
-      { scale: 0.85, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" },
-    );
-  }, [question.number]);
-
+export function QuestionCard({
+  question,
+  marked,
+  onToggleMark,
+}: QuestionCardProps) {
   return (
-    <Card className="border-border/70">
-      <CardHeader className="space-y-3 pb-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-          <CardTitle className="text-base font-bold leading-snug text-foreground sm:text-lg">
-            <MathRenderer text={question.text} />
-          </CardTitle>
-          <div ref={badgeRef} className="sm:flex-shrink-0">
-            <Badge
-              variant="outline"
-              className={difficultyStyles[question.difficulty]}
-            >
-              {question.difficulty}
-            </Badge>
-          </div>
+    <section aria-labelledby="current-question" className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+          <Badge
+            variant="outline"
+            className={difficultyStyles[question.difficulty]}
+          >
+            {question.difficulty}
+          </Badge>
+          <span>
+            {question.points} {question.points === 1 ? "point" : "points"}
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>Question {question.number}</span>
-          <span>·</span>
-          <span>{question.points} points</span>
-          <span>·</span>
-          <span>{question.type}</span>
-        </div>
-      </CardHeader>
-    </Card>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-pressed={marked}
+          onClick={onToggleMark}
+          className={cn(
+            "-mr-2 shrink-0",
+            marked && "text-amber-700 dark:text-amber-400",
+          )}
+        >
+          <Bookmark
+            className={cn(
+              "mr-1.5 size-4",
+              marked && "fill-amber-400 text-amber-500",
+            )}
+          />
+          {marked ? "Marked for review" : "Mark for review"}
+        </Button>
+      </div>
+
+      <h2
+        id="current-question"
+        className="text-xl font-semibold leading-snug tracking-tight sm:text-2xl"
+      >
+        <MathRenderer text={question.text} />
+      </h2>
+    </section>
   );
 }

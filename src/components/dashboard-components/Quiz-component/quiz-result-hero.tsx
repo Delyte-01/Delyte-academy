@@ -1,173 +1,120 @@
 "use client";
 
-import { Trophy, CheckCircle2, XCircle, Award } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuizResultData {
   score: number;
   passed: boolean;
+  passingScore: number;
   correctAnswers: number;
   incorrectAnswers: number;
+  earnedPoints: number;
   totalPoints: number;
 }
 
-interface QuizResultsHeroProps {
-  result: QuizResultData;
-}
+const R = 70;
+const C = 2 * Math.PI * R;
 
-export function QuizResultsHero({ result }: QuizResultsHeroProps) {
-  const circumference = 2 * Math.PI * 70;
-  const offset = circumference - (result.score / 100) * circumference;
+export function QuizResultsHero({ result }: { result: QuizResultData }) {
+  // Start empty, then fill, so the ring draws itself once on arrival.
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(result.score)); // eslint-disable-line react-hooks/set-state-in-effect
+    return () => cancelAnimationFrame(id);
+  }, [result.score]);
 
-  const accent = result.passed
-    ? {
-        gradient: "from-slate-900 via-emerald-950 to-emerald-900",
-        glow: "bg-emerald-500/20",
-        ring: "ring-emerald-400/20",
-        stopA: "#34d399",
-        stopB: "#2dd4bf",
-        badgeClass: "bg-emerald-500/20 text-emerald-300",
-      }
-    : {
-        gradient: "from-slate-900 via-slate-900 to-rose-950/60",
-        glow: "bg-rose-500/10",
-        ring: "ring-rose-400/20",
-        stopA: "#fb7185",
-        stopB: "#f97316",
-        badgeClass: "bg-rose-500/20 text-rose-300",
-      };
+  const { passed } = result;
 
   return (
-    <Card
-      className={`relative overflow-hidden border-0 bg-gradient-to-br text-white shadow-xl ${accent.gradient}`}
+    <section
+      className={cn(
+        "rounded-3xl border p-6 sm:p-8",
+        passed
+          ? "border-emerald-500/25 bg-emerald-500/5"
+          : "border-amber-500/25 bg-amber-500/5",
+      )}
     >
-      {/* Ambient background texture */}
-      <div className="pointer-events-none absolute inset-0">
-        <div
-          className={`absolute -right-24 -top-24 h-72 w-72 rounded-full ${accent.glow} blur-3xl`}
-        />
-        <div
-          className={`absolute -bottom-24 -left-24 h-72 w-72 rounded-full ${accent.glow} blur-3xl`}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-      </div>
-
-      <CardContent className="relative p-6 sm:p-8 lg:p-10">
-        <div className="flex flex-col items-center gap-5 text-center sm:gap-6">
-          {/* Trophy / result icon */}
-          <div
-            className={`flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10 shadow-lg ring-1 backdrop-blur-sm sm:h-20 sm:w-20 ${accent.ring}`}
+      <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:gap-10 sm:text-left">
+        <div className="relative size-36 shrink-0 sm:size-40">
+          <svg
+            viewBox="0 0 160 160"
+            className="size-full -rotate-90"
+            aria-hidden
           >
-            {result.passed ? (
-              <Trophy className="h-8 w-8 text-amber-300 sm:h-10 sm:w-10" />
-            ) : (
-              <Award className="h-8 w-8 text-rose-300 sm:h-10 sm:w-10" />
-            )}
-          </div>
-
-          {/* Score circle */}
-          <div className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-44 lg:w-44">
-            <div
-              className={`absolute inset-4 rounded-full ${accent.glow} blur-2xl`}
+            <circle
+              cx="80"
+              cy="80"
+              r={R}
+              fill="none"
+              strokeWidth="10"
+              className="stroke-foreground/10"
             />
-            <svg
-              className="relative h-full w-full -rotate-90"
-              viewBox="0 0 160 160"
-            >
-              <circle
-                cx="80"
-                cy="80"
-                r="70"
-                fill="none"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="10"
-              />
-              <circle
-                cx="80"
-                cy="80"
-                r="70"
-                fill="none"
-                stroke="url(#scoreGradient)"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                className="transition-all duration-1000 ease-out motion-reduce:transition-none"
-              />
-              <defs>
-                <linearGradient
-                  id="scoreGradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <stop offset="0%" stopColor={accent.stopA} />
-                  <stop offset="100%" stopColor={accent.stopB} />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                {result.score}%
-              </span>
-              <span className="text-[11px] text-white/60 sm:text-xs">
-                Your Score
-              </span>
-            </div>
-          </div>
-
-          {/* Pass / Fail badge */}
-          <Badge
-            variant="outline"
-            className={`border-0 px-4 py-1.5 text-sm font-bold ${accent.badgeClass}`}
-          >
-            {result.passed ? (
-              <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            ) : (
-              <XCircle className="mr-1.5 h-4 w-4" />
-            )}
-            {result.passed ? "Passed!" : "Not Passed"}
-          </Badge>
-
-          {/* Stats row */}
-          <div className="grid w-full max-w-md grid-cols-3 gap-3 sm:gap-4">
-            <div className="rounded-2xl bg-white/10 p-3 text-center ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.14] sm:p-4">
-              <CheckCircle2 className="mx-auto mb-1 h-4 w-4 text-emerald-400 sm:h-5 sm:w-5" />
-              <p className="text-lg font-extrabold sm:text-xl">
-                {result.correctAnswers}
-              </p>
-              <p className="text-[10px] text-white/60 sm:text-[11px]">
-                Correct
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-3 text-center ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.14] sm:p-4">
-              <XCircle className="mx-auto mb-1 h-4 w-4 text-rose-400 sm:h-5 sm:w-5" />
-              <p className="text-lg font-extrabold sm:text-xl">
-                {result.incorrectAnswers}
-              </p>
-              <p className="text-[10px] text-white/60 sm:text-[11px]">
-                Incorrect
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-3 text-center ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.14] sm:p-4">
-              <Award className="mx-auto mb-1 h-4 w-4 text-amber-300 sm:h-5 sm:w-5" />
-              <p className="text-lg font-extrabold sm:text-xl">
-                {result.totalPoints}
-              </p>
-              <p className="text-[10px] text-white/60 sm:text-[11px]">Points</p>
-            </div>
+            <circle
+              cx="80"
+              cy="80"
+              r={R}
+              fill="none"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={C}
+              strokeDashoffset={C - (shown / 100) * C}
+              className={cn(
+                "transition-[stroke-dashoffset] duration-1000 ease-out motion-reduce:transition-none",
+                passed ? "stroke-emerald-500" : "stroke-amber-500",
+              )}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-4xl font-semibold tabular-nums tracking-tight">
+              {result.score}%
+            </span>
+            <span className="text-xs text-muted-foreground">Your score</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="w-full flex-1 space-y-5">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {passed ? "You passed" : "Not quite there yet"}
+            </h1>
+            <p className="text-muted-foreground">
+              {passed
+                ? `You scored above the ${result.passingScore}% pass mark.`
+                : `You need ${result.passingScore}% to pass. Check the answers below, then try again.`}
+            </p>
+          </div>
+
+          <dl className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
+              <dt className="flex items-center justify-center gap-1 text-xs text-muted-foreground sm:justify-start">
+                <Check className="size-3.5 text-emerald-600" /> Correct
+              </dt>
+              <dd className="mt-1 text-xl font-semibold tabular-nums">
+                {result.correctAnswers}
+              </dd>
+            </div>
+            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
+              <dt className="flex items-center justify-center gap-1 text-xs text-muted-foreground sm:justify-start">
+                <X className="size-3.5 text-rose-600" /> Incorrect
+              </dt>
+              <dd className="mt-1 text-xl font-semibold tabular-nums">
+                {result.incorrectAnswers}
+              </dd>
+            </div>
+            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
+              <dt className="text-xs text-muted-foreground">Points</dt>
+              <dd className="mt-1 text-xl font-semibold tabular-nums">
+                {result.earnedPoints}
+                <span className="text-sm font-normal text-muted-foreground">
+                  /{result.totalPoints}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
   );
 }

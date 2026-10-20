@@ -1,47 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { FileQuestion, ArrowLeft } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, FileQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface EmptyQuizStateProps {
-  topicId: string;
-}
-
-export function EmptyQuizState({ topicId }: EmptyQuizStateProps) {
+export function EmptyQuizState({ topicId }: { topicId: string }) {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md border-border/70 shadow-sm">
-        <CardContent className="flex flex-col items-center gap-5 p-6 text-center sm:p-8">
-          {/* Icon with layered depth instead of a flat tile */}
-          <div className="relative flex h-20 w-20 items-center justify-center">
-            <div className="absolute inset-0 rounded-3xl bg-muted" />
-            <div className="absolute inset-0 rounded-3xl border border-dashed border-border" />
-            <FileQuestion
-              className="relative h-9 w-9 text-muted-foreground"
-              strokeWidth={1.75}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <h2 className="text-lg font-bold text-foreground">
-              No quiz here yet
-            </h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              This topic doesn&apos;t have a quiz configured yet. Check back
-              later, or head back and keep going with the material.
-            </p>
-          </div>
-
-          <Button className="w-full shadow-sm sm:w-auto" asChild>
-            <Link href={`/dashboard/topics/${topicId}`}>
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Back to Topic
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-4 py-10 text-center">
+      <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+        <FileQuestion
+          className="size-8 text-muted-foreground"
+          strokeWidth={1.75}
+        />
+      </div>
+      <div className="max-w-sm space-y-1.5">
+        <h1 className="text-lg font-semibold">This topic has no quiz yet</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Questions haven&apos;t been added for this topic. Go back to the
+          lesson and check again later.
+        </p>
+      </div>
+      <Button asChild>
+        <Link href={`/dashboard/topics/${topicId}`}>
+          <ArrowLeft className="mr-2 size-4" />
+          Back to topic
+        </Link>
+      </Button>
     </div>
   );
 }

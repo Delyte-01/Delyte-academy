@@ -1,184 +1,171 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ListChecks, Grid3x3 } from "lucide-react";
-import gsap from "gsap";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, LayoutGrid, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { QuestionNavigator, QuestionState } from "./question-navigator";
-
+import { NavItem, QuestionNavigator } from "./question-navigator";
 
 interface QuizSidebarProps {
   total: number;
-  states: QuestionState[];
+  items: NavItem[];
   current: number;
   onSelect: (index: number) => void;
   answeredCount: number;
   markedCount: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onFinish: () => void;
+  isLast: boolean;
+  busy?: boolean;
 }
 
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-// Small helper: animates a number label counting up/down to its new value.
-function useCountUp(value: number) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const prevRef = useRef(0);
-
-  useEffect(() => {
-    const from = prevRef.current;
-    prevRef.current = value;
-    if (!ref.current) return;
-
-    if (prefersReducedMotion()) {
-      ref.current.textContent = String(value);
-      return;
-    }
-
-    const obj = { val: from };
-    const tween = gsap.to(obj, {
-      val: value,
-      duration: 0.4,
-      ease: "power2.out",
-      onUpdate: () => {
-        if (ref.current) ref.current.textContent = String(Math.round(obj.val));
-      },
-    });
-
-    return () => {
-      tween.kill();
-    };
-  }, [value]);
-
-  return ref;
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+      <dd className="text-lg font-semibold tabular-nums">{value}</dd>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+    </div>
+  );
 }
 
 export function QuizSidebar({
   total,
-  states,
+  items,
   current,
   onSelect,
   answeredCount,
   markedCount,
+  onPrev,
+  onNext,
+  onFinish,
+  isLast,
+  busy,
 }: QuizSidebarProps) {
   const [open, setOpen] = useState(false);
-  const unansweredCount = total - answeredCount - markedCount;
+  const unanswered = total - answeredCount;
 
-  const answeredRef = useCountUp(answeredCount);
-  const markedRef = useCountUp(markedCount);
-  const unansweredRef = useCountUp(unansweredCount);
-
-  const legend = [
-    { label: "Answered", color: "bg-emerald-500", ref: answeredRef },
-    { label: "Marked", color: "bg-amber-500", ref: markedRef },
-    {
-      label: "Unanswered",
-      color: "bg-muted-foreground/30",
-      ref: unansweredRef,
-    },
-  ];
-
-  const navigatorContent = (
-    <div className="space-y-4">
-      <QuestionNavigator
-        total={total}
-        states={states}
-        current={current}
-        onSelect={onSelect}
-      />
-      <div className="space-y-2 border-t border-border/60 pt-3 px-5">
-        {legend.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between text-xs"
-          >
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-              {item.label}
-            </span>
-            <span
-              ref={item.ref}
-              className="font-bold tabular-nums text-foreground"
-            >
-              0
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+  const stats = (
+    <dl className="grid grid-cols-3 gap-2">
+      <Stat label="Answered" value={answeredCount} />
+      <Stat label="Left" value={unanswered} />
+      <Stat label="Marked" value={markedCount} />
+    </dl>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <div className="hidden lg:block lg:sticky lg:top-24">
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-bold">
-              <Grid3x3 className="h-4 w-4 text-primary" />
-              Question Navigator
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">{navigatorContent}</CardContent>
-        </Card>
-      </div>
+      {/* Desktop: sticky rail */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-24 space-y-5 rounded-2xl border border-border/60 bg-card p-5">
+          <h2 className="text-sm font-semibold">Questions</h2>
+          <QuestionNavigator
+            items={items}
+            current={current}
+            onSelect={onSelect}
+          />
+          {stats}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={onFinish}
+            disabled={busy}
+          >
+            <Send className="mr-2 size-4" />
+            Finish quiz
+          </Button>
+        </div>
+      </aside>
 
-      {/* Mobile: fixed bottom summary bar, keeps status + navigator one tap away */}
-      <div className="lg:hidden">
-        {/* Reserves space so page content doesn't sit behind the fixed bar */}
-        <div className="h-[68px]" aria-hidden="true" />
-
-        <div
-          className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/90 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/75"
-          style={{
-            paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
-          }}
-        >
-          <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="tabular-nums">{answeredCount}</span>/{total}{" "}
-                answered
-              </span>
-              {markedCount > 0 && (
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  <span className="tabular-nums">{markedCount}</span> marked
+      {/* Mobile: thumb-reach bar with navigator, previous and next/finish */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center gap-2">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="lg"
+                className="min-w-0 flex-1 justify-start"
+              >
+                <LayoutGrid className="mr-2 size-4 shrink-0" />
+                <span className="truncate tabular-nums">
+                  {answeredCount}/{total} answered
                 </span>
-              )}
-            </div>
-
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            >
+              <SheetHeader className="px-0 text-left">
+                <SheetTitle>Questions</SheetTitle>
+                <SheetDescription>
+                  Tap a number to jump to that question.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-4 space-y-5">
+                <QuestionNavigator
+                  items={items}
+                  current={current}
+                  onSelect={(i) => {
+                    onSelect(i);
+                    setOpen(false);
+                  }}
+                />
+                {stats}
                 <Button
-                  size="sm"
                   variant="outline"
-                  className="flex-shrink-0 rounded-xl"
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() => {
+                    setOpen(false);
+                    onFinish();
+                  }}
                 >
-                  <ListChecks className="mr-1.5 h-4 w-4" />
-                  Navigator
+                  <Send className="mr-2 size-4" />
+                  Finish quiz
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-sm">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Grid3x3 className="h-5 w-5 text-primary" />
-                    Question Navigator
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">{navigatorContent}</div>
-              </SheetContent>
-            </Sheet>
-          </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="shrink-0 px-3.5"
+            onClick={onPrev}
+            disabled={current === 0}
+            aria-label="Previous question"
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+
+          {isLast ? (
+            <Button
+              size="lg"
+              className="shrink-0 bg-emerald-600 text-white hover:bg-emerald-500"
+              onClick={onFinish}
+              disabled={busy}
+            >
+              Finish
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="shrink-0 bg-emerald-600 text-white hover:bg-emerald-500"
+              onClick={onNext}
+            >
+              Next
+              <ArrowRight className="ml-1.5 size-4" />
+            </Button>
+          )}
         </div>
       </div>
     </>

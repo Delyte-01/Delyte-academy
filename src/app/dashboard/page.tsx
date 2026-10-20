@@ -8,17 +8,18 @@ import {
   Award,
   Target,
   ArrowRight,
-
-  Star,
-
   ClipboardCheck,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Compass,
 } from "lucide-react";
 import gsap from "gsap";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGSAP } from "@gsap/react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard-components/dashboard/stats-card";
 import { useEnrollment } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,100 +29,83 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { ContinueLearningHero } from "@/components/dashboard-components/dashboard/continue-learning";
 import { useProfile } from "@/context/profile-context";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
-import { useGSAP } from "@gsap/react";
 
-// const recommendedCourses = [
-//   {
-//     id: "rec-1",
-//     title: "Python for Beginners",
-//     instructor: "Dr. Alan Smith",
-//     image:
-//       "https://images.pexels.com/photos/1181271/pexels-photo-1181271.jpeg?auto=compress&cs=tinysrgb&w=400",
-//     rating: 4.9,
-//     students: 2100,
-//   },
-//   {
-//     id: "rec-2",
-//     title: "Data Structures & Algorithms",
-//     instructor: "Prof. Rita Patel",
-//     image:
-//       "https://images.pexels.com/photos/270557/pexels-photo-270557.jpeg?auto=compress&cs=tinysrgb&w=400",
-//     rating: 4.8,
-//     students: 1800,
-//   },
-//   {
-//     id: "rec-3",
-//     title: "Web Development Bootcamp",
-//     instructor: "Mr. Kevin Lee",
-//     image:
-//       "https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&cs=tinysrgb&w=400",
-//     rating: 4.7,
-//     students: 3200,
-//   },
-//   {
-//     id: "rec-4",
-//     title: "Machine Learning Basics",
-//     instructor: "Dr. Sophia Chen",
-//     image:
-//       "https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=400",
-//     rating: 4.9,
-//     students: 2500,
-//   },
-// ];
+const ACTIVITY_COLLAPSED_COUNT = 5;
 
 const prefersReducedMotion = (): boolean =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Small heading with a colored accent bar — used to keep section headers consistent. */
-function SectionHeading({ title, badge }: { title: string; badge?: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="h-5 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-teal-500" />
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
-      {badge && <Badge className="text-xs">{badge}</Badge>}
-    </div>
-  );
-}
+const plural = (n: number, one: string, many = `${one}s`): string =>
+  `${n} ${n === 1 ? one : many}`;
 
 const activityMeta = {
   enrollment: {
     icon: BookOpen,
-    color: "text-blue-600",
+    color: "text-blue-600 dark:text-blue-400",
     bg: "bg-blue-500/10",
   },
   topic_completed: {
     icon: CheckCircle2,
-    color: "text-emerald-600",
+    color: "text-emerald-600 dark:text-emerald-400",
     bg: "bg-emerald-500/10",
   },
   quiz_completed: {
     icon: ClipboardCheck,
-    color: "text-violet-600",
+    color: "text-violet-600 dark:text-violet-400",
     bg: "bg-violet-500/10",
   },
 };
 
+/** Consistent section title with an optional count and action link. */
+function SectionHeader({
+  title,
+  subtitle,
+  href,
+  actionLabel = "View all",
+}: {
+  title: string;
+  subtitle?: string;
+  href?: string;
+  actionLabel?: string;
+}) {
+  return (
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div>
+        <h2 className="text-xl font-bold tracking-tight text-foreground">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+        )}
+      </div>
+      {href && (
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="shrink-0 rounded-full text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Link href={href}>
+            {actionLabel}
+            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { profile } = useProfile();
-  console.log(profile)
 
   const { activities, loading: activityLoading } = useRecentActivity(user?.id);
   const { enrollments, loading } = useEnrollment(user?.id ?? "");
   const { upcomingQuizzes } = useDashboard();
 
   const [greeting, setGreeting] = useState("Welcome back");
-
-  const ACTIVITY_COLLAPSED_COUNT = 5;
-
-  // inside component:
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
-
-  const visibleActivities = activitiesExpanded
-    ? activities
-    : activities.slice(0, ACTIVITY_COLLAPSED_COUNT);
-  const hasMoreActivities = activities.length > ACTIVITY_COLLAPSED_COUNT;
 
   // Computed client-side only, so the server-rendered markup and first paint
   // stay identical (avoids a hydration mismatch from the visitor's clock).
@@ -140,169 +124,80 @@ export default function DashboardPage() {
 
   const totalCourses = enrollments.length;
   const completedCourses = enrollments.filter((e) => e.completed).length;
+  const activeCourses = enrollments.filter((e) => !e.completed).length;
+  const quizCount = upcomingQuizzes.length;
 
   const averageProgress =
-    enrollments.length === 0
+    totalCourses === 0
       ? 0
       : Math.round(
-          enrollments.reduce((sum, e) => sum + e.progress, 0) /
-            enrollments.length,
+          enrollments.reduce((sum, e) => sum + e.progress, 0) / totalCourses,
         );
 
-  const activeCourses = enrollments.filter((e) => !e.completed).length;
+  const completionRate =
+    totalCourses === 0
+      ? 0
+      : Math.round((completedCourses / totalCourses) * 100);
 
   const continueCourse = enrollments
     .filter((e) => !e.completed)
     .sort((a, b) => b.progress - a.progress)[0];
 
-  // const displayName = user?.user_metadata?.full_name ?? "Student";
-
   const displayName = profile?.full_name || "Student";
 
-  // --- Animation refs (typed, no `any`) ---
-  const statsRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const heroBarRef = useRef<HTMLDivElement>(null);
-  const heroPercentRef = useRef<HTMLSpanElement>(null);
-  const coursesGridRef = useRef<HTMLDivElement>(null);
-  const activityRef = useRef<HTMLDivElement>(null);
-  const quizzesRef = useRef<HTMLDivElement>(null);
-  const recommendedRef = useRef<HTMLDivElement>(null);
+  const summary =
+    totalCourses === 0
+      ? "Pick a course below to start your learning journey."
+      : activeCourses === 0
+        ? "You're all caught up. Time to pick your next course?"
+        : `${plural(activeCourses, "course")} in progress${
+            quizCount > 0
+              ? ` · ${plural(quizCount, "quiz", "quizzes")} waiting for you`
+              : ""
+          }`;
+
+  const visibleActivities = activitiesExpanded
+    ? activities
+    : activities.slice(0, ACTIVITY_COLLAPSED_COUNT);
+  const hasMoreActivities = activities.length > ACTIVITY_COLLAPSED_COUNT;
+
+  // --- Entrance animation (runs once, as soon as the page content exists) ---
+  const containerRef = useRef<HTMLDivElement>(null);
   const hasAnimatedRef = useRef(false);
 
   useGSAP(
     () => {
-      if (loading || hasAnimatedRef.current || activityLoading) return;
-
+      if (loading || hasAnimatedRef.current) return;
       hasAnimatedRef.current = true;
 
-      gsap.killTweensOf([
-        statsRef.current?.children,
-        heroRef.current,
-        heroBarRef.current,
-        coursesGridRef.current?.children,
-        activityRef.current?.children,
-        quizzesRef.current?.children,
-        recommendedRef.current?.children,
-      ]);
-
-      if (prefersReducedMotion()) {
-        if (heroBarRef.current && continueCourse) {
-          heroBarRef.current.style.width = `${continueCourse.progress}%`;
-        }
-        return;
-      }
+      if (prefersReducedMotion()) return;
 
       const tl = gsap.timeline({
-        defaults: { ease: "power3.out" },
+        defaults: {
+          ease: "power3.out",
+          clearProps: "opacity,transform",
+        },
       });
 
-      tl.from(statsRef.current?.children ?? [], {
-        y: 16,
+      tl.from("[data-reveal]", {
+        y: 14,
         opacity: 0,
         duration: 0.45,
         stagger: 0.08,
-        clearProps: "opacity,transform",
       });
 
       tl.from(
-        heroRef.current,
+        "[data-reveal-group] > *",
         {
-          y: 18,
-          opacity: 0,
-          duration: 0.5,
-          clearProps: "opacity,transform",
-        },
-        "-=0.25",
-      );
-
-      if (heroBarRef.current && continueCourse) {
-        tl.fromTo(
-          heroBarRef.current,
-          { width: "0%" },
-          {
-            width: `${continueCourse.progress}%`,
-            duration: 0.9,
-            ease: "power2.out",
-          },
-          "-=0.2",
-        );
-
-        const counter = { val: 0 };
-
-        tl.to(
-          counter,
-          {
-            val: continueCourse.progress,
-            duration: 0.9,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (heroPercentRef.current) {
-                heroPercentRef.current.textContent = `${Math.round(counter.val)}%`;
-              }
-            },
-          },
-          "<",
-        );
-      }
-
-      tl.from(
-        coursesGridRef.current?.children ?? [],
-        {
-          y: 14,
+          y: 12,
           opacity: 0,
           duration: 0.4,
-          stagger: 0.06,
-          clearProps: "opacity,transform",
-        },
-        "-=0.3",
-      );
-
-      tl.from(
-        activityRef.current?.children ?? [],
-        {
-          x: -10,
-          opacity: 0,
-          duration: 0.35,
           stagger: 0.05,
-          clearProps: "opacity,transform",
-        },
-        "-=0.3",
-      );
-
-      tl.from(
-        quizzesRef.current?.children ?? [],
-        {
-          x: 10,
-          opacity: 0,
-          duration: 0.35,
-          stagger: 0.05,
-          clearProps: "opacity,transform",
         },
         "-=0.35",
       );
-
-      tl.from(
-        recommendedRef.current?.children ?? [],
-        {
-          y: 14,
-          opacity: 0,
-          duration: 0.4,
-          stagger: 0.06,
-          clearProps: "opacity,transform",
-        },
-        "-=0.25",
-      );
     },
-    {
-      dependencies: [
-        loading,
-        // enrolledCourses.length,
-        activities.length,
-        upcomingQuizzes.length,
-        // recommendedCourses.length,
-      ],
-    },
+    { scope: containerRef, dependencies: [loading] },
   );
 
   if (loading) {
@@ -310,316 +205,312 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Greeting */}
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">{greeting},</p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          {displayName} <span aria-hidden="true">👋</span>
-        </h1>
-      </div>
+    <div ref={containerRef} className="mx-auto w-full max-w-[1400px] space-y-8">
+      {/* Header */}
+      <header
+        data-reveal
+        className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            {greeting},
+          </p>
+          <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            {displayName}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">{summary}</p>
+        </div>
+        <Button asChild className="w-full rounded-full sm:w-auto">
+          <Link href="/dashboard/courses">
+            <Compass className="mr-2 h-4 w-4" />
+            Explore courses
+          </Link>
+        </Button>
+      </header>
 
-      {/* SECTION 1: Statistics Cards */}
+      {/* Stats */}
       <div
-        ref={statsRef}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:grid-cols-4"
+        data-reveal-group
+        className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
         <StatCard
-          label="Courses Enrolled"
+          label="Enrolled"
           value={totalCourses}
-          subtitle="2 new this month"
-          trend="+2"
-          trendUp
+          subtitle={
+            totalCourses === 0
+              ? "No courses yet"
+              : `${activeCourses} in progress`
+          }
           icon={BookOpen}
-          gradient="from-blue-500/10 to-blue-500/5"
-          iconColor="text-blue-600"
+          tone="blue"
         />
         <StatCard
-          label="Completed Courses"
+          label="Completed"
           value={completedCourses}
-          subtitle="Keep going!"
-          trend="+1"
-          trendUp
-          icon={CheckCircle2}
-          gradient="from-emerald-500/10 to-emerald-500/5"
-          iconColor="text-emerald-600"
-        />
-        <StatCard
-          label="Average Progress"
-          value={`${averageProgress}%`}
-          subtitle="Learn more!"
-          trend="+1"
-          trendUp
+          subtitle={
+            totalCourses === 0
+              ? "Finish a course to see it here"
+              : `${completionRate}% of your courses`
+          }
           icon={Award}
-          gradient="from-amber-500/10 to-amber-500/5"
-          iconColor="text-amber-600"
+          tone="emerald"
         />
         <StatCard
-          label="Active Courses"
-          value={activeCourses}
-          subtitle="+8% improvement"
-          trend="+8%"
-          trendUp
+          label="Average progress"
+          value={`${averageProgress}%`}
+          subtitle="Across all courses"
           icon={Target}
-          gradient="from-violet-500/10 to-violet-500/5"
-          iconColor="text-violet-600"
+          tone="amber"
+          progress={averageProgress}
+        />
+        <StatCard
+          label="Quizzes waiting"
+          value={quizCount}
+          subtitle={quizCount === 0 ? "Nothing due right now" : "Ready to take"}
+          icon={ClipboardCheck}
+          tone="violet"
         />
       </div>
 
-      {/* SECTION 2: Hero / Continue Learning */}
-      {continueCourse && <ContinueLearningHero enrollment={continueCourse} />}
+      {/* Main layout: content + right rail */}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        {/* Left column */}
+        <div className="min-w-0 space-y-8">
+          {continueCourse && (
+            <div data-reveal>
+              <ContinueLearningHero enrollment={continueCourse} />
+            </div>
+          )}
 
-      {/* SECTION 3: My Courses */}
-      <div>
-        <div className="mb-4 flex items-center justify-between">
-          <SectionHeading
-            title="My Courses"
-            badge={`${publishedCourses.length} enrolled`}
-          />
-          <Button asChild variant="ghost" size="sm" className="text-xs">
-            <Link href="/dashboard/courses">
-              View all
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        </div>
-        <div
-          ref={coursesGridRef}
-          className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 "
-        >
-          {publishedCourses.map((enrollment) => {
-            const course = enrollment.course!;
-            return <CourseCard key={course.id} {...course} />;
-          })}
-        </div>
-        {!loading && enrollments.length === 0 && (
-          <div className="mt-6 rounded-2xl border border-dashed p-6 text-center">
-            <h3 className="text-lg font-semibold text-foreground">
-              No courses enrolled yet
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Browse our course catalog and start learning today!
-            </p>
-            <Button
-              asChild
-              variant="secondary"
-              size="sm"
-              className="mt-4 bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              <Link href="/dashboard/courses">Browse Courses</Link>
-            </Button>
-          </div>
-        )}
-      </div>
+          <section>
+            <div data-reveal>
+              <SectionHeader
+                title="My courses"
+                subtitle={
+                  publishedCourses.length > 0
+                    ? plural(publishedCourses.length, "course") +
+                      " in your library"
+                    : undefined
+                }
+                href="/dashboard/courses"
+              />
+            </div>
 
-      {/* SECTION 4: Recent Activity + SECTION 5: Upcoming Quizzes */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Activity */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-bold">
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
-            {activityLoading ? (
-              <p className="text-sm text-muted-foreground">
-                Loading activity...
-              </p>
-            ) : activities.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No recent activity yet.
-              </p>
-            ) : (
-              <>
-                <div
-                  ref={activityRef}
-                  className={`relative ${
-                    activitiesExpanded
-                      ? "max-h-[400px] overflow-y-auto pr-1"
-                      : ""
-                  }`}
-                >
-                  <div className="space-y-4">
-                    {visibleActivities.map((activity, idx) => {
-                      const meta = activityMeta[activity.type];
-                      const Icon = meta.icon;
-
-                      return (
-                        <div
-                          key={activity.id}
-                          className="flex items-start gap-3 min-w-0"
-                        >
-                          <div className="relative flex flex-col items-center flex-shrink-0">
-                            <div
-                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${meta.bg}`}
-                            >
-                              <Icon className={`h-4 w-4 ${meta.color}`} />
-                            </div>
-                            {idx < visibleActivities.length - 1 && (
-                              <div className="mt-1 h-full w-px flex-1 bg-border" />
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0 pb-4">
-                            <p className="text-sm font-semibold text-foreground break-words">
-                              {activity.text}
-                            </p>
-                            <p className="text-xs text-muted-foreground break-words">
-                              {activity.course}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {activity.time}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {activitiesExpanded && (
-                    <div className="pointer-events-none sticky bottom-0 left-0 h-6 w-full bg-gradient-to-t from-background to-transparent" />
-                  )}
-                </div>
-
-                {hasMoreActivities && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 w-full text-xs text-muted-foreground"
-                    onClick={() => setActivitiesExpanded((v) => !v)}
-                  >
-                    {activitiesExpanded ? (
-                      <>
-                        Show less
-                        <ChevronUp className="ml-1 h-3.5 w-3.5" />
-                      </>
-                    ) : (
-                      <>
-                        View all {activities.length} activities
-                        <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                      </>
-                    )}
-                  </Button>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Quizzes */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-bold">
-              Upcoming Quizzes
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent ref={quizzesRef} className="space-y-3 p-4 sm:p-5 pt-0">
-            {upcomingQuizzes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No quizzes available right now.
-              </p>
-            ) : (
-              upcomingQuizzes.slice(0, 5).map((quiz) => (
-                <div
-                  key={quiz.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/60 p-3 transition-colors duration-200 hover:border-emerald-500/30 hover:bg-muted/50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {quiz.title}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {quiz.course}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                      <span>Passing: {quiz.passingScore}%</span>
-                      <span className="hidden sm:inline">•</span>
-                      <span>{quiz.timeLimit} min</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    asChild
-                    className="w-full sm:w-auto flex-shrink-0 transition-transform duration-150 active:scale-95"
-                  >
-                    <Link href={`/dashboard/topics/${quiz.topicId}/quiz`}>
-                      Start
-                    </Link>
-                  </Button>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* SECTION 6: Recommended Courses */}
-      {/* <div>
-        <div className="mb-4 flex items-center justify-between">
-          <SectionHeading title="Recommended Courses" />
-          <Button variant="ghost" size="sm" className="text-xs">
-            View all
-            <ArrowRight className="ml-1 h-3.5 w-3.5" />
-          </Button>
-        </div>
-        <div className="relative">
-          {/* Edge fades hint that the row scrolls, without a visible scrollbar */}
-          {/* <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent"
-          />
-          <div
-            ref={recommendedRef}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:thin]"
-          >
-            {recommendedCourses.map((course) => (
-              <Card
-                key={course.id}
-                className="min-w-[260px] flex-shrink-0 snap-start border-border/60 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+            {publishedCourses.length > 0 ? (
+              <div
+                data-reveal-group
+                className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3"
               >
-                <div className="relative h-32 overflow-hidden rounded-t-xl">
-                  <img
-                    src={course.image}
-                    alt={course.title}
-                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {publishedCourses.map((enrollment) => {
+                  const course = enrollment.course!;
+                  return <CourseCard key={course.id} {...course} />;
+                })}
+              </div>
+            ) : (
+              <div
+                data-reveal
+                className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-10 text-center"
+              >
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <BookOpen className="h-6 w-6" />
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="line-clamp-1 text-sm font-bold text-foreground">
-                    {course.title}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {course.instructor}
-                  </p>
-                  <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                      {course.rating}
-                    </span>
-                    <span>{course.students.toLocaleString()} students</span>
-                  </div> */}
-                  {/* <Button variant="outline" size="sm" className="mt-3 w-full">
-                    Enroll
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  {totalCourses === 0
+                    ? "No courses enrolled yet"
+                    : "Your courses aren't available yet"}
+                </h3>
+                <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
+                  {totalCourses === 0
+                    ? "Browse the catalog and start learning something new today."
+                    : "Courses you enrolled in will appear here once they're published."}
+                </p>
+                <Button asChild className="mt-5 rounded-full">
+                  <Link href="/dashboard/courses">Browse courses</Link>
+                </Button>
+              </div>
+            )}
+          </section>
         </div>
-      </div> */} 
 
-      {/* SECTION 7: Achievements */}
-      {/* <div>
-        <div className="mb-4 flex items-center gap-3">
-          <Trophy className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-bold text-foreground">Achievements</h2>
-        </div>
-        <AchievementCard achievements={achievements} />
-      </div> */}
+        {/* Right rail */}
+        <aside className="min-w-0 space-y-6">
+          {/* Upcoming quizzes */}
+          <Card
+            data-reveal
+            className="gap-0 overflow-hidden rounded-2xl border-border/60 py-0 shadow-sm"
+          >
+            <div className="flex items-center justify-between px-5 pb-3 pt-5">
+              <h2 className="text-base font-semibold text-foreground">
+                Upcoming quizzes
+              </h2>
+              {quizCount > 0 && (
+                <Badge  className="rounded-full">
+                  {quizCount}
+                </Badge>
+              )}
+            </div>
+
+            <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+              {quizCount === 0 ? (
+                <div className="rounded-xl bg-muted/40 px-4 py-8 text-center">
+                  <ClipboardCheck className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No quizzes available right now.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {upcomingQuizzes.slice(0, 5).map((quiz) => (
+                    <li
+                      key={quiz.id}
+                      className="group flex items-center gap-3 rounded-xl border border-border/60 p-3 transition-colors duration-200 hover:border-violet-500/30 hover:bg-muted/50"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                        <ClipboardCheck className="h-5 w-5" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {quiz.title}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {quiz.course}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <Target className="h-3 w-3" />
+                            Pass {quiz.passingScore}%
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {quiz.timeLimit} min
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        asChild
+                        className="shrink-0 rounded-full transition-transform duration-150 active:scale-95"
+                      >
+                        <Link href={`/dashboard/topics/${quiz.topicId}/quiz`}>
+                          Start
+                        </Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Card>
+
+          {/* Recent activity */}
+          <Card
+            data-reveal
+            className="gap-0 overflow-hidden rounded-2xl border-border/60 py-0 shadow-sm"
+          >
+            <div className="px-5 pb-3 pt-5">
+              <h2 className="text-base font-semibold text-foreground">
+                Recent activity
+              </h2>
+            </div>
+
+            <div className="px-5 pb-4">
+              {activityLoading ? (
+                <p className="py-4 text-sm text-muted-foreground">
+                  Loading activity...
+                </p>
+              ) : activities.length === 0 ? (
+                <div className="rounded-xl bg-muted/40 px-4 py-8 text-center">
+                  <BookOpen className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No recent activity yet.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className={cn(
+                      "relative",
+                      activitiesExpanded &&
+                        "max-h-[420px] overflow-y-auto pr-1",
+                    )}
+                  >
+                    <ul>
+                      {visibleActivities.map((activity, idx) => {
+                        const meta =
+                          activityMeta[activity.type] ??
+                          activityMeta.enrollment;
+                        const Icon = meta.icon;
+
+                        return (
+                          <li
+                            key={activity.id}
+                            className="relative flex min-w-0 gap-3 pb-5 last:pb-0"
+                          >
+                            {idx < visibleActivities.length - 1 && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute bottom-0 left-[17px] top-9 w-px bg-border"
+                              />
+                            )}
+                            <div
+                              className={cn(
+                                "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+                                meta.bg,
+                              )}
+                            >
+                              <Icon className={cn("h-4 w-4", meta.color)} />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="break-words text-sm font-medium text-foreground">
+                                {activity.text}
+                              </p>
+                              <p className="break-words text-xs text-muted-foreground">
+                                {activity.course}
+                              </p>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground/80">
+                                {activity.time}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    {activitiesExpanded && (
+                      <div className="pointer-events-none sticky bottom-0 left-0 h-6 w-full bg-gradient-to-t from-card to-transparent" />
+                    )}
+                  </div>
+
+                  {hasMoreActivities && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-3 w-full rounded-full text-xs text-muted-foreground"
+                      onClick={() => setActivitiesExpanded((v) => !v)}
+                      aria-expanded={activitiesExpanded}
+                    >
+                      {activitiesExpanded ? (
+                        <>
+                          Show less
+                          <ChevronUp className="ml-1 h-3.5 w-3.5" />
+                        </>
+                      ) : (
+                        <>
+                          View all {activities.length} activities
+                          <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

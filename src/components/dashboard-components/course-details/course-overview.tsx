@@ -1,30 +1,41 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface CourseOverviewProps {
   description: string;
 }
 
 export function CourseOverview({ description }: CourseOverviewProps) {
+  const [open, setOpen] = useState(false);
+  if (!description) return null;
+
+  const isLong = description.length > 240;
+
   return (
-    <Card className="border-border/60 shadow-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <BookOpen className="h-4 w-4" />
-          </span>
-          About this Course
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {description && (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
+    <section aria-labelledby="about-course" className="space-y-3">
+      <h2 id="about-course" className="text-xl font-semibold tracking-tight">
+        About this course
+      </h2>
+      <p
+        className={cn(
+          "max-w-prose whitespace-pre-line text-[15px] leading-7 text-muted-foreground",
+          isLong && !open && "line-clamp-4 lg:line-clamp-none",
         )}
-      </CardContent>
-    </Card>
+      >
+        {description}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 lg:hidden dark:text-emerald-400"
+        >
+          {open ? "Show less" : "Read more"}
+        </button>
+      )}
+    </section>
   );
 }

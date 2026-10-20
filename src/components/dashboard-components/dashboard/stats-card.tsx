@@ -1,20 +1,50 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { LucideIcon, TrendingDown, TrendingUp } from "lucide-react";
 import gsap from "gsap";
+import { cn } from "@/lib/utils";
+
+/**
+ * Tailwind needs full class names at build time, so each tone is spelled out.
+ */
+const TONES = {
+  blue: {
+    chip: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    bar: "bg-blue-500",
+  },
+  emerald: {
+    chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    bar: "bg-emerald-500",
+  },
+  amber: {
+    chip: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    bar: "bg-amber-500",
+  },
+  violet: {
+    chip: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+    bar: "bg-violet-500",
+  },
+} as const;
+
+export type StatTone = keyof typeof TONES;
 
 interface StatCardProps {
   label: string;
   value: number | string;
-  subtitle: string;
-  trend: string;
-  trendUp: boolean;
+  subtitle?: string;
   icon: LucideIcon;
-  gradient: string;
-  iconColor: string;
+  /** Accent colour for the icon chip and progress bar. */
+  tone?: StatTone;
+  /** Optional 0–100 value; renders a thin progress bar under the number. */
+  progress?: number;
+  /** Optional trend pill. Only pass real data. */
+  trend?: string;
+  trendUp?: boolean;
+  /** Overrides the icon colour (kept so older usages keep compiling). */
+  iconColor?: string;
+  /** @deprecated No longer used by the new design; accepted so old call sites still compile. */
+  gradient?: string;
 }
 
 interface ParsedValue {
@@ -59,14 +89,21 @@ export function StatCard({
   label,
   value,
   subtitle,
-  trend,
-  trendUp,
   icon: Icon,
-  gradient,
+  tone = "emerald",
+  progress,
+  trend,
+  trendUp = true,
   iconColor,
 }: StatCardProps) {
   const valueRef = useRef<HTMLParagraphElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
+  const palette = TONES[tone];
+  const clampedProgress =
+    progress === undefined ? null : Math.max(0, Math.min(100, progress));
+
+  // Count-up for the headline number.
   useEffect(() => {
     const parsed = parseValue(value);
     const el = valueRef.current;
@@ -83,7 +120,7 @@ export function StatCard({
       duration: 0.9,
       ease: "power2.out",
       onUpdate: () => {
-        if (el) el.textContent = formatCounted(counter.val, parsed);
+        el.textContent = formatCounted(counter.val, parsed);
       },
     });
 
@@ -92,31 +129,74 @@ export function StatCard({
     };
   }, [value]);
 
-  return (
-    <Card className="group relative overflow-hidden border-border/60 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 p-2">
-      <div
-        className={cn(
-          "relative overflow-hidden bg-gradient-to-br p-5 shadow-lg shadow-black/5 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl group-hover:shadow-black/10 rounded-2xl",
-          gradient,
-        )}
-      >
-        {/* Decorative glass glow behind the icon — subtle, not literal blur-panel overkill */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/40 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-60 dark:bg-white/10"
-        />
+  // Fill animation for the optional progress bar.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (clampedProgress === null || !bar) return;
 
-        <CardContent className="relative z-10 p-0">
-          <div className="flex items-start justify-between">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/40 bg-white/30 shadow-inner backdrop-blur-sm dark:border-white/10">
-              <Icon className={cn("h-5 w-5", iconColor)} />
-            </div>
+    if (prefersReducedMotion()) {
+      bar.style.width = `${clampedProgress}%`;
+      return;
+    }
+
+    const tween: gsap.core.Tween = gsap.fromTo(
+      bar,
+      { width: "0%" },
+      { width: `${clampedProgress}%`, duration: 0.9, ease: "power2.out" },
+    );
+
+    return () => {
+      tween.kill();
+    };
+  }, [clampedProgress]);
+
+  return (
+    <div className="group relative h-full overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-md sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
+            palette.chip,
+          )}
+        >
+          <Icon className={cn("h-[18px] w-[18px]", iconColor)} />
+        </div>
+      </div>
+
+      <p
+        ref={valueRef}
+        className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground"
+      >
+        {value}
+      </p>
+
+      {clampedProgress !== null && (
+        <div
+          className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={clampedProgress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${label}: ${clampedProgress}%`}
+        >
+          <div
+            ref={barRef}
+            className={cn("h-full rounded-full", palette.bar)}
+            style={{ width: `${clampedProgress}%` }}
+          />
+        </div>
+      )}
+
+      {(subtitle || trend) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {trend && (
             <span
               className={cn(
-                "flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-semibold",
+                "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
                 trendUp
-                  ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                  : "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                  : "bg-rose-500/10 text-rose-700 dark:text-rose-400",
               )}
             >
               {trendUp ? (
@@ -126,17 +206,12 @@ export function StatCard({
               )}
               {trend}
             </span>
-          </div>
-          <p
-            ref={valueRef}
-            className="mt-4 text-2xl font-extrabold tabular-nums tracking-tight text-foreground sm:text-3xl"
-          >
-            {value}
-          </p>
-          <p className="mt-0.5 text-sm font-medium text-foreground">{label}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
-        </CardContent>
-      </div>
-    </Card>
+          )}
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
