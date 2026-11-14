@@ -1,29 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
-import gsap from "gsap";
 import Sidebar from "@/components/dashboard-components/sidebar";
 import Header from "@/components/dashboard-components/header";
-import { toast } from "sonner";
+import { CommandPalette } from "@/components/dashboard-components/command-palette";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authService } from "@/services/auth";
-import { FullPageLoader } from "@/components/loading/Loading";
+import { gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 
 import { ProfileProvider, useProfile } from "@/context/profile-context";
 import { EnrollmentProvider } from "@/context/enrollment-context";
 import { NotificationProvider } from "@/components/dashboard-components/notifications-components/notification-context";
-
-const display = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-display",
-});
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-});
 
 export default function DashboardLayout({
   children,
@@ -39,28 +29,50 @@ export default function DashboardLayout({
   );
 }
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { profile } = useProfile();
+/** Shown while the profile loads, so the first paint is the shell, not a blank screen. */
+function ShellSkeleton() {
+  return (
+    <div
+      className="flex min-h-screen bg-background"
+      role="status"
+      aria-label="Loading your workspace"
+    >
+      <div className="hidden w-64 shrink-0 flex-col gap-3 border-r bg-card p-4 lg:flex">
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="mt-4 h-16 w-full rounded-xl" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-11 w-full" />
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-16 items-center justify-between border-b px-4 sm:px-6 lg:px-8">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="size-10 rounded-full" />
+        </div>
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+          <Skeleton className="h-9 w-72" />
+          <Skeleton className="h-52 w-full rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { profile, loading: profileLoading } = useProfile();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const contentRef = useRef<HTMLElement>(null);
 
   const displayName = profile?.full_name || "Student";
-
   const displayLevel =
     profile?.role === "admin" || profile?.role === "super_admin"
       ? "Administrator"
       : "Student";
-
   const avatarUrl = profile?.avatar_url || "";
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  // const [profile, setProfile] = useState("");
-  console.log(setLoading);
-
-  const blobRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -73,69 +85,45 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       router.refresh();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to log out.",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to log out.");
     }
   };
 
-  // Ambient background aura — slow breathing motion, purely decorative
-  useEffect(() => {
-    if (!blobRef.current) return;
-    const ctx = gsap.context(() => {
-      gsap.to(blobRef.current, {
-        scale: 1.08,
-        x: 20,
-        y: -10,
-        duration: 8,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    });
-    return () => ctx.revert();
-  }, []);
-
-  useEffect(() => {
-    if (!loading && contentRef.current) {
+  // Soft page transition on every route change (transform/opacity only,
+  // cleared afterwards so fixed children and hover transforms keep working).
+  useGSAP(
+    () => {
+      const el = contentRef.current;
+      if (!el || prefersReducedMotion()) return;
       gsap.fromTo(
-        contentRef.current,
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.05 },
+        el,
+        { opacity: 0, y: 8 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
+        },
       );
-    }
-  }, [loading]);
+    },
+    { dependencies: [pathname, Boolean(profile)] },
+  );
 
-  if (loading) {
-    return <FullPageLoader />;
+  if (!profile) {
+    return profileLoading ? <ShellSkeleton /> : null;
   }
-
-  if (!profile) return null;
 
   return (
     <EnrollmentProvider studentId={profile.id}>
-      <div
-        className={`${display.variable} ${body.variable} relative flex min-h-screen bg-background text-foreground font-sans antialiased student-theme`}
-      >
-        {/* Ambient gradient aura, fixed to viewport, behind everything */}
-        <div
-          ref={blobRef}
-          aria-hidden
-          className="pointer-events-none fixed -right-48 -top-48 z-0 h-[700px] w-[700px] rounded-full blur-[140px]"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(16,185,129,0.55) 0%, rgba(45,212,191,0.30) 26%, rgba(99,102,241,0.16) 54%, rgba(0,0,0,0) 82%)",
-          }}
-        />
+      <div className="relative flex min-h-screen bg-background font-sans text-foreground antialiased">
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-lg bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-float focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        >
+          Skip to content
+        </a>
 
-        <div
-          aria-hidden
-          className="pointer-events-none fixed -left-44 bottom-[-140px] z-0 h-[560px] w-[560px] rounded-full blur-[140px]"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 50%, rgba(34,197,94,0.40) 0%, rgba(16,185,129,0.24) 34%, rgba(139,92,246,0.12) 64%, rgba(0,0,0,0) 86%)",
-          }}
-        />
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -145,18 +133,24 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="relative z-10 flex min-w-0 flex-1 flex-col">
           <Header
             onMenuClick={() => setSidebarOpen(true)}
+            onSearchClick={() => setPaletteOpen(true)}
+            onSignOut={handleSignOut}
             displayName={displayName}
             displayLevel={displayLevel}
             avatarUrl={avatarUrl}
           />
 
+          {/* overflow-x-clip (not auto) so sticky children keep sticking to the page scroll */}
           <main
+            id="main-content"
             ref={contentRef}
-            className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
+            className="flex-1 overflow-x-clip p-4 sm:p-6 lg:p-8"
           >
             {children}
           </main>
         </div>
+
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </div>
     </EnrollmentProvider>
   );

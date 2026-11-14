@@ -4,14 +4,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   LayoutGrid,
   PlayCircle,
-  FileText,
   ClipboardList,
   HelpCircle,
   BarChart3,
+  Clock,
+  Paperclip,
+  Link2,
+  Target,
 } from "lucide-react";
-import gsap from "gsap";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
-import { StatsBar } from "@/components/admin/course-workspace/stats-bar";
+import { StatStrip } from "@/components/admin/workspace/stat-strip";
+import { WorkspaceSkeleton } from "@/components/admin/workspace/workspace-skeleton";
 
 import {
   WorkspaceTabItem,
@@ -28,71 +32,6 @@ import { formatReadableDate } from "@/constants/date-format";
 import { ContentTab } from "@/components/admin/topic-workspace/content/content-tab";
 import { useCourse } from "@/hooks/useCourse";
 import { QuizPage } from "@/components/admin/topic-workspace/quiz/quiz-page";
-import { FullPageLoader } from "@/components/loading/Loading";
-
-const stats = [
-  {
-    label: "Lessons",
-    value: "6",
-    icon: PlayCircle,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
-  },
-  {
-    label: "Resources",
-    value: "4",
-    icon: FileText,
-    color: "text-rose-600",
-    bgColor: "bg-rose-500/10",
-  },
-  {
-    label: "Practice Sets",
-    value: "2",
-    icon: ClipboardList,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-  },
-  {
-    label: "Questions",
-    value: "24",
-    icon: HelpCircle,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    label: "Completion",
-    value: "82%",
-    icon: BarChart3,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-  },
-];
-
-const overviewStats = [
-  { label: "Lessons", value: "6" },
-  { label: "Resources", value: "4" },
-  { label: "Practice Sets", value: "2" },
-  { label: "Questions", value: "24" },
-];
-
-const recentActivity = [
-  {
-    action: 'Added lesson "Solving for X"',
-    user: "Super Admin",
-    time: "3h ago",
-  },
-  { action: "Updated topic description", user: "Super Admin", time: "2d ago" },
-  {
-    action: 'Created practice set "Algebra Basics Quiz"',
-    user: "Super Admin",
-    time: "4d ago",
-  },
-  {
-    action: 'Uploaded resource "Variables Worksheet.pdf"',
-    user: "Super Admin",
-    time: "1w ago",
-  },
-];
 
 const tabs: WorkspaceTabItem[] = [
   { value: "overview", label: "Overview", icon: LayoutGrid },
@@ -121,7 +60,7 @@ export default function TopicWorkspacePage() {
     external_links: [{ title: "", url: "" }],
     attachments: [],
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -157,7 +96,6 @@ export default function TopicWorkspacePage() {
     }));
   };
 
-  console.log(topic);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
@@ -165,16 +103,16 @@ export default function TopicWorkspacePage() {
 
   // Crossfade the tab panel every time the active tab changes
   useEffect(() => {
-    if (!tabContentRef.current) return;
+    if (!tabContentRef.current || prefersReducedMotion()) return;
     gsap.fromTo(
       tabContentRef.current,
       { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
+      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out", clearProps: "transform,opacity" },
     );
   }, [activeTab]);
 
   if (!topic) {
-    return <FullPageLoader />;
+    return <WorkspaceSkeleton />;
   }
 
   //  changes the status of the topic----------------------------
@@ -262,6 +200,18 @@ export default function TopicWorkspacePage() {
     }
   };
 
+  // Real figures from the topic itself (the old tiles were hard-coded sample numbers).
+  const attachmentCount = contentData.attachments.length;
+  const linkCount = contentData.external_links.filter((l) => l.url.trim()).length;
+  const objectiveCount = contentData.objectives.filter((o) => o.trim()).length;
+  const stats = [
+    { label: "Reading time (min)", value: topic.estimated_time ?? 0, icon: Clock, tone: "info" as const },
+    { label: "Learning objectives", value: objectiveCount, icon: Target, tone: "brand" as const },
+    { label: "Attachments", value: attachmentCount, icon: Paperclip, tone: "warning" as const },
+    { label: "External links", value: linkCount, icon: Link2, tone: "success" as const },
+  ];
+  const overviewStats = stats.map(({ label, value }) => ({ label, value: String(value) }));
+
   return (
     <div className="space-y-6">
       <TopicWorkspaceHeader
@@ -275,11 +225,16 @@ export default function TopicWorkspacePage() {
         onChangeStatus={handleChangeStatus}
       />
 
-      <StatsBar stats={stats} />
+      <StatStrip items={stats} />
 
       <WorkspaceTabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
-      <div ref={tabContentRef}>
+      <div
+        ref={tabContentRef}
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === "overview" && (
           <TopicOverviewTab
             title={topic.title}
@@ -292,7 +247,6 @@ export default function TopicWorkspacePage() {
             updatedAt={formatReadableDate(topic.updated_at)}
             // author={topic.author}
             stats={overviewStats}
-            recentActivity={recentActivity}
           />
         )}
         {activeTab === "content" && (
@@ -320,8 +274,8 @@ export default function TopicWorkspacePage() {
         {activeTab === "questions" && (
           <TopicPlaceholderTab
             icon={HelpCircle}
-            iconColor="text-violet-600"
-            iconBg="bg-violet-500/10"
+            iconColor="text-primary"
+            iconBg="bg-primary/10"
             title="Question bank"
             description="Build and organize multiple-choice and short-answer questions for this topic."
             actionLabel="Add Question"
@@ -330,8 +284,8 @@ export default function TopicWorkspacePage() {
         {activeTab === "analytics" && (
           <TopicPlaceholderTab
             icon={BarChart3}
-            iconColor="text-amber-600"
-            iconBg="bg-amber-500/10"
+            iconColor="text-warning"
+            iconBg="bg-warning/10"
             title="Topic analytics"
             description="Track student performance, average scores, and question difficulty across this topic."
             actionLabel="View Analytics"

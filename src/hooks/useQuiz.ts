@@ -23,7 +23,6 @@ export function useQuiz(topicId: string, options: UseQuizOptions = {}) {
     setLoading(true);
     try {
       let existing = await QuizService.getQuizByTopic(topicId);
-      console.log("Quiz from Supabase:", existing);
 
       if (!existing && createIfMissing) {
         existing = await QuizService.createQuiz({

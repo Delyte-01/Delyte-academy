@@ -1,159 +1,88 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Award, CheckCircle2, ChevronDown, ChevronUp, FileCheck, UserPlus, type LucideIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  ArrowUpRight,
-  UserPlus,
-  FileCheck,
-  CheckCircle2,
-  Award,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { StudentActivity } from "./dashboard-data";
+import { Button } from "@/components/ui/button";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
+import { cn } from "@/lib/utils";
+import type { StudentActivity } from "./dashboard-data";
 
-
-
-const typeConfig: Record<
-  StudentActivity["type"],
-  { icon: LucideIcon; color: string; bgColor: string }
-> = {
-  enrolled: {
-    icon: UserPlus,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
-  },
-  quiz: {
-    icon: FileCheck,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-  },
-  topic: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-  },
-  finished: {
-    icon: Award,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
-  },
+const TYPE: Record<StudentActivity["type"], { icon: LucideIcon; tone: string }> = {
+  enrolled: { icon: UserPlus, tone: "bg-info-soft text-info" },
+  quiz: { icon: FileCheck, tone: "bg-warning-soft text-warning" },
+  topic: { icon: CheckCircle2, tone: "bg-success-soft text-success" },
+  finished: { icon: Award, tone: "bg-primary-soft text-primary-soft-foreground" },
 };
 
-const COLLAPSED_COUNT = 6;
+const COLLAPSED = 6;
 
 export function RecentActivity() {
   const { recentActivity } = useAdminAnalytics();
-
   const [expanded, setExpanded] = useState(false);
 
-  const hasMore = recentActivity.length > COLLAPSED_COUNT;
-  const visibleActivities = expanded
-    ? recentActivity
-    : recentActivity.slice(0, COLLAPSED_COUNT);
+  const visible = expanded ? recentActivity : recentActivity.slice(0, COLLAPSED);
+  const hidden = recentActivity.length - COLLAPSED;
 
   return (
-    <Card className="h-full border-border/60">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-        <CardTitle className="text-base font-bold">
-          Recent Student Activity
-        </CardTitle>
-        <Button variant="ghost" size="sm" className="flex-shrink-0 text-xs">
-          View all
-          <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-        </Button>
-      </CardHeader>
+    <section className="rounded-xl border bg-card p-5 shadow-card" aria-labelledby="activity-title">
+      <h2 id="activity-title" className="mb-3 font-heading text-lg font-bold tracking-tight">
+        Recent student activity
+      </h2>
 
-      <CardContent className="space-y-1 px-2 sm:px-4">
-        {recentActivity.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-            No recent activity yet.
-          </p>
-        ) : (
-          <>
-            <div
-              className={
-                expanded
-                  ? "max-h-[420px] space-y-1 overflow-y-auto pr-1"
-                  : "space-y-1"
-              }
-            >
-              {visibleActivities.map((activity) => {
-                const config = typeConfig[activity.type];
-                const Icon = config.icon;
-                return (
-                  <div
-                    key={activity.id}
-                    className="flex items-center gap-2 rounded-2xl p-2.5 transition-colors hover:bg-muted/40 sm:gap-3 sm:p-3"
-                  >
-                    <Avatar className="h-8 w-8 flex-shrink-0 sm:h-9 sm:w-9">
-                      <AvatarFallback className="bg-primary/10 text-[10px] font-bold text-primary sm:text-[11px]">
-                        {activity.initials}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {activity.name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {activity.action} ·{" "}
-                        <span className="font-medium">{activity.course}</span>
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground sm:hidden">
-                        {activity.time}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-shrink-0 flex-col items-center gap-1 sm:flex-row sm:gap-2">
-                      <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 ${config.bgColor}`}
-                      >
-                        <Icon
-                          className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${config.color}`}
-                        />
-                      </div>
-                      <span className="hidden text-xs text-muted-foreground sm:block">
-                        {activity.time}
-                      </span>
-                    </div>
+      {recentActivity.length === 0 ? (
+        <p className="rounded-xl border border-dashed px-4 py-10 text-center text-[15px] text-muted-foreground">
+          No student activity yet. It will appear here as learners enroll and complete work.
+        </p>
+      ) : (
+        <>
+          <ul className={cn("-mx-2 space-y-0.5", expanded && "max-h-[420px] overflow-y-auto pr-1")}>
+            {visible.map((a) => {
+              const { icon: Icon, tone } = TYPE[a.type];
+              return (
+                <li key={a.id} className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-muted/60">
+                  <Avatar className="size-9 shrink-0">
+                    <AvatarFallback className="bg-primary-soft text-[11px] font-bold text-primary-soft-foreground">
+                      {a.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-foreground">{a.name}</p>
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      {a.action} · <span className="font-semibold text-foreground/80">{a.course}</span>
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-
-            {expanded && (
-              <div className="pointer-events-none sticky bottom-0 left-0 h-6 w-full bg-gradient-to-t from-background to-transparent" />
-            )}
-
-            {hasMore && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 w-full text-xs text-muted-foreground"
-                onClick={() => setExpanded((v) => !v)}
-              >
-                {expanded ? (
-                  <>
-                    Show less
-                    <ChevronUp className="ml-1 h-3.5 w-3.5" />
-                  </>
-                ) : (
-                  <>
-                    Show {recentActivity.length - COLLAPSED_COUNT} more
-                    <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                  </>
-                )}
-              </Button>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+                  <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                    <span className="text-xs text-muted-foreground">{a.time}</span>
+                    <span className={cn("flex size-8 items-center justify-center rounded-lg", tone)}>
+                      <Icon className="size-4" aria-hidden />
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {hidden > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 w-full"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? (
+                <>
+                  Show less <ChevronUp aria-hidden />
+                </>
+              ) : (
+                <>
+                  Show {hidden} more <ChevronDown aria-hidden />
+                </>
+              )}
+            </Button>
+          )}
+        </>
+      )}
+    </section>
   );
 }

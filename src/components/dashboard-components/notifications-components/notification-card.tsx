@@ -8,102 +8,100 @@ import { Notification } from "@/types/notification";
 import { formatRelativeTime, notificationTypeMeta } from "./notification-types";
 
 interface NotificationCardProps {
-notification: Notification;
-onRead?: (id: string) => void;
-variant?: "default" | "compact";
+  notification: Notification;
+  onRead?: (id: string) => void;
+  variant?: "default" | "compact";
 }
 
 export function NotificationCard({
-notification,
-onRead,
-variant = "default",
+  notification,
+  onRead,
+  variant = "default",
 }: NotificationCardProps) {
-const meta =
-notificationTypeMeta[notification.type] ??
-notificationTypeMeta.system;
+  const meta = notificationTypeMeta[notification.type] ?? notificationTypeMeta.system;
+  const Icon = meta.icon;
+  const compact = variant === "compact";
 
-const Icon = meta.icon;
+  const content = (
+    <div
+      className={cn(
+        "group relative flex items-start gap-3.5 rounded-xl border transition-[border-color,box-shadow,background-color] duration-200 motion-reduce:transition-none",
+        compact ? "p-3" : "p-4 hover:border-primary/30 hover:shadow-card",
+        notification.read
+          ? "bg-card"
+          : "border-primary/25 bg-primary-soft/50",
+      )}
+    >
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-center rounded-xl",
+          compact ? "size-9" : "size-11",
+          meta.bg,
+        )}
+      >
+        <Icon className={cn(compact ? "size-4" : "size-5", meta.accent)} aria-hidden />
+      </div>
 
-const content = (
-<div
-className={cn(
-"group relative flex items-start gap-3.5 rounded-3xl border p-4 transition-all duration-200",
-"hover:-translate-y-0.5 hover:shadow-md",
-notification.read
-? "border-border bg-card"
-: "border-primary/20 bg-primary/[0.03]",
-)}
->
-{/* Icon */}
-<div
-className={cn(
-"flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl",
-meta.bg,
-)}
->
-<Icon className={cn("h-5 w-5", meta.accent)} /> </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[15px] font-bold leading-snug text-foreground">
+            {notification.title}
+          </p>
+          {!notification.read && (
+            <>
+              <span
+                aria-hidden
+                className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
+              />
+              <span className="sr-only">Unread</span>
+            </>
+          )}
+        </div>
 
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {notification.message}
+        </p>
 
-  {/* Body */}
-  <div className="min-w-0 flex-1">
-    <div className="flex items-start justify-between gap-2">
-      <p className="text-sm font-semibold text-foreground">
-        {notification.title}
-      </p>
+        <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <span className="rounded-full bg-muted px-2 py-0.5">{meta.label}</span>
+          <span aria-hidden>·</span>
+          <span>{formatRelativeTime(notification.created_at)}</span>
+        </div>
+      </div>
 
-      {!notification.read && (
-        <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-primary transition-opacity duration-300 group-hover:opacity-40" />
+      {!compact && notification.link && (
+        <span
+          aria-hidden
+          className="inline-flex size-8 shrink-0 items-center justify-center self-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
+        >
+          <ArrowRight className="size-3.5" />
+        </span>
       )}
     </div>
+  );
 
-    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-      {notification.message}
-    </p>
+  const focusRing =
+    "block w-full rounded-xl text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40";
 
-    <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
-      {notification.course_id && (
-        <>
-          <span className="truncate font-medium text-foreground/70">
-            Course
-          </span>
+  if (notification.link) {
+    return (
+      <Link
+        href={notification.link}
+        onClick={() => onRead?.(notification.id)}
+        className={focusRing}
+      >
+        {content}
+      </Link>
+    );
+  }
 
-          <span className="text-muted-foreground/50">·</span>
-        </>
-      )}
-
-      <span>{formatRelativeTime(notification.created_at)}</span>
-    </div>
-  </div>
-
-  {/* Action */}
-  {variant === "default" && notification.link && (
-    <div className="flex-shrink-0 self-center">
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all group-hover:bg-primary group-hover:text-primary-foreground">
-        <ArrowRight className="h-3.5 w-3.5" />
-      </span>
-    </div>
-  )}
-</div>
-
-
-);
-
-if (notification.link) {
-return (
-<Link
-href={notification.link}
-onClick={() => onRead?.(notification.id)}
-className="block"
->
-{content} </Link>
-);
-}
-
-return (
-<button
-onClick={() => onRead?.(notification.id)}
-className="block w-full text-left"
->
-{content} </button>
-);
+  return (
+    <button
+      type="button"
+      onClick={() => onRead?.(notification.id)}
+      className={focusRing}
+    >
+      {content}
+    </button>
+  );
 }

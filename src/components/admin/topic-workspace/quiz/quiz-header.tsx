@@ -1,59 +1,46 @@
 "use client";
 
-import { Eye, Save, UploadCloud } from "lucide-react";
+import { Eye, GraduationCap, Save, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GraduationCap } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface QuizHeaderProps {
   onPreview: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
-  saving:boolean
+  saving: boolean;
+  status?: "draft" | "published";
 }
 
-export function QuizHeader({
-  onPreview,
-  onSaveDraft,
-  onPublish,
-  saving
-}: QuizHeaderProps) {
+export function QuizHeader({ onPreview, onSaveDraft, onPublish, saving, status }: QuizHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <GraduationCap className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
-            Quiz &amp; Practice
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Create assessments for this topic.
-          </p>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
+          <GraduationCap className="size-6" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
+              Quiz &amp; practice
+            </h2>
+            {status && <StatusBadge status={status} />}
+          </div>
+          <p className="text-[15px] text-muted-foreground">Build the assessment for this topic.</p>
         </div>
       </div>
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onPreview}
-          disabled={saving}
-        >
-          <Eye className="mr-1.5 h-3.5 w-3.5" />
-          Preview Quiz
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" onClick={onPreview} disabled={saving}>
+          <Eye className="size-4" />
+          Preview
         </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onSaveDraft}
-          disabled={saving}
-        >
-          <Save className="mr-1.5 h-3.5 w-3.5" />
-          {saving ? "Saving Draft..." : "Draft"}
+        <Button variant="secondary" onClick={onSaveDraft} disabled={saving}>
+          <Save className="size-4" />
+          {saving ? "Saving…" : "Save draft"}
         </Button>
-        <Button size="sm" onClick={onPublish}>
-          <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
-          {saving ? "Publishing..." : "Publish"}
+        <Button variant="brand" onClick={onPublish} disabled={saving}>
+          <UploadCloud className="size-4" />
+          {saving ? "Publishing…" : "Publish"}
         </Button>
       </div>
     </div>

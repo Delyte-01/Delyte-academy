@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, Copy, Download, X } from "lucide-react";
+import { Copy, Download, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BulkActionsProps {
@@ -11,53 +11,37 @@ interface BulkActionsProps {
   onClear: () => void;
 }
 
-export function BulkActions({
-  selectedCount,
-  onDelete,
-  onDuplicate,
-  onExport,
-  onClear,
-}: BulkActionsProps) {
+/** Floating selection bar — sticks to the bottom of the viewport while questions are selected. */
+export function BulkActions({ selectedCount, onDelete, onDuplicate, onExport, onClear }: BulkActionsProps) {
   if (selectedCount === 0) return null;
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border bg-primary/5 px-4 py-2.5">
+    <div
+      role="region"
+      aria-label="Bulk actions"
+      className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2.5 shadow-float"
+    >
       <div className="flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary px-1.5 text-sm font-bold tabular-nums text-primary-foreground">
           {selectedCount}
         </span>
-        <span className="text-sm font-medium text-foreground">selected</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={onClear}
-        >
-          <X className="mr-1 h-3 w-3" />
+        <span className="text-sm font-semibold text-foreground">selected</span>
+        <Button variant="ghost" size="sm" onClick={onClear}>
+          <X className="size-4" />
           Clear
         </Button>
       </div>
-      <div className="flex items-center gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8"
-          onClick={onDuplicate}
-        >
-          <Copy className="mr-1.5 h-3.5 w-3.5" />
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={onDuplicate}>
+          <Copy className="size-4" />
           Duplicate
         </Button>
-        <Button variant="outline" size="sm" className="h-8" onClick={onExport}>
-          <Download className="mr-1.5 h-3.5 w-3.5" />
+        <Button variant="outline" size="sm" onClick={onExport}>
+          <Download className="size-4" />
           Export
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10"
-          onClick={onDelete}
-        >
-          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={onDelete}>
+          <Trash2 className="size-4" />
           Delete
         </Button>
       </div>

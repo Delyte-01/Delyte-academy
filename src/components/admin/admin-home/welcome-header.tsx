@@ -1,15 +1,12 @@
 "use client";
 
-import { Plus, Calendar } from "lucide-react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAdminProfile } from "@/hooks/useAdminProfile";
-import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/ui/page-header";
+import type { Profile } from "@/types/profile";
 
-export function WelcomeHeader() {
-  const router = useRouter();
-  const { profile } = useAdminProfile();
-
+export function WelcomeHeader({ profile }: { profile: Profile | null }) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -17,41 +14,22 @@ export function WelcomeHeader() {
     day: "numeric",
   });
 
-  const displayName =
-    profile?.full_name?.split(" ")[0] ??
-    profile?.email?.split("@")[0] ??
-    "Admin";
+  const name =
+    profile?.full_name?.split(" ")[0] ?? profile?.email?.split("@")[0] ?? "there";
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      {" "}
-      <div>
-        {" "}
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-          Welcome back, {displayName}{" "}
-        </h1>{" "}
-        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-          {" "}
-          <Calendar className="h-3.5 w-3.5" />
-          {today}{" "}
-        </p>{" "}
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="relative hidden md:block">
-          <Input
-            placeholder="Search courses, students..."
-            className="h-10 w-64 bg-muted"
-          />
-        </div>
-
-        <Button
-          className="flex-shrink-0"
-          onClick={() => router.push("/admin/courses/new")}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create Course
+    <PageHeader
+      eyebrow={profile?.role === "super_admin" ? "Super admin" : "Admin"}
+      title={`Welcome back, ${name}`}
+      description={today}
+      actions={
+        <Button variant="brand" asChild>
+          <Link href="/admin/courses/create">
+            <Plus aria-hidden />
+            Create course
+          </Link>
         </Button>
-      </div>
-    </div>
+      }
+    />
   );
 }

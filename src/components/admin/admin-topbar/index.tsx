@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useTheme } from "next-themes";
-import gsap from "gsap";
-import { Moon, Sun, Bell, Search, Menu } from "lucide-react";
+import Link from "next/link";
+import { Bell, GraduationCap, LogOut, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Kbd } from "@/components/ui/kbd";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,150 +15,64 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdminNotifications } from "@/hooks/useAdminNotification";
+import { initialsOf, roleLabel } from "@/components/admin/admin-sidebar";
+import type { Profile } from "@/types/profile";
 
 interface AdminTopbarProps {
+  profile: Profile | null;
   onOpenMobile: () => void;
-  title: string;
-  subtitle?: string;
+  onOpenSearch: () => void;
+  onSignOut: () => void;
 }
 
-export default function AdminTopbar({
-  onOpenMobile,
-  title,
-  subtitle,
-}: AdminTopbarProps) {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
-  const bellRef = useRef<HTMLButtonElement>(null);
-  const iconWrapRef = useRef<HTMLSpanElement>(null);
-
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } =
-    useAdminNotifications();
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
-
-  // Entrance
-  useEffect(() => {
-    if (!headerRef.current) return;
-    gsap.fromTo(
-      headerRef.current,
-      { y: -16, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }
-    );
-  }, []);
-
-  // One-time attention wobble on the bell, after entrance settles
-  useEffect(() => {
-    if (!mounted || !bellRef.current) return;
-    const tl = gsap.timeline({ delay: 0.6 });
-    tl.to(bellRef.current, {
-      rotate: 14,
-      duration: 0.12,
-      ease: "power1.inOut",
-      transformOrigin: "top center",
-    })
-      .to(bellRef.current, {
-        rotate: -12,
-        duration: 0.12,
-        ease: "power1.inOut",
-      })
-      .to(bellRef.current, { rotate: 6, duration: 0.1, ease: "power1.inOut" })
-      .to(bellRef.current, { rotate: 0, duration: 0.1, ease: "power1.inOut" });
-  }, [mounted]);
-
-  const toggleTheme = () => {
-    if (iconWrapRef.current) {
-      gsap.fromTo(
-        iconWrapRef.current,
-        { rotate: -90, opacity: 0, scale: 0.6 },
-        { rotate: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }
-      );
-    }
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+export default function AdminTopbar({ profile, onOpenMobile, onOpenSearch, onSignOut }: AdminTopbarProps) {
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useAdminNotifications();
 
   return (
-    <header
-      ref={headerRef}
-      className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sm:px-6"
-    >
-      {/* Mobile menu */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden"
-        onClick={onOpenMobile}
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5" />
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur-md sm:px-6">
+      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMobile} aria-label="Open menu">
+        <Menu aria-hidden />
       </Button>
 
-      {/* Title */}
-      <div className="min-w-0 flex-1 lg:flex-none">
-        <h1 className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
-            {subtitle}
-          </p>
-        )}
-      </div>
+      {/* Search / command palette trigger */}
+      <button
+        type="button"
+        onClick={onOpenSearch}
+        aria-label="Search courses and pages"
+        className="group flex h-10 min-w-0 max-w-md flex-1 items-center gap-2.5 rounded-xl border bg-card px-3 text-left text-sm text-muted-foreground shadow-soft transition-colors hover:border-primary/40 hover:text-foreground"
+      >
+        <Search className="size-4 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">Search courses or jump to…</span>
+        <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
+      </button>
 
-      {/* Search (desktop) */}
-      <div className="relative hidden max-w-xs flex-1 md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search..."
-          className="h-9 border-border/60 bg-muted/60 pl-9 pr-12 transition-colors focus-visible:bg-background"
-        />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground md:flex">
-          ⌘K
-        </kbd>
-      </div>
+      <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
 
-      <div className="ml-auto flex items-center gap-1.5">
-        {/* Dark mode toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          <span ref={iconWrapRef} className="inline-flex">
-            {mounted && theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </span>
-        </Button>
-
-        {/* Notifications */}
-        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-xl"
+              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+            >
+              <Bell aria-hidden />
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold tabular-nums text-destructive-foreground">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel className="flex items-center justify-between">
+          <DropdownMenuContent align="end" className="w-[min(22rem,calc(100vw-2rem))]">
+            <DropdownMenuLabel className="flex items-center justify-between gap-2">
               Notifications
               {unreadCount > 0 && (
                 <Button
-                  variant="ghost"
+                  variant="link"
                   size="sm"
-                  className="h-auto p-0 text-xs text-primary"
+                  className="h-auto p-0 text-xs"
                   onClick={(e) => {
                     e.preventDefault();
                     void markAllAsRead();
@@ -169,83 +82,76 @@ export default function AdminTopbar({
                 </Button>
               )}
             </DropdownMenuLabel>
-
             <DropdownMenuSeparator />
-
-            {loading ? (
-              <div className="space-y-2 p-3">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-12 animate-pulse rounded-lg bg-muted"
-                  />
-                ))}
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                You&apos;re all caught up.
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="flex cursor-pointer flex-col items-start gap-0.5 py-3"
-                  onClick={() => void markAsRead(notification.id)}
-                >
-                  <div className="flex w-full items-start justify-between gap-2">
-                    <span className="text-sm font-medium">
-                      {notification.title}
+            <div className="max-h-96 overflow-y-auto">
+              {loading ? (
+                <div className="space-y-2 p-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="skeleton-shimmer h-12 rounded-lg bg-muted" />
+                  ))}
+                </div>
+              ) : notifications.length === 0 ? (
+                <p className="p-6 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p>
+              ) : (
+                notifications.map((n) => (
+                  <DropdownMenuItem
+                    key={n.id}
+                    className="flex cursor-pointer flex-col items-start gap-0.5 py-3"
+                    onClick={() => void markAsRead(n.id)}
+                  >
+                    <div className="flex w-full items-start justify-between gap-2">
+                      <span className="text-sm font-semibold">{n.title}</span>
+                      {!n.read && <span aria-label="Unread" className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />}
+                    </div>
+                    <span className="text-[13px] text-muted-foreground">{n.message}</span>
+                    <span className="text-xs text-muted-foreground/80">
+                      {new Date(n.created_at).toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
-
-                    {!notification.read && (
-                      <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </div>
-
-                  <span className="text-xs text-muted-foreground">
-                    {notification.message}
-                  </span>
-
-                  <span className="text-[11px] text-muted-foreground/80">
-                    {new Date(notification.created_at).toLocaleString([], {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </DropdownMenuItem>
-              ))
-            )}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="ml-1 flex items-center gap-2 rounded-full outline-none ring-offset-background transition-shadow focus-visible:ring-2 focus-visible:ring-ring">
-              <Avatar className="h-9 w-9 ring-2 ring-primary/20 transition-all hover:ring-primary/40">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-indigo-700 text-xs font-bold text-primary-foreground">
-                  DA
+            <button
+              type="button"
+              aria-label="Account menu"
+              className="ml-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Avatar className="size-9">
+                <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary-soft-foreground">
+                  {initialsOf(profile)}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">Super Admin</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  admin@delyte.academy
-                </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="truncate text-sm font-bold">{profile?.full_name || profile?.username || "Admin"}</span>
+                <span className="truncate text-xs font-normal text-muted-foreground">{profile?.email}</span>
+                {profile && <span className="text-xs font-semibold text-primary">{roleLabel(profile.role)}</span>}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              Logout
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <GraduationCap aria-hidden /> Student view
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onSignOut}
+            >
+              <LogOut aria-hidden /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

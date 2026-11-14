@@ -21,7 +21,7 @@ export function ContentSection({
   label,
   children,
   defaultOpen = true,
-  accent = "bg-blue-500/10 text-blue-600",
+  accent = "bg-info/10 text-info",
 }: ContentSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
 

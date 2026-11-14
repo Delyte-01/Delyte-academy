@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Urbanist } from "next/font/google";
 import "./globals.css";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { Toaster } from "sonner";
@@ -8,14 +8,16 @@ import { ThemeProvider } from "next-themes";
 import "katex/dist/katex.min.css";
 import { AppProviders } from "@/providers/authProvider";
 
-const inter = Inter({
-  variable: "--font-inter",
+// One family for the whole product (headings + body). Variable font: 100–900.
+const urbanist = Urbanist({
+  variable: "--font-urbanist",
   subsets: ["latin"],
   display: "swap",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+// Display face for landing headlines only; body and product UI stay on Urbanist.
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
@@ -34,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      className={`${urbanist.variable} ${bricolage.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">

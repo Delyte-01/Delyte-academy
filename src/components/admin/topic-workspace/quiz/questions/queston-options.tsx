@@ -71,7 +71,7 @@ export function QuestionOptions({ options, onChange,quizId }: QuestionOptionsPro
               className={cn(
                 "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all",
                option.is_correct
-                  ? "border-emerald-500 bg-emerald-500 text-white"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : "border-muted-foreground/30 hover:border-primary/50"
               )}
             >

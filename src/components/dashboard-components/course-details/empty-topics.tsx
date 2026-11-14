@@ -7,7 +7,7 @@ export function EmptyTopics() {
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center justify-center gap-4 p-12 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-muted">
+        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-muted">
           <BookX className="h-10 w-10 text-muted-foreground" />
         </div>
         <div className="space-y-1">

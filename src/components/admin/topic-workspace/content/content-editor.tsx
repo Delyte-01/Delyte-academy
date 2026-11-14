@@ -71,7 +71,7 @@ function AttachmentRow({
     <div className=" flex  gap-3 rounded-xl border bg-card p-3 transition-all duration-200 hover:shadow-sm flex-col">
       <div>
         {" "}
-        <Badge className="border shadow bg-transparent text-black border-green-400 dark:text-white">
+        <Badge className="border border-primary bg-transparent text-foreground shadow">
           {attachment.title}
         </Badge>
       </div>
@@ -89,7 +89,7 @@ function AttachmentRow({
         <div className="min-w-0 flex-1 mb-2">
           <p className="truncate text-sm font-semibold text-foreground">
             {attachment.file_name}{" "}
-            <span className="ml-2 border shadow p-1 rounded-3xl border-red-400">
+            <span className="ml-2 border shadow p-1 rounded-xl border-destructive">
               {attachment.category}
             </span>
           </p>
@@ -161,7 +161,7 @@ export function ContentEditor({
         id="introduction"
         icon={<BookOpen className="h-4 w-4" />}
         label="Introduction"
-        accent="bg-blue-500/10 text-blue-600"
+        accent="bg-info/10 text-info"
       >
         <Textarea
           value={data.introduction}
@@ -175,7 +175,7 @@ export function ContentEditor({
         id="objectives"
         icon={<Target className="h-4 w-4" />}
         label="Learning Objectives"
-        accent="bg-emerald-500/10 text-emerald-600"
+        accent="bg-primary/10 text-primary"
       >
         <EditableList
           items={data.objectives}
@@ -193,7 +193,7 @@ export function ContentEditor({
         id="prerequisites"
         icon={<CheckSquare className="h-4 w-4" />}
         label="Prerequisites"
-        accent="bg-amber-500/10 text-amber-600"
+        accent="bg-warning/10 text-warning"
       >
         <EditableList
           items={data.prerequisites}
@@ -204,7 +204,7 @@ export function ContentEditor({
           }
           placeholder="Describe a prerequisite..."
           addLabel="Add Prerequisite"
-          accentColor="bg-amber-500/10 text-amber-600"
+          accentColor="bg-warning/10 text-warning"
         />
       </ContentSection>
       {/* Section 4: Main Lesson Content */}
@@ -212,7 +212,7 @@ export function ContentEditor({
         id="main-content"
         icon={<FileText className="h-4 w-4" />}
         label="Main Lesson Content"
-        accent="bg-violet-500/10 text-violet-600"
+        accent="bg-primary/10 text-primary"
       >
         <RichTextEditor
           value={data.content}
@@ -223,7 +223,7 @@ export function ContentEditor({
         id="Video urls"
         icon={<Target className="h-4 w-4" />}
         label="Uplaod Video Urls"
-        accent="bg-emerald-500/10 text-emerald-600"
+        accent="bg-primary/10 text-primary"
       >
         {" "}
         <Card>
@@ -253,7 +253,7 @@ export function ContentEditor({
         id="External Links"
         icon={<ListChecks className="h-4 w-4" />}
         label="External Links"
-        accent="bg-rose-500/10 text-rose-600"
+        accent="bg-destructive/10 text-destructive"
       >
         <Card>
           <CardHeader>
@@ -335,7 +335,7 @@ export function ContentEditor({
         id="summary"
         icon={<ListChecks className="h-4 w-4" />}
         label="Summary"
-        accent="bg-rose-500/10 text-rose-600"
+        accent="bg-destructive/10 text-destructive"
       >
         <Textarea
           value={data.summary}
@@ -349,12 +349,12 @@ export function ContentEditor({
         id="attachments"
         icon={<Paperclip className="h-4 w-4" />}
         label="Attachments"
-        accent="bg-cyan-500/10 text-cyan-600"
+        accent="bg-info/10 text-info"
       >
         <div className="space-y-3">
           <Button
             variant="outline"
-            className="w-full border-dashed py-6  transition-all duration-200 hover:border-primary/50 hover:bg-muted/40 hover:text-black hover:dark:text-white cursor-pointer"
+            className="w-full border-dashed py-6  transition-all duration-200 hover:border-primary/50 hover:bg-muted/40 hover:text-foreground cursor-pointer"
             onClick={() => setUploadOpen(true)}
           >
             <Upload className="mr-2 h-4 w-4" />

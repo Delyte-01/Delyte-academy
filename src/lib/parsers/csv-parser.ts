@@ -36,7 +36,6 @@ export async function parseCSV(file: File): Promise<ParsedQuestion[]> {
             points: Number(row.points) || 1,
             type: "multiple_choice",
           }));
-        console.log("Parsed Questions:", questions);
         resolve(questions);
       },
 

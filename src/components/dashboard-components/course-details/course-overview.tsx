@@ -15,12 +15,12 @@ export function CourseOverview({ description }: CourseOverviewProps) {
 
   return (
     <section aria-labelledby="about-course" className="space-y-3">
-      <h2 id="about-course" className="text-xl font-semibold tracking-tight">
+      <h2 id="about-course" className="font-heading text-xl font-bold tracking-tight text-foreground">
         About this course
       </h2>
       <p
         className={cn(
-          "max-w-prose whitespace-pre-line text-[15px] leading-7 text-muted-foreground",
+          "max-w-prose whitespace-pre-line text-base leading-7 text-muted-foreground",
           isLong && !open && "line-clamp-4 lg:line-clamp-none",
         )}
       >
@@ -31,7 +31,7 @@ export function CourseOverview({ description }: CourseOverviewProps) {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 lg:hidden dark:text-emerald-400"
+          className="min-h-11 rounded-lg text-sm font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/40 lg:hidden"
         >
           {open ? "Show less" : "Read more"}
         </button>

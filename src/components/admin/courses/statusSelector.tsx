@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { FileText, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,7 @@ export function StatusSelector({ value, onChange }: StatusSelectorProps) {
           ref={pillRef}
           className={cn(
             "absolute left-0 top-1 h-[calc(100%-8px)] rounded-lg shadow-sm transition-colors duration-200",
-            value === "published" ? "bg-emerald-500" : "bg-background"
+            value === "published" ? "bg-primary" : "bg-background"
           )}
           style={{ willChange: "transform, width" }}
         />
@@ -73,7 +73,7 @@ export function StatusSelector({ value, onChange }: StatusSelectorProps) {
                 "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-5",
                 active
                   ? optValue === "published"
-                    ? "text-white"
+                    ? "text-primary-foreground"
                     : "text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}

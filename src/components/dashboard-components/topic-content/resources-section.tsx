@@ -24,15 +24,15 @@ const icons: Record<string, LucideIcon> = {
 };
 
 const tones: Record<string, string> = {
-  PDF: "bg-rose-500/10 text-rose-600",
-  DOC: "bg-blue-500/10 text-blue-600",
-  DOCX: "bg-blue-500/10 text-blue-600",
-  ZIP: "bg-amber-500/10 text-amber-600",
-  PNG: "bg-violet-500/10 text-violet-600",
-  JPG: "bg-violet-500/10 text-violet-600",
-  JPEG: "bg-violet-500/10 text-violet-600",
-  XLSX: "bg-emerald-500/10 text-emerald-600",
-  XLS: "bg-emerald-500/10 text-emerald-600",
+  PDF: "bg-destructive/10 text-destructive",
+  DOC: "bg-info-soft text-info",
+  DOCX: "bg-info-soft text-info",
+  ZIP: "bg-warning-soft text-warning",
+  PNG: "bg-primary-soft text-primary-soft-foreground",
+  JPG: "bg-primary-soft text-primary-soft-foreground",
+  JPEG: "bg-primary-soft text-primary-soft-foreground",
+  XLSX: "bg-success-soft text-success",
+  XLS: "bg-success-soft text-success",
 };
 
 function formatSize(bytes: number) {
@@ -70,7 +70,7 @@ export function ResourcesSection({
                 download={file.file_name || file.title}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3.5 transition-colors hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 sm:p-4"
+                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 transition-colors hover:border-success/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
               >
                 <span
                   className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${tones[type] ?? "bg-muted text-muted-foreground"}`}
@@ -87,7 +87,7 @@ export function ResourcesSection({
                       .join(" · ")}
                   </span>
                 </span>
-                <Download className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-emerald-600" />
+                <Download className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-success" />
                 <span className="sr-only">Download</span>
               </a>
             </li>

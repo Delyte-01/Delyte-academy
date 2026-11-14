@@ -47,8 +47,8 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
         <div className="space-y-3">
           {guides.map(({ icon: Icon, format, description }) => (
             <div key={format} className="flex items-start gap-2.5">
-              <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                <Check className="h-3 w-3 text-emerald-600" />
+              <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-3 w-3 text-primary" />
               </div>
               <div className="flex items-center gap-2">
                 <Icon className="h-4 w-4 text-muted-foreground" />
@@ -72,7 +72,7 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
               {/* DOCX example */}
               <div className="rounded-xl border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-blue-500" />
+                  <FileText className="h-3.5 w-3.5 text-info" />
                   <span className="text-xs font-semibold text-foreground">
                     DOCX
                   </span>
@@ -93,7 +93,7 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
               {/* CSV example */}
               <div className="rounded-xl border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" />
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
                   <span className="text-xs font-semibold text-foreground">
                     CSV
                   </span>
@@ -114,7 +114,7 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
               {/* PDF example */}
               <div className="col-span-2 rounded-xl border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <FileType className="h-3.5 w-3.5 text-rose-500" />
+                  <FileType className="h-3.5 w-3.5 text-destructive" />
                   <span className="text-xs font-semibold text-foreground">
                     PDF
                   </span>
@@ -133,7 +133,7 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-blue-500" />
+                  <FileText className="h-3.5 w-3.5 text-info" />
                   <span className="text-xs font-semibold text-foreground">
                     DOCX
                   </span>
@@ -149,7 +149,7 @@ export function UploadGuideCard({ mode }: UploadGuideCardProps) {
               </div>
               <div className="rounded-xl border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <FileType className="h-3.5 w-3.5 text-rose-500" />
+                  <FileType className="h-3.5 w-3.5 text-destructive" />
                   <span className="text-xs font-semibold text-foreground">
                     PDF
                   </span>

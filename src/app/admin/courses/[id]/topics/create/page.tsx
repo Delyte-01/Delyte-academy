@@ -24,29 +24,29 @@ const upcomingModules = [
     icon: PlayCircle,
     label: "Lessons",
     description: "Add video lessons & walkthroughs",
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
+    color: "text-info",
+    bgColor: "bg-info/10",
   },
   {
     icon: FileText,
     label: "Resources",
     description: "Attach PDFs & worksheets",
-    color: "text-rose-600",
-    bgColor: "bg-rose-500/10",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
   },
   {
     icon: HelpCircle,
     label: "Practice Questions",
     description: "Build the question bank",
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
   {
     icon: ClipboardList,
     label: "Quiz",
     description: "Create quizzes & assessments",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
 ];
 
@@ -63,7 +63,6 @@ export default function CreateTopicPage({ params }: PageProps) {
   const [saving, setSaving] = useState(false);
   const [savingMessage, setSavingMessage] = useState("");
 
-  console.log(setSavingMessage);
 
   const [data, setData] = useState<TopicFormData>({
     title: "",
@@ -77,6 +76,8 @@ export default function CreateTopicPage({ params }: PageProps) {
   });
 
   const [errors, setErrors] = useState<TopicFormErrors>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const errorCount = Object.values(errors).filter(Boolean).length;
 
   const handleChange = (
     field: keyof TopicFormData,
@@ -89,19 +90,17 @@ export default function CreateTopicPage({ params }: PageProps) {
   };
 
   const handleSaveDraft = async () => {
+    if (saving) return;
     const errs = validateTopic(data);
     setErrors(errs);
+    setSubmitAttempted(true);
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
     try {
       setSaving(true);
-      console.log("Sending topic:", {
-        status: data.status,
-        difficulty: data.difficulty,
-        data,
-      });
+      setSavingMessage("Saving topic...");
       await TopicService.createTopic({
         courseId: id,
         title: data.title,
@@ -110,34 +109,31 @@ export default function CreateTopicPage({ params }: PageProps) {
         difficulty: data.difficulty,
         status: "draft",
       });
-
-      console.log({
-        status: data.status,
-        difficulty: data.difficulty,
-      });
-
       toast.success("Topic saved as draft.");
 
       router.push(`/admin/courses/${id}/?tab=topics`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save topic."
+      );
     } finally {
       setSaving(false);
+      setSavingMessage("");
     }
   };
 
   const handlePublish = async () => {
+    if (saving) return;
     const errs = validateTopic(data);
     setErrors(errs);
+    setSubmitAttempted(true);
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
     try {
       setSaving(true);
-      console.log("Sending topic:", {
-        status: data.status,
-        difficulty: data.difficulty,
-        data,
-      });
+      setSavingMessage("Publishing topic...");
       await TopicService.createTopic({
         courseId: id,
         title: data.title,
@@ -146,23 +142,23 @@ export default function CreateTopicPage({ params }: PageProps) {
         difficulty: data.difficulty,
         status: "published",
       });
-      console.log({
-        status: data.status,
-        difficulty: data.difficulty,
-      });
-
-      toast.success("Topic saved as draft.");
+      toast.success("Topic published.");
 
       router.push(`/admin/courses/${id}/?tab=topics`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to publish topic."
+      );
     } finally {
       setSaving(false);
+      setSavingMessage("");
     }
   };
 
   const handleCancel = () => router.push(`/admin/courses/${id}`);
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       <TopicHeader
         title="Create Topic"
         subtitle="Add a new topic to this course."
@@ -183,10 +179,15 @@ export default function CreateTopicPage({ params }: PageProps) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <TopicForm data={data} errors={errors} onChange={handleChange} />
+          <TopicForm
+            data={data}
+            errors={errors}
+            onChange={handleChange}
+            submitAttempted={submitAttempted}
+          />
           <ModulePlaceholders modules={upcomingModules} />
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:sticky lg:top-4 lg:col-span-1 lg:self-start">
           <TopicPreviewCard
             courseName={course?.title ?? "Course Title"}
             courseCode={course?.course_code ?? "Course Code"}
@@ -208,6 +209,8 @@ export default function CreateTopicPage({ params }: PageProps) {
         onPublish={handlePublish}
         saving={saving}
         savingMessage={savingMessage}
+        errorCount={submitAttempted ? errorCount : 0}
+        publishLabel="Publish topic"
       />
     </div>
   );

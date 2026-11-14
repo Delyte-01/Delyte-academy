@@ -29,7 +29,7 @@ export function ProgressCard({
           </div>
           <div className="h-2.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
+              className="h-full rounded-full bg-primary transition-all duration-700"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -38,7 +38,7 @@ export function ProgressCard({
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
               Completed
             </div>
             <p className="mt-1 text-lg font-extrabold text-foreground">

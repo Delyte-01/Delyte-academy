@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
-import gsap from "gsap";
 
+import { EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
 import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileSection } from "@/components/dashboard-components/settings-oomponents/profile-section";
 import { AccountSection } from "@/components/dashboard-components/settings-oomponents/account-selection";
@@ -14,13 +15,12 @@ import { PreferencesSection } from "@/components/dashboard-components/settings-o
 import { SecuritySection } from "@/components/dashboard-components/settings-oomponents/security-section";
 import { DangerZoneSection } from "@/components/dashboard-components/settings-oomponents/danger-zone";
 import {
+  SETTINGS_NAV,
   SettingsSidebar,
   SettingsMobileNav,
 } from "@/components/dashboard-components/settings-oomponents/settings-sidebar";
 
-const prefersReducedMotion = (): boolean =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const VALID_IDS = SETTINGS_NAV.map((item) => item.id);
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -29,14 +29,22 @@ export default function SettingsPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const isFirstRun = useRef(true);
 
+  // Deep links: /dashboard/settings#security opens that section.
+  useEffect(() => {
+    const id = window.location.hash.replace("#", "");
+    if (VALID_IDS.includes(id)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActive(id);
+    }
+  }, []);
+
   const handleSelect = (id: string) => {
     setActive(id);
+    window.history.replaceState(null, "", `#${id}`);
   };
 
   const renderSection = () => {
     switch (active) {
-      case "profile":
-        return <ProfileSection />;
       case "account":
         return <AccountSection />;
       case "preferences":
@@ -50,27 +58,25 @@ export default function SettingsPage() {
     }
   };
 
-  // Small crossfade whenever the active section changes (also plays once on
-  // first mount, a touch bigger, for a gentle page entrance).
+  // Short crossfade when the section changes (a touch longer on first load).
   useEffect(() => {
     const el = contentRef.current;
     if (!el || prefersReducedMotion()) {
       isFirstRun.current = false;
       return;
     }
-
-    const tween: gsap.core.Tween = gsap.fromTo(
+    const tween = gsap.fromTo(
       el,
       { opacity: 0, y: isFirstRun.current ? 14 : 8 },
       {
         opacity: 1,
         y: 0,
         duration: isFirstRun.current ? 0.5 : 0.3,
-        ease: "power2.out",
+        ease: EASE.out,
+        clearProps: "opacity,transform",
       },
     );
     isFirstRun.current = false;
-
     return () => {
       tween.kill();
     };
@@ -89,45 +95,39 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link
-          href="/dashboard"
-          className="font-medium transition-colors hover:text-foreground"
-        >
-          Dashboard
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="font-medium text-foreground">Profile & Settings</span>
-      </div>
+      <PageHeader
+        breadcrumb={
+          <span className="flex items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="font-semibold transition-colors hover:text-foreground"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight className="size-3.5" aria-hidden />
+            <span className="font-semibold text-foreground">Settings</span>
+          </span>
+        }
+        title="Profile & settings"
+        description="Manage your account, learning preferences and security."
+      />
 
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          Profile & Settings
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account, learning preferences, and security.
-        </p>
-      </div>
-
-      {/* Mobile nav — sticky so it stays reachable while scrolling a long section */}
-      <div className="sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 lg:hidden">
+      {/* Mobile: sticky section tabs, below the 64px app header */}
+      <div className="sticky top-16 z-10 -mx-4 border-b bg-background/85 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:hidden">
         <SettingsMobileNav active={active} onSelect={handleSelect} />
       </div>
 
-      {/* Desktop layout */}
-      <div className="grid gap-6 lg:grid-cols-4 lg:items-start">
-        {/* Sticky sidebar with a compact profile snapshot */}
-        <div className="hidden lg:col-span-1 lg:block">
-          <div className="sticky top-6 space-y-4">
-            <Card className="overflow-hidden border-border/60 py-0">
-              <div className="flex items-center gap-3 border-b border-border/60 bg-muted/30 p-4">
-                <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white">
+      <div className="grid gap-6 lg:grid-cols-[18rem_1fr] lg:items-start">
+        {/* Desktop: sticky rail with a profile snapshot */}
+        <div className="hidden lg:block">
+          <div className="sticky top-24">
+            <Card className="overflow-hidden py-0">
+              <div className="flex items-center gap-3 border-b bg-muted/40 p-4">
+                <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
                   {avatarUrl ? (
                     <Image
                       src={avatarUrl}
-                      alt={displayName}
+                      alt=""
                       fill
                       sizes="44px"
                       className="object-cover"
@@ -137,13 +137,11 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">
+                  <p className="truncate text-sm font-bold text-foreground">
                     {displayName}
                   </p>
                   {email && (
-                    <p className="truncate text-xs text-muted-foreground">
-                      {email}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{email}</p>
                   )}
                 </div>
               </div>
@@ -154,8 +152,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Active settings section */}
-        <div ref={contentRef} className="space-y-6 lg:col-span-3">
+        <div ref={contentRef} className="min-w-0 space-y-6">
           {renderSection()}
         </div>
       </div>

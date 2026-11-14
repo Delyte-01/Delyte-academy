@@ -28,7 +28,7 @@ export function UploadDropzone({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all duration-200",
+        "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-all duration-200",
         isDragOver
           ? "scale-[1.01] border-primary bg-primary/5"
           : "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
@@ -44,7 +44,7 @@ export function UploadDropzone({
 
       <div
         className={cn(
-          "flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200",
+          "flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200",
           isDragOver && "scale-110",
         )}
       >

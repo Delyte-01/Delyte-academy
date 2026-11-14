@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { User, Settings, Shield, Trash2, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 
 export interface SettingsNavItem {
@@ -139,8 +139,8 @@ export function SettingsSidebar({ active, onSelect }: SettingsNavProps) {
           "relative z-10 flex w-full items-start gap-3 rounded-xl px-3.5 py-3 text-left text-sm font-medium transition-colors duration-200",
           item.danger
             ? isActive
-              ? "text-rose-600 dark:text-rose-400"
-              : "text-rose-500/75 hover:text-rose-600 dark:text-rose-400/75"
+              ? "text-destructive"
+              : "text-destructive/75 hover:text-destructive"
             : isActive
               ? "text-primary"
               : "text-muted-foreground hover:text-foreground",
@@ -151,8 +151,8 @@ export function SettingsSidebar({ active, onSelect }: SettingsNavProps) {
             "mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
             item.danger
               ? isActive
-                ? "bg-rose-500/15"
-                : "bg-rose-500/5"
+                ? "bg-destructive/15"
+                : "bg-destructive/5"
               : isActive
                 ? "bg-primary/15"
                 : "bg-muted",
@@ -180,7 +180,7 @@ export function SettingsSidebar({ active, onSelect }: SettingsNavProps) {
         className={cn(
           "absolute inset-x-0 z-0 rounded-xl opacity-0 transition-colors duration-200",
           activeItem?.danger
-            ? "bg-rose-500/10 dark:bg-rose-500/15"
+            ? "bg-destructive/10"
             : "bg-primary/10 dark:bg-primary/15",
         )}
         style={{ top: 0, height: 0 }}
@@ -261,11 +261,11 @@ export function SettingsMobileNav({ active, onSelect }: SettingsNavProps) {
             onClick={() => onSelect(item.id)}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-semibold transition-colors duration-200",
+              "flex min-h-11 flex-shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2.5 text-[13px] font-semibold transition-colors duration-200",
               item.danger
                 ? isActive
-                  ? "text-rose-600 dark:text-rose-400"
-                  : "text-rose-500/70"
+                  ? "text-destructive"
+                  : "text-destructive/70"
                 : isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",

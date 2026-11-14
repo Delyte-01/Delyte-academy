@@ -5,6 +5,8 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
 
   const code = searchParams.get("code");
+  // Only this one internal destination is allowed (password-reset links).
+  const isRecovery = searchParams.get("next") === "/reset-password";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login`);
@@ -18,6 +20,10 @@ export async function GET(request: Request) {
   if (exchangeError) {
     console.error("OAuth exchange failed:", exchangeError);
     return NextResponse.redirect(`${origin}/login`);
+  }
+
+  if (isRecovery) {
+    return NextResponse.redirect(`${origin}/reset-password`);
   }
 
   const {

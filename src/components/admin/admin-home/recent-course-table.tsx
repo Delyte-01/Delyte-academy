@@ -1,55 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { BookOpen, MoreHorizontal, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { BookOpen, MoreHorizontal, Pencil, Inbox } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { CourseTableRow } from "./dashboard-data";
-import { useAdminCourses } from "@/hooks/useAdminCoures";
+import { DataTableShell } from "@/components/ui/data-table-shell";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { EmptyState } from "@/components/empty-states";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAdminCourses, type CourseTableRow } from "@/hooks/useAdminCoures";
 
-
-const statusConfig: Record<CourseTableRow["status"], { className: string }> = {
-  Published: {
-    className:
-      "border-0 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  },
-  Draft: { className: "border-0 bg-muted text-muted-foreground" },
-  Archived: {
-    className: "border-0 bg-muted text-muted-foreground",
-  },
-  
+const STATUS: Record<CourseTableRow["status"], "published" | "draft" | "archived"> = {
+  Published: "published",
+  Draft: "draft",
+  Archived: "archived",
 };
 
-function CourseActionsMenu({ courseId }: { courseId: string }) {
-
-   
+function RowMenu({ courseId, title }: { courseId: string; title: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${title}`}>
+          <MoreHorizontal aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
+          <Link href={`/admin/courses/${courseId}`}>
+            <BookOpen aria-hidden /> Open
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href={`/admin/courses/${courseId}/edit`}>
-            <Pencil className="mr-2 h-3.5 w-3.5" />
-            Edit
+            <Pencil aria-hidden /> Edit
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -57,185 +42,93 @@ function CourseActionsMenu({ courseId }: { courseId: string }) {
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-        <Inbox className="h-7 w-7 text-muted-foreground" />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-foreground">No courses yet</p>
-        <p className="text-xs text-muted-foreground">
-          Create your first course to get started.
-        </p>
-      </div>
-      <Button size="sm" asChild>
-        <Link href="/admin/courses/create">Create Course</Link>
-      </Button>
-    </div>
-  );
-}
-
 export function RecentCoursesTable() {
+  const { courses, loading } = useAdminCourses();
 
-  const { courses } = useAdminCourses();
-  
   return (
-    <Card className="border-border/60">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
-        <CardTitle className="text-base font-bold">Recent Courses</CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex-shrink-0 text-xs"
-          asChild
-        >
-          <Link href="/admin/courses">View all</Link>
-        </Button>
-      </CardHeader>
+    <section aria-labelledby="recent-courses">
+      <SectionHeader title="Recent courses" description="Most recently updated" href="/admin/courses" actionLabel="All courses" />
 
-      <CardContent className="p-0">
-        {courses.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            {/* Mobile: stacked cards (below md) */}
-            <div className="divide-y divide-border md:hidden">
-              {courses.map((course) => (
-                <div key={course.id} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                        <BookOpen className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {course.title}
-                        </p>
-                        {/* <p className="truncate text-xs text-muted-foreground">
-                          {course.category}
-                        </p> */}
-                      </div>
-                    </div>
-                    <CourseActionsMenu courseId={course.id} />
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                    <Badge
-                      className={
-                        statusConfig[course.status as keyof typeof statusConfig]
-                          ?.className ??
-                        "border-0 bg-muted text-muted-foreground"
-                      }
-                    >
-                      {course.status}
-                    </Badge>
-                    <span>
-                      <span className="font-medium text-foreground">
-                        {course.students.toLocaleString()}
-                      </span>{" "}
-                      students
-                    </span>
-                    <span>
-                      <span className="font-medium text-foreground">
-                        {course.topics}
-                      </span>{" "}
-                      topics
-                    </span>
-                    <span>
-                      <span className="font-medium text-foreground">
-                        {course.quizzes}
-                      </span>{" "}
-                      quizzes
-                    </span>
-                  </div>
-
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Updated {course.updated}
-                  </p>
+      {loading ? (
+        <div className="space-y-2" role="status" aria-label="Loading courses">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-14 rounded-xl" />
+          ))}
+        </div>
+      ) : courses.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="No courses yet"
+          description="Create your first course, then add topics and quizzes to it."
+          action={
+            <Button variant="brand" asChild>
+              <Link href="/admin/courses/create">
+                <Plus aria-hidden /> Create course
+              </Link>
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          {/* Mobile: stacked rows */}
+          <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-card md:hidden">
+            {courses.map((c) => (
+              <li key={c.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <Link href={`/admin/courses/${c.id}`} className="min-w-0 text-[15px] font-bold text-foreground hover:text-primary">
+                    <span className="block truncate">{c.title}</span>
+                  </Link>
+                  <RowMenu courseId={c.id} title={c.title} />
                 </div>
-              ))}
-            </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
+                  <StatusBadge status={STATUS[c.status]} />
+                  <span><b className="tabular-nums text-foreground">{c.students.toLocaleString()}</b> students</span>
+                  <span><b className="tabular-nums text-foreground">{c.topics}</b> topics</span>
+                  <span><b className="tabular-nums text-foreground">{c.quizzes}</b> quizzes</span>
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">Updated {c.updated}</p>
+              </li>
+            ))}
+          </ul>
 
-            {/* Desktop: full table (md and up) */}
-            <div className="hidden overflow-x-auto md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="pl-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Course
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Status
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Students
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Topics
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Quizzes
-                    </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Last Updated
-                    </TableHead>
-                    <TableHead className="pr-5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </TableHead>
+          {/* Desktop: table */}
+          <DataTableShell className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Students</TableHead>
+                  <TableHead className="text-right">Topics</TableHead>
+                  <TableHead className="text-right">Quizzes</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {courses.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="max-w-[280px]">
+                      <Link href={`/admin/courses/${c.id}`} className="flex min-w-0 items-center gap-3 font-semibold text-foreground hover:text-primary">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                          <BookOpen className="size-4" aria-hidden />
+                        </span>
+                        <span className="truncate">{c.title}</span>
+                      </Link>
+                    </TableCell>
+                    <TableCell><StatusBadge status={STATUS[c.status]} /></TableCell>
+                    <TableCell className="text-right tabular-nums">{c.students.toLocaleString()}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.topics}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.quizzes}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{c.updated}</TableCell>
+                    <TableCell className="text-right"><RowMenu courseId={c.id} title={c.title} /></TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {courses.map((course) => (
-                    <TableRow
-                      key={course.id}
-                      className="transition-colors hover:bg-muted/30"
-                    >
-                      <TableCell className="max-w-[240px] pl-5 py-3.5">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                            <BookOpen className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {course.title}
-                            </p>
-                            {/* <p className="truncate text-xs text-muted-foreground">
-                              {course.category}
-                            </p> */}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={statusConfig[course.status].className}
-                        >
-                          {course.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {course.students.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {course.topics}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {course.quizzes}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {course.updated}
-                      </TableCell>
-                      <TableCell className="pr-5 text-right">
-                        <CourseActionsMenu courseId={course.id} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </DataTableShell>
+        </>
+      )}
+    </section>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, PartyPopper, Target, X } from "lucide-react";
+
+import { CountUp } from "@/components/motion/count-up";
+import { ProgressRing } from "@/components/motion/progress-ring";
 import { cn } from "@/lib/utils";
 
 interface QuizResultData {
@@ -14,102 +16,81 @@ interface QuizResultData {
   totalPoints: number;
 }
 
-const R = 70;
-const C = 2 * Math.PI * R;
-
+/** Score moment: ring draws in, number counts up. Tone follows the outcome. */
 export function QuizResultsHero({ result }: { result: QuizResultData }) {
-  // Start empty, then fill, so the ring draws itself once on arrival.
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setShown(result.score)); // eslint-disable-line react-hooks/set-state-in-effect
-    return () => cancelAnimationFrame(id);
-  }, [result.score]);
-
   const { passed } = result;
 
   return (
     <section
+      aria-labelledby="result-heading"
       className={cn(
-        "rounded-3xl border p-6 sm:p-8",
-        passed
-          ? "border-emerald-500/25 bg-emerald-500/5"
-          : "border-amber-500/25 bg-amber-500/5",
+        "relative overflow-hidden rounded-2xl border p-6 shadow-card sm:p-9",
+        passed ? "bg-brand-wash bg-card" : "border-warning/30 bg-warning-soft/50",
       )}
     >
-      <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:gap-10 sm:text-left">
-        <div className="relative size-36 shrink-0 sm:size-40">
-          <svg
-            viewBox="0 0 160 160"
-            className="size-full -rotate-90"
-            aria-hidden
-          >
-            <circle
-              cx="80"
-              cy="80"
-              r={R}
-              fill="none"
-              strokeWidth="10"
-              className="stroke-foreground/10"
-            />
-            <circle
-              cx="80"
-              cy="80"
-              r={R}
-              fill="none"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={C}
-              strokeDashoffset={C - (shown / 100) * C}
-              className={cn(
-                "transition-[stroke-dashoffset] duration-1000 ease-out motion-reduce:transition-none",
-                passed ? "stroke-emerald-500" : "stroke-amber-500",
-              )}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-semibold tabular-nums tracking-tight">
-              {result.score}%
+      <div className="flex flex-col items-center gap-8 text-center md:flex-row md:gap-12 md:text-left">
+        <ProgressRing
+          value={result.score}
+          size={176}
+          stroke={12}
+          tone={passed ? "brand" : "warning"}
+          label="Quiz score"
+          className="shrink-0"
+        >
+          <span className="flex flex-col items-center">
+            <span className="font-heading text-5xl font-extrabold tabular-nums tracking-tight">
+              <CountUp value={result.score} suffix="%" />
             </span>
-            <span className="text-xs text-muted-foreground">Your score</span>
-          </div>
-        </div>
+            <span className="text-xs font-semibold text-muted-foreground">Your score</span>
+          </span>
+        </ProgressRing>
 
-        <div className="w-full flex-1 space-y-5">
-          <div className="space-y-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {passed ? "You passed" : "Not quite there yet"}
+        <div className="w-full flex-1 space-y-6">
+          <div className="space-y-2">
+            <p
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider",
+                passed ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
+              )}
+            >
+              {passed ? <PartyPopper className="size-3.5" aria-hidden /> : <Target className="size-3.5" aria-hidden />}
+              {passed ? "Passed" : "Not passed yet"}
+            </p>
+            <h1
+              id="result-heading"
+              className="font-heading text-[30px] font-extrabold leading-tight tracking-tight sm:text-4xl"
+            >
+              {passed ? "Great work, you passed." : "Not quite there yet."}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="max-w-md text-[16px] text-muted-foreground">
               {passed
-                ? `You scored above the ${result.passingScore}% pass mark.`
+                ? `You cleared the ${result.passingScore}% pass mark.`
                 : `You need ${result.passingScore}% to pass. Check the answers below, then try again.`}
             </p>
           </div>
 
           <dl className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
-              <dt className="flex items-center justify-center gap-1 text-xs text-muted-foreground sm:justify-start">
-                <Check className="size-3.5 text-emerald-600" /> Correct
+            <div className="rounded-xl bg-background/80 p-3.5 ring-1 ring-border">
+              <dt className="flex items-center justify-center gap-1 text-xs font-semibold text-muted-foreground md:justify-start">
+                <Check className="size-3.5 text-success" aria-hidden /> Correct
               </dt>
-              <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {result.correctAnswers}
+              <dd className="mt-1 font-heading text-2xl font-extrabold tabular-nums">
+                <CountUp value={result.correctAnswers} />
               </dd>
             </div>
-            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
-              <dt className="flex items-center justify-center gap-1 text-xs text-muted-foreground sm:justify-start">
-                <X className="size-3.5 text-rose-600" /> Incorrect
+            <div className="rounded-xl bg-background/80 p-3.5 ring-1 ring-border">
+              <dt className="flex items-center justify-center gap-1 text-xs font-semibold text-muted-foreground md:justify-start">
+                <X className="size-3.5 text-destructive" aria-hidden /> Incorrect
               </dt>
-              <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {result.incorrectAnswers}
+              <dd className="mt-1 font-heading text-2xl font-extrabold tabular-nums">
+                <CountUp value={result.incorrectAnswers} />
               </dd>
             </div>
-            <div className="rounded-2xl bg-background/70 p-3 ring-1 ring-border/60">
-              <dt className="text-xs text-muted-foreground">Points</dt>
-              <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {result.earnedPoints}
-                <span className="text-sm font-normal text-muted-foreground">
-                  /{result.totalPoints}
-                </span>
+            <div className="rounded-xl bg-background/80 p-3.5 ring-1 ring-border">
+              <dt className="text-xs font-semibold text-muted-foreground">Points</dt>
+              <dd className="mt-1 font-heading text-2xl font-extrabold tabular-nums">
+                <CountUp value={result.earnedPoints} />
+                <span className="text-sm font-semibold text-muted-foreground">/{result.totalPoints}</span>
               </dd>
             </div>
           </dl>

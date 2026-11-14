@@ -11,7 +11,7 @@ import {
   EyeOff,
   Loader2,
 } from "lucide-react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import {
   Card,
   CardContent,
@@ -40,15 +40,15 @@ interface PasswordStrength {
 }
 
 const STRENGTH_META: PasswordStrength[] = [
-  { segments: 0, label: "Weak", bar: "bg-rose-500", text: "text-rose-600" },
-  { segments: 1, label: "Weak", bar: "bg-rose-500", text: "text-rose-600" },
-  { segments: 2, label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
-  { segments: 3, label: "Good", bar: "bg-blue-500", text: "text-blue-600" },
+  { segments: 0, label: "Weak", bar: "bg-destructive", text: "text-destructive" },
+  { segments: 1, label: "Weak", bar: "bg-destructive", text: "text-destructive" },
+  { segments: 2, label: "Fair", bar: "bg-warning", text: "text-warning" },
+  { segments: 3, label: "Good", bar: "bg-info", text: "text-info" },
   {
     segments: 4,
     label: "Strong",
-    bar: "bg-emerald-500",
-    text: "text-emerald-600",
+    bar: "bg-success",
+    text: "text-success",
   },
 ];
 
@@ -163,7 +163,7 @@ export function SecuritySection() {
       </CardHeader>
       <CardContent ref={contentRef} className="space-y-6">
         {/* Change password */}
-        <div className="space-y-3 rounded-2xl border border-border/60 p-4">
+        <div className="space-y-3 rounded-xl border border-border/60 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <KeyRound className="h-5 w-5 text-primary" />
@@ -260,7 +260,7 @@ export function SecuritySection() {
               </button>
             </div>
             {!passwordsMatch && (
-              <p className="text-xs text-rose-600">Passwords do not match.</p>
+              <p className="text-xs text-destructive">Passwords do not match.</p>
             )}
           </div>
 
@@ -283,10 +283,10 @@ export function SecuritySection() {
         </div>
 
         {/* 2FA */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-              <Lock className="h-5 w-5 text-amber-600" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-warning/10">
+              <Lock className="h-5 w-5 text-warning" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">
@@ -299,7 +299,7 @@ export function SecuritySection() {
           </div>
           <Badge
             variant="outline"
-            className="w-fit flex-shrink-0 border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+            className="w-fit flex-shrink-0 border-warning/30 bg-warning/15 text-warning"
           >
             Coming Soon
           </Badge>
@@ -335,10 +335,10 @@ export function SecuritySection() {
         </div>
 
         {/* Sign out all devices */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-rose-500/10">
-              <LogOut className="h-5 w-5 text-rose-600" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+              <LogOut className="h-5 w-5 text-destructive" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">
@@ -352,7 +352,7 @@ export function SecuritySection() {
           <Button
             variant="outline"
             disabled={signingOut}
-            className="w-full flex-shrink-0 border-rose-500/30 text-rose-600 hover:bg-rose-500/10 hover:text-rose-600 sm:w-auto"
+            className="w-full flex-shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
             onClick={handleSignOutAll}
           >
             {signingOut ? (

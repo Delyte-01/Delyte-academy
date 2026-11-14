@@ -75,8 +75,6 @@ export function useAdminStudents() {
   updated_at`,
           )
           .eq("role", "student");
-        console.log("PROFILES:", profiles);
-        console.log("PROFILES ERROR:", profilesError);
 
         if (profilesError) throw profilesError;
 

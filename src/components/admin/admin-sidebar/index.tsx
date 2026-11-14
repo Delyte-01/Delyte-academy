@@ -1,42 +1,58 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
 import {
-  LayoutDashboard,
   BookOpen,
-  Users,
-  Settings,
   ChevronLeft,
   GraduationCap,
+  LayoutDashboard,
   LogOut,
+  ShieldCheck,
+  Users,
   X,
+  type LucideIcon,
 } from "lucide-react";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import { Logo } from "@/components/logo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import { useProfile } from "@/hooks/useProfile";
-// import { useProfile } from "@/context/profile-context";
+import type { Profile } from "@/types/profile";
 
-export const navItems = [
+export interface AdminNavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Only shown to super admins (unchanged permission rule). */
+  superOnly?: boolean;
+}
+
+export const navItems: AdminNavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  // { href: "/admin/topics", label: "Topics", icon: ListTree },
-  // { href: "/admin/practice-sets", label: "Practice Sets", icon: ClipboardList },
-  // { href: "/admin/questions", label: "Questions", icon: HelpCircle },
-  // { href: "/admin/resources", label: "Resources (PDFs)", icon: FileText },
-  { href: "/admin/students", label: "Students", icon: Users },
-  { href: "/admin/admins", label: "Admins", icon: Users },
-  // { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
-  // { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  // { href: "/admin/profile", label: "Profile", icon: User },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/students", label: "Students", icon: Users, superOnly: true },
+  { href: "/admin/admins", label: "Admins", icon: ShieldCheck, superOnly: true },
 ];
+
+const ICON_MARK =
+  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784147337/Group_1_bpvzwx.svg";
+
+export function roleLabel(role?: Profile["role"]) {
+  return role === "super_admin" ? "Super admin" : "Admin";
+}
+
+export function initialsOf(profile: Profile | null) {
+  const source = profile?.full_name?.trim() || profile?.email || "A";
+  const parts = source.split(/[\s@.]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "A") + (parts[1]?.[0] ?? "")).toUpperCase();
+}
 
 interface AdminSidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
+  profile: Profile | null;
   onCloseMobile: () => void;
   onToggleCollapse: () => void;
   handleSignOut: () => void;
@@ -45,6 +61,7 @@ interface AdminSidebarProps {
 export default function AdminSidebar({
   collapsed,
   mobileOpen,
+  profile,
   onCloseMobile,
   onToggleCollapse,
   handleSignOut,
@@ -53,176 +70,115 @@ export default function AdminSidebar({
   const navRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const pillRef = useRef<HTMLDivElement>(null);
-  const chevronRef = useRef<SVGSVGElement>(null);
-  const hasAnimatedPill = useRef(false);
+  const placed = useRef(false);
 
-  const { profile } = useProfile();
+  const isSuper = profile?.role === "super_admin";
+  const visible = navItems.filter((item) => !item.superOnly || isSuper);
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.href === "/admin/students" || item.href === "/admin/admins") {
-      return profile?.role === "super_admin";
-    }
+  const isActive = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  const activeItem = visible.find((n) => isActive(n.href));
 
-    return true;
-  });
-
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
-  };
-
-  const activeItem = visibleNavItems.find((n) => isActive(n.href));
-
-  // Track the active nav item with a sliding gradient pill (signature element)
+  // Sliding brand pill behind the active item (transform/height only).
   useLayoutEffect(() => {
     const container = navRef.current;
     const pill = pillRef.current;
-    const activeEl = activeItem ? itemRefs.current[activeItem.href] : null;
-    if (!container || !pill || !activeEl) return;
-
-    const cRect = container.getBoundingClientRect();
-    const aRect = activeEl.getBoundingClientRect();
-    const top = aRect.top - cRect.top + container.scrollTop;
-
+    const el = activeItem ? itemRefs.current[activeItem.href] : null;
+    if (!container || !pill) return;
+    if (!el) {
+      gsap.set(pill, { opacity: 0 });
+      return;
+    }
+    const top = el.offsetTop;
+    const instant = !placed.current || prefersReducedMotion();
     gsap.to(pill, {
       y: top,
-      height: aRect.height,
+      height: el.offsetHeight,
       opacity: 1,
-      duration: hasAnimatedPill.current ? 0.45 : 0.01,
+      duration: instant ? 0 : 0.4,
       ease: "power3.out",
     });
-    hasAnimatedPill.current = true;
-  }, [pathname, collapsed, activeItem]);
+    placed.current = true;
+  }, [pathname, collapsed, activeItem, isSuper]);
 
-  // Staggered entrance for nav items on first mount
+  // Close the mobile drawer with Escape.
   useEffect(() => {
-    const items = gsap.utils.toArray<HTMLElement>(
-      navRef.current?.querySelectorAll("[data-nav-item]") ?? [],
-    );
-    gsap.fromTo(
-      items,
-      { opacity: 0, x: -10 },
-      {
-        opacity: 1,
-        x: 0,
-        duration: 0.45,
-        stagger: 0.035,
-        ease: "power2.out",
-        delay: 0.05,
-      },
-    );
-  }, []);
-
-  // Sync chevron rotation to persisted collapsed state on mount
-  useEffect(() => {
-    gsap.set(chevronRef.current, { rotate: collapsed ? 180 : 0 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleToggleCollapse = () => {
-    gsap.to(chevronRef.current, {
-      rotate: collapsed ? 0 : 180,
-      duration: 0.35,
-      ease: "power2.inOut",
-    });
-    onToggleCollapse();
-  };
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseMobile();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen, onCloseMobile]);
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm duration-200 animate-in fade-in lg:hidden"
+          aria-hidden
+          className="fixed inset-0 z-40 bg-foreground/40 animate-fade-in lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
       <aside
+        aria-label="Admin navigation"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen flex-col overflow-hidden border-r border-border/60 bg-card/95 backdrop-blur-xl transition-[width,transform] duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh flex-col border-r bg-card transition-[width,transform] duration-300 ease-in-out motion-reduce:transition-none",
           "lg:static lg:translate-x-0",
-          collapsed ? "lg:w-[76px]" : "lg:w-[268px]",
-          mobileOpen
-            ? "w-[268px] translate-x-0 shadow-2xl"
-            : "-translate-x-full w-[268px] lg:translate-x-0",
+          collapsed ? "lg:w-[76px]" : "lg:w-[264px]",
+          mobileOpen ? "w-[280px] translate-x-0 shadow-float" : "w-[280px] -translate-x-full lg:translate-x-0",
         )}
       >
         {/* Brand */}
-        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-border/60 px-4">
-          <Link
-            href="/admin"
-            className="group flex items-center gap-2.5 overflow-hidden"
-          >
-            <div>
-              <Image
-                src={
-                  "https://res.cloudinary.com/dk5mfu099/image/upload/v1784147337/Group_1_bpvzwx.svg"
-                }
-                alt="delyte academy logo"
-                width={120}
-                height={120}
-                className="object-cover w-[40px] height-[60px] "
-              />
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-extrabold tracking-tight text-foreground">
-                  Delyte Academy
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-500">
-                  Admin Panel
-                </span>
-              </div>
-            )}
+        <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+          <Link href="/admin" className="flex items-center gap-2.5 overflow-hidden rounded-lg" aria-label="Delyte admin home">
+            {collapsed ? (
+              <Image src={ICON_MARK} alt="Delyte" width={36} height={36} className="hidden h-9 w-9 object-contain lg:block" />
+            ) : null}
+            <span className={cn(collapsed && "lg:hidden")}>
+              <Logo className="w-[124px]" />
+            </span>
           </Link>
           <button
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
+            type="button"
             onClick={onCloseMobile}
             aria-label="Close menu"
+            className="flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
           >
-            <X className="h-5 w-5" />
+            <X className="size-5" aria-hidden />
           </button>
         </div>
 
-        {/* Admin profile */}
-        {!collapsed && (
-          <div className="flex-shrink-0 border-b border-border/60 px-4 py-4">
-            <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-2.5">
-              <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-700 text-sm font-bold text-primary-foreground ring-2 ring-background">
-                DA
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-500" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  Super Admin
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  admin@delyte.academy
-                </p>
-              </div>
+        {/* Signed-in admin (real profile) */}
+        <div className={cn("shrink-0 px-3 pt-4", collapsed && "lg:px-2")}>
+          <div className={cn("flex items-center gap-3 rounded-xl bg-muted/60 p-2.5", collapsed && "lg:justify-center lg:bg-transparent lg:p-0")}>
+            <Avatar className="size-10 shrink-0">
+              <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary-soft-foreground">
+                {initialsOf(profile)}
+              </AvatarFallback>
+            </Avatar>
+            <div className={cn("min-w-0", collapsed && "lg:hidden")}>
+              <p className="truncate text-sm font-bold text-foreground">
+                {profile?.full_name || profile?.username || "Admin"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {profile ? roleLabel(profile.role) : " "}
+              </p>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Nav */}
-        <nav
-          ref={navRef}
-          className="relative flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]"
-        >
-          {/* Sliding active pill */}
+        <nav ref={navRef} className="relative flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
           <div
             ref={pillRef}
-            className="pointer-events-none absolute left-3 top-0 z-0 w-[calc(100%-1.5rem)] rounded-xl bg-gradient-to-r from-primary to-indigo-600 opacity-0 shadow-lg shadow-primary/25"
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-0 z-0 w-[calc(100%-1.5rem)] rounded-xl bg-primary-soft opacity-0"
             style={{ willChange: "transform, height" }}
           />
-
-          {!collapsed && (
-            <p className="relative z-10 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Management
-            </p>
-          )}
-          {visibleNavItems.map(({ href, label, icon: Icon }) => {
+          <p className={cn("relative z-10 px-3 pb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground", collapsed && "lg:hidden")}>
+            Manage
+          </p>
+          {visible.map(({ href, label, icon: Icon }) => {
             const active = isActive(href);
             return (
               <Link
@@ -231,68 +187,58 @@ export default function AdminSidebar({
                 ref={(el) => {
                   itemRefs.current[href] = el;
                 }}
-                data-nav-item
                 onClick={onCloseMobile}
+                aria-current={active ? "page" : undefined}
                 title={collapsed ? label : undefined}
                 className={cn(
-                  "group relative z-10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
-                  active
-                    ? "text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
+                  "group relative z-10 flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold transition-colors",
+                  active ? "text-primary-soft-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   collapsed && "lg:justify-center lg:px-0",
                 )}
               >
-                <Icon
-                  className={cn(
-                    "h-[18px] w-[18px] flex-shrink-0 transition-transform duration-200",
-                    active && "scale-110",
-                  )}
-                />
-                {!collapsed && <span className="truncate">{label}</span>}
-                {collapsed && (
-                  <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg lg:group-hover:block">
-                    {label}
-                  </span>
-                )}
+                <Icon className={cn("size-[18px] shrink-0", active && "text-primary")} aria-hidden />
+                <span className={cn("truncate", collapsed && "lg:sr-only")}>{label}</span>
               </Link>
             );
           })}
         </nav>
 
         {/* Footer */}
-        <div className="flex-shrink-0 border-t border-border/60 px-3 py-3">
+        <div className="shrink-0 space-y-1 border-t p-3">
           <Link
             href="/dashboard"
+            title={collapsed ? "Student view" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground",
+              "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
               collapsed && "lg:justify-center lg:px-0",
             )}
-            title={collapsed ? "Student View" : undefined}
           >
-            <GraduationCap className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>Student View</span>}
+            <GraduationCap className="size-[18px] shrink-0" aria-hidden />
+            <span className={cn(collapsed && "lg:sr-only")}>Student view</span>
           </Link>
           <button
+            type="button"
             onClick={handleSignOut}
+            title={collapsed ? "Log out" : undefined}
             className={cn(
-              "mt-1 flex items-center gap-3 border w-full justify-center rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive",
+              "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
               collapsed && "lg:justify-center lg:px-0",
             )}
-            title={collapsed ? "Logout" : undefined}
           >
-            <LogOut className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>Logout</span>}
+            <LogOut className="size-[18px] shrink-0" aria-hidden />
+            <span className={cn(collapsed && "lg:sr-only")}>Log out</span>
+          </button>
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-pressed={collapsed}
+            className="hidden min-h-10 w-full items-center justify-center gap-2 rounded-xl text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:flex"
+          >
+            <ChevronLeft className={cn("size-4 transition-transform duration-300 motion-reduce:transition-none", collapsed && "rotate-180")} aria-hidden />
+            <span className={cn(collapsed && "sr-only")}>Collapse</span>
           </button>
         </div>
-
-        {/* Collapse toggle (desktop) */}
-        <button
-          onClick={handleToggleCollapse}
-          className="hidden flex-shrink-0 items-center justify-center gap-2 border-t border-border/60 px-3 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:flex"
-        >
-          <ChevronLeft ref={chevronRef} className="h-4 w-4" />
-          {!collapsed && <span>Collapse</span>}
-        </button>
       </aside>
     </>
   );

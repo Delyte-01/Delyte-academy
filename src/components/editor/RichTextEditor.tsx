@@ -34,7 +34,6 @@ export default function RichTextEditor({
   const [mathOpen, setMathOpen] = useState(false);
   const [mathMode, setMathMode] = useState<"inline" | "block">("inline");
 
-  console.log(mathMode);
 
   const params = useParams();
   const courseId = params.id as string;

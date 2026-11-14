@@ -29,7 +29,7 @@ export function DeleteQuestionDialog({
 }: DeleteQuestionDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-2xl">
+      <AlertDialogContent className="rounded-xl">
         <AlertDialogHeader className="space-y-1">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
             <Trash2 className="h-5 w-5" />

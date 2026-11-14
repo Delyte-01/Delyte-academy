@@ -29,7 +29,7 @@ export function ExternalLinksSection({
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3.5 transition-colors hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 sm:p-4"
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 transition-colors hover:border-success/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">
@@ -39,7 +39,7 @@ export function ExternalLinksSection({
                   {getHostname(link.url)}
                 </span>
               </span>
-              <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-emerald-600" />
+              <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-success" />
               <span className="sr-only">(opens in a new tab)</span>
             </a>
           </li>

@@ -31,7 +31,7 @@ export function VideoSection({ videoUrl }: { videoUrl: string | null }) {
   if (!embedUrl) return null;
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-950 shadow-sm ring-1 ring-border/60">
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-foreground shadow-float">
       <iframe
         src={embedUrl}
         title="Video lesson"

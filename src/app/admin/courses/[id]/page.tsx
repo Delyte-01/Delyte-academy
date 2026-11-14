@@ -2,9 +2,10 @@
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, ClipboardList, Users, FileBarChart } from "lucide-react";
-import gsap from "gsap";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import { CourseWorkspaceHeader } from "@/components/admin/course-workspace/workspace-header";
-import { StatsBar } from "@/components/admin/course-workspace/stats-bar";
+import { StatStrip } from "@/components/admin/workspace/stat-strip";
+import { WorkspaceSkeleton } from "@/components/admin/workspace/workspace-skeleton";
 import {
   courseTabs,
   WorkspaceTabs,
@@ -19,31 +20,11 @@ import { TopicService } from "@/services/topic";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatReadableDate } from "@/constants/date-format";
-import FullPageLoader from "@/components/loading/Loading";
 import { Quiz } from "@/types/quiz";
 import { Enrollment } from "@/types/enrollment";
 import { QuizService } from "@/services/quiz";
 import { enrollmentService } from "@/services/enrollment";
 import { CourseStudentsTab } from "@/components/admin/course-workspace/course-students-tab";
-
-const recentActivity = [
-  {
-    action: 'Published topic "Geometry & Trigonometry"',
-    user: "Super Admin",
-    time: "2h ago",
-  },
-  {
-    action: 'Added 12 new questions to "Quadratic Functions"',
-    user: "Super Admin",
-    time: "1d ago",
-  },
-  { action: "Updated course description", user: "Super Admin", time: "3d ago" },
-  {
-    action: 'Created practice set "Algebra Mock Test"',
-    user: "Super Admin",
-    time: "5d ago",
-  },
-];
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -109,16 +90,16 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
   // Crossfade the tab panel every time the active tab changes
   useEffect(() => {
-    if (!tabContentRef.current) return;
+    if (!tabContentRef.current || prefersReducedMotion()) return;
     gsap.fromTo(
       tabContentRef.current,
       { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
+      { opacity: 1, y: 0, duration: 0.3, ease: "power2.out", clearProps: "transform,opacity" },
     );
   }, [activeTab]);
 
   if (loading) {
-    return <FullPageLoader />;
+    return <WorkspaceSkeleton />;
   }
 
   if (!course) {
@@ -130,29 +111,9 @@ export default function CourseDetailsPage({ params }: PageProps) {
   const totalStudents = enrollments.length;
 
   const stats = [
-    {
-      label: "Topics",
-      value: totalTopics,
-      icon: BookOpen,
-      color: "text-blue-600",
-      bgColor: "bg-blue-500/10",
-    },
-
-    {
-      label: "Quiz Questions",
-      value: totalQuizzes,
-      icon: ClipboardList,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-500/10",
-    },
-
-    {
-      label: "Students",
-      value: totalStudents,
-      icon: Users,
-      color: "text-amber-600",
-      bgColor: "bg-amber-500/10",
-    },
+    { label: "Topics", value: totalTopics, icon: BookOpen, tone: "info" as const },
+    { label: "Quizzes", value: totalQuizzes, icon: ClipboardList, tone: "brand" as const },
+    { label: "Students", value: totalStudents, icon: Users, tone: "warning" as const },
   ];
 
   return (
@@ -166,21 +127,31 @@ export default function CourseDetailsPage({ params }: PageProps) {
         courseSlug={id}
       />
 
-      <StatsBar stats={stats} />
+      <StatStrip items={stats} />
 
       <WorkspaceTabs
-        tabs={courseTabs}
+        tabs={courseTabs.map((t) =>
+          t.value === "topics"
+            ? { ...t, count: totalTopics }
+            : t.value === "students"
+              ? { ...t, count: totalStudents }
+              : t,
+        )}
         value={activeTab}
         onChange={setActiveTab}
       />
 
-      <div ref={tabContentRef}>
+      <div
+        ref={tabContentRef}
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === "overview" && (
           <OverviewTab
             description={course?.description}
             code={course?.course_code}
             status={course.status}
-            recentActivity={recentActivity}
             createdAt={formatReadableDate(course.created_at)}
             updatedAt={formatReadableDate(course.updated_at)}
             id={course.id}
@@ -200,8 +171,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
             title="Course analytics"
             description="See engagement, completion rates, and performance trends for this course."
             actionLabel="View Analytics"
-            iconColor="text-violet-600"
-            iconBg="bg-violet-500/10"
+            iconColor="text-primary"
+            iconBg="bg-primary/10"
           />
         )}
         {activeTab === "settings" && (
@@ -210,8 +181,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
             title="Course settings"
             description="Configure course visibility, certificates, and enrollment preferences."
             actionLabel="Edit Settings"
-            iconColor="text-blue-600"
-            iconBg="bg-blue-500/10"
+            iconColor="text-info"
+            iconBg="bg-info/10"
           />
         )}
       </div>

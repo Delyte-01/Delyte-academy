@@ -46,14 +46,14 @@ interface ContentTabProps {
   courseName: string;
 }
 const statusStyles: Record<Status, string> = {
-  published: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  draft: "border-amber-500/30 bg-amber-500/15 text-amber-700",
+  published: "border-primary/30 bg-primary/15 text-primary",
+  draft: "border-warning/30 bg-warning/15 text-warning",
 };
 
 const difficultyStyles: Record<Difficulty, string> = {
-  beginner: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  intermediate: "border-amber-500/30 bg-amber-500/15 text-amber-700",
-  advanced: "border-rose-500/30 bg-rose-500/15 text-rose-700",
+  beginner: "border-primary/30 bg-primary/15 text-primary",
+  intermediate: "border-warning/30 bg-warning/15 text-warning",
+  advanced: "border-destructive/30 bg-destructive/15 text-destructive",
 };
 
 export function ContentTab({
@@ -116,7 +116,7 @@ export function ContentTab({
         </nav>
 
         {/* Title row */}
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">

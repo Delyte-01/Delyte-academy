@@ -3,12 +3,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Plus, HelpCircle, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { QuizHeader } from "./quiz-header";
 import { DeleteQuestionDialog } from "./delete-question-dialog";
 
@@ -432,25 +426,17 @@ export function QuizPage() {
           parsed = await parseCSV(file);
         } else if (ext === "docx") {
           const text = await extractDocxText(file);
-          console.log("===== RAW DOCX TEXT =====");
-          console.log(text);
-          console.log("=========================");
           parsed = parseQuestions(text);
         }
 
         // later
         else if (ext === "pdf") {
           const text = await parsePDF(file);
-console.log("===== RAW PDF TEXT =====");
-console.log(text);
-console.log("========================");
           parsed = parseQuestions(text);
         }
 
         let nextOrder = Math.max(...questions.map((q) => q.order_index), 0) + 1;
-        console.log("Parsed questions:", parsed.length, parsed);
         for (const question of parsed) {
-          console.log("Importing:", question.question);
           await addQuestion({
             quizId: quiz.id,
             question: question.question,
@@ -492,6 +478,7 @@ console.log("========================");
         onSaveDraft={() => updateQuizStatus("draft")}
         onPublish={() => updateQuizStatus("published")}
         saving={saving}
+        status={status}
       />
 
       <QuizStats
@@ -501,156 +488,126 @@ console.log("========================");
         status={status}
       />
 
-      <QuizSettingsCard settings={settings!} onChange={setSettings} />
-
-      {/* Questions section */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <HelpCircle className="h-4 w-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base font-bold">Questions</CardTitle>
-                <CardDescription className="text-sm">
-                  Manage assessment questions.
-                </CardDescription>
-              </div>
+      {/* Split layout: questions on the left, settings rail on the right (stacks on mobile) */}
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section aria-labelledby="questions-heading" className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 id="questions-heading" className="font-heading text-xl font-extrabold tracking-tight text-foreground">
+                Questions
+                <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-middle text-sm font-bold tabular-nums text-muted-foreground">
+                  {questions.length}
+                </span>
+              </h3>
+              <p className="text-[15px] text-muted-foreground">Add, edit and order the assessment questions.</p>
             </div>
-            <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setImportOpen(true)}
-              >
-                <UploadCloud className="mr-1.5 h-4 w-4" />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <UploadCloud className="size-4" />
                 Import
               </Button>
-              <Button size="sm" onClick={handleAddQuestion}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add Question
+              <Button variant="brand" onClick={handleAddQuestion}>
+                <Plus className="size-4" />
+                Add question
               </Button>
             </div>
           </div>
-        </CardHeader>
-      </Card>
 
-      {questions.length === 0 ? (
-        <EmptyState onAddQuestion={handleAddQuestion} />
-      ) : (
-        <div className="space-y-4">
-          <QuestionFilters
-            search={search}
-            onSearchChange={setSearch}
-            difficulty={difficultyFilter}
-            onDifficultyChange={setDifficultyFilter}
-            type={typeFilter}
-            onTypeChange={setTypeFilter}
-            sort={sort}
-            onSortChange={setSort}
-          />
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={toggleSelectAll}
+          {questions.length === 0 ? (
+            <EmptyState onAddQuestion={handleAddQuestion} />
+          ) : (
+            <div className="space-y-4">
+              <QuestionFilters
+                search={search}
+                onSearchChange={setSearch}
+                difficulty={difficultyFilter}
+                onDifficultyChange={setDifficultyFilter}
+                type={typeFilter}
+                onTypeChange={setTypeFilter}
+                sort={sort}
+                onSortChange={setSort}
               />
-              <span className="text-sm font-medium">Select All</span>
-            </div>
 
-            <span className="text-xs text-muted-foreground">
-              Showing {start}-{end} of {filteredQuestions.length}
-            </span>
-          </div>
-
-          <BulkActions
-            selectedCount={selectedIds.size}
-            onDelete={handleBulkDelete}
-            onDuplicate={handleBulkDuplicate}
-            onExport={handleExport}
-            onClear={clearSelection}
-          />
-
-          {/* Question list with drag handles */}
-          <div className="space-y-3">
-            {paginatedQuestions.length === 0 ? (
-              <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/20 p-8 text-center">
-                <HelpCircle className="h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-3 text-sm font-semibold text-foreground">
-                  No questions found
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Try adjusting your filters or search.
-                </p>
+              <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3">
+                <label className="flex min-h-8 cursor-pointer items-center gap-3 text-sm font-semibold text-foreground">
+                  <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+                  Select all on this page
+                </label>
+                <span className="text-[13px] tabular-nums text-muted-foreground" aria-live="polite">
+                  {filteredQuestions.length === 0 ? "0" : `${start}–${end}`} of {filteredQuestions.length}
+                </span>
               </div>
-            ) : (
-              paginatedQuestions.map((q, index) => (
-                <QuestionCard
-                  key={q.id}
-                  question={q}
-                  isExpanded={expandedId === q.id}
-                  isSelected={selectedIds.has(q.id)}
-                  onToggleExpand={() => toggleExpand(q.id)}
-                  onToggleSelect={() => toggleSelect(q.id)}
-                  onEdit={() => handleEditQuestion(q)}
-                  onDelete={() => handleDelete(q.id)}
-                  onDuplicate={() => handleDuplicate(q)}
-                  displayNumber={index + 1}
-                />
-              ))
-            )}
 
-            {/* 2. Render Shadcn Pagination only if there's more than 1 page */}
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  {/* Previous Button */}
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                      className={
-                        page === 1
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
+              <div className="space-y-3">
+                {paginatedQuestions.length === 0 ? (
+                  <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 p-8 text-center">
+                    <HelpCircle className="size-8 text-muted-foreground/60" aria-hidden />
+                    <p className="mt-3 text-base font-bold text-foreground">No questions match</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Try a different search or filter.</p>
+                  </div>
+                ) : (
+                  paginatedQuestions.map((q, index) => (
+                    <QuestionCard
+                      key={q.id}
+                      question={q}
+                      isExpanded={expandedId === q.id}
+                      isSelected={selectedIds.has(q.id)}
+                      onToggleExpand={() => toggleExpand(q.id)}
+                      onToggleSelect={() => toggleSelect(q.id)}
+                      onEdit={() => handleEditQuestion(q)}
+                      onDelete={() => handleDelete(q.id)}
+                      onDuplicate={() => handleDuplicate(q)}
+                      displayNumber={(page - 1) * QUESTIONS_PER_PAGE + index + 1}
                     />
-                  </PaginationItem>
+                  ))
+                )}
 
-                  {/* Render Page Numbers */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (pageNum) => (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink
-                          isActive={page === pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className="cursor-pointer"
-                        >
-                          {pageNum}
-                        </PaginationLink>
+                {totalPages > 1 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                          className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
                       </PaginationItem>
-                    ),
-                  )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            isActive={page === pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className="cursor-pointer"
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                          className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
 
-                  {/* Next Button */}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() =>
-                        setPage((p) => Math.min(p + 1, totalPages))
-                      }
-                      className={
-                        page === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </div>
-        </div>
-      )}
+              <BulkActions
+                selectedCount={selectedIds.size}
+                onDelete={handleBulkDelete}
+                onDuplicate={handleBulkDuplicate}
+                onExport={handleExport}
+                onClear={clearSelection}
+              />
+            </div>
+          )}
+        </section>
+
+        <aside aria-label="Quiz settings" className="min-w-0 xl:sticky xl:top-16">
+          <QuizSettingsCard settings={settings!} onChange={setSettings} />
+        </aside>
+      </div>
 
       <QuestionDialog
         open={dialogOpen}

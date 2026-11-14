@@ -11,7 +11,7 @@ export const config = {
     "/dashboard/course/:path",
     "/admin/:path*",
     "/login",
-    "/signup",
+    "/sign-up",
     "/auth/callback",
   ],
 };

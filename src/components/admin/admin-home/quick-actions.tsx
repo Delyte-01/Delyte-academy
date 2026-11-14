@@ -1,83 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, FolderPlus, HelpCircle, Users, Award } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowUpRight, BookOpen, Plus, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 
 interface QuickAction {
   label: string;
+  description: string;
   href: string;
   icon: LucideIcon;
-  color: string;
-  bgColor: string;
+  superOnly?: boolean;
 }
 
-const actions: QuickAction[] = [
-  {
-    label: "Create Course",
-    href: "/admin/courses/create",
-    icon: BookOpen,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-  },
-  {
-    label: "Add Topic",
-    href: "/admin/topics",
-    icon: FolderPlus,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
-  },
-  {
-    label: "Create Quiz",
-    href: "/admin/questions",
-    icon: HelpCircle,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-  },
-  {
-    label: "View Students",
-    href: "/admin/students",
-    icon: Users,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    label: "Manage Certificates",
-    href: "/admin/analytics",
-    icon: Award,
-    color: "text-rose-600",
-    bgColor: "bg-rose-500/10",
-  },
+// Only routes that exist. (Topics and quizzes are created inside a course workspace.)
+const ACTIONS: QuickAction[] = [
+  { label: "Create a course", description: "Start a new course, then add topics and quizzes", href: "/admin/courses/create", icon: Plus },
+  { label: "Manage courses", description: "Edit, publish or archive existing courses", href: "/admin/courses", icon: BookOpen },
+  { label: "Students", description: "See learners and their enrollments", href: "/admin/students", icon: Users, superOnly: true },
+  { label: "Admins", description: "Manage who can administer the academy", href: "/admin/admins", icon: ShieldCheck, superOnly: true },
 ];
 
-export function QuickActions() {
+export function QuickActions({ isSuperAdmin }: { isSuperAdmin: boolean }) {
+  const actions = ACTIONS.filter((a) => !a.superOnly || isSuperAdmin);
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-2.5">
-        {actions.map((action) => {
-          const Icon = action.icon;
-          return (
+    <section className="rounded-xl border bg-card p-5 shadow-card" aria-labelledby="quick-title">
+      <h2 id="quick-title" className="mb-3 font-heading text-lg font-bold tracking-tight">
+        Quick actions
+      </h2>
+      <ul className="-mx-2 space-y-0.5">
+        {actions.map(({ label, description, href, icon: Icon }) => (
+          <li key={href}>
             <Link
-              key={action.label}
-              href={action.href}
-              className="flex items-center gap-3 rounded-2xl border p-3 transition-all hover:border-primary/40 hover:bg-muted/30 hover:shadow-sm"
+              href={href}
+              className="group flex min-h-14 items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted"
             >
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-xl ${action.bgColor}`}
-              >
-                <Icon className={`h-4.5 w-4.5 ${action.color}`} />
-              </div>
-              <span className="text-sm font-medium text-foreground">
-                {action.label}
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
+                <Icon className="size-[18px]" aria-hidden />
               </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-foreground">{label}</span>
+                <span className="block truncate text-[13px] text-muted-foreground">{description}</span>
+              </span>
+              <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden />
             </Link>
-          );
-        })}
-      </CardContent>
-    </Card>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

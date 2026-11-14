@@ -1,14 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
+import { useGSAP, gsap } from "@/lib/gsap";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LucideIcon, Sparkles, Lock } from "lucide-react";
-
-gsap.registerPlugin(useGSAP);
-
 export interface ModulePlaceholder {
   icon: LucideIcon;
   label: string;

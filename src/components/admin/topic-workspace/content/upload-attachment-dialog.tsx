@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,6 @@ import {
   Presentation,
   FileSpreadsheet,
   FileCode2,
-  CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -211,7 +210,7 @@ export function UploadAttachmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-0 rounded-2xl p-0 sm:max-w-xl">
+      <DialogContent className="max-w-lg gap-0 rounded-xl p-0 sm:max-w-xl">
         {/* Header */}
         <DialogHeader className="space-y-1 border-b border-border/60 px-6 pb-4 pt-6">
           <DialogTitle className="text-lg font-bold tracking-tight">
@@ -282,7 +281,7 @@ export function UploadAttachmentDialog({
                     handleFileSelect(e.dataTransfer.files);
                   }}
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors duration-200",
+                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors duration-200",
                     isDragOver
                       ? "border-primary bg-primary/5"
                       : "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40"
@@ -297,7 +296,7 @@ export function UploadAttachmentDialog({
                   />
                   <div
                     ref={dropIconRef}
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+                    className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary"
                   >
                     <UploadCloud className="h-7 w-7" />
                   </div>
@@ -335,7 +334,7 @@ export function UploadAttachmentDialog({
             ) : (
               <div
                 ref={fileCardRef}
-                className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4"
+                className="space-y-3 rounded-xl border border-border/60 bg-muted/20 p-4"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -366,7 +365,7 @@ export function UploadAttachmentDialog({
                   <div className="space-y-1">
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500"
+                        className="h-full rounded-full bg-primary"
                         style={{ width: `${uploadedFile.progress}%` }}
                       />
                     </div>
@@ -378,7 +377,7 @@ export function UploadAttachmentDialog({
                 {/* {uploadedFile.progress === 100 && !uploading && (
                   <p
                     ref={successRef}
-                    className="flex items-center gap-1.5 text-xs font-medium text-emerald-600"
+                    className="flex items-center gap-1.5 text-xs font-medium text-primary"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Upload complete

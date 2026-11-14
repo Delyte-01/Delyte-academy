@@ -27,6 +27,9 @@ export function useTopics(courseId: string) {
   }, [courseId]);
 
   useEffect(() => {
+    // loadTopics sets `loading` before its first await; that is intentional
+    // (it must reset when courseId changes or reload() runs).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTopics();
   }, [loadTopics]);
 

@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, UserPlus, Plus } from "lucide-react";
+import { Download } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import AdminBreadcrumb from "@/components/admin/admin-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { StudentsKpiCards } from "@/components/admin/students-component/students-kpi-cards";
 import { EnrollmentFilter, SortOption, StatusFilter, StudentsToolbar } from "@/components/admin/students-component/students-toolbar";
-// import { StudentsTable } from "@/components/admin/students-component/students-table";
 import { StudentDetailSheet } from "@/components/admin/students-component/student-detail-sheet";
 
 import { AdminStudent, useAdminStudents } from "@/hooks/useAdminStudents";
@@ -94,31 +94,17 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-            Students
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage all student accounts, enrollments, and learning activity.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2.5">
+      <PageHeader
+        breadcrumb={<AdminBreadcrumb />}
+        title="Students"
+        description="Manage all student accounts, enrollments, and learning activity."
+        actions={
           <Button variant="outline" onClick={handleExportCsv}>
-            <Download className="mr-2 h-4 w-4" />
+            <Download aria-hidden />
             Export CSV
           </Button>
-          <Button disabled variant="ghost">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Student
-          </Button>
-          <Button disabled variant="default">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Student
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI cards */}
       <StudentsKpiCards students={students} />
@@ -137,18 +123,20 @@ export default function StudentsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3" role="status" aria-label="Loading students">
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="h-16 animate-pulse rounded-2xl border bg-muted/40"
+              className="skeleton-shimmer h-16 rounded-xl border bg-muted/40"
             />
           ))}
         </div>
       ) : (
         <AdminStudentsTable
-          students={filteredStudents as any}
-          onSelectStudent={handleSelectStudent as any}
+          students={filteredStudents}
+          total={students.length}
+          onSelectStudent={handleSelectStudent}
+          onStudentDeleted={removeStudentLocal}
         />
       )}
 

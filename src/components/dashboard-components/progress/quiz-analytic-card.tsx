@@ -1,158 +1,101 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { FileCheck, Target, TrendingUp, Trophy } from "lucide-react";
+
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig,
 } from "@/components/ui/chart";
-import type { ChartConfig } from "@/components/ui/chart";
+import { EmptyState } from "@/components/empty-states";
 import { QuizAnalytics } from "@/types/progress";
-import { TrendingUp, Trophy, FileCheck, Target } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  
-} from "recharts";
-
-
-interface QuizAnalyticsCardProps {
-  data: QuizAnalytics;
-}
+import { Panel } from "./panel";
 
 const chartConfig: ChartConfig = {
-  score: {
-    label: "Score",
-    color: "#10B981",
-  },
+  score: { label: "Score", color: "var(--chart-1)" },
 };
 
-export function QuizAnalyticsCard({ data }: QuizAnalyticsCardProps) {
+export function QuizAnalyticsCard({ data }: { data: QuizAnalytics }) {
   const stats = [
-    {
-      label: "Average Score",
-      value: `${data.averageScore}%`,
-      icon: TrendingUp,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-500/10",
-    },
-    {
-      label: "Highest Score",
-      value: `${data.highestScore}%`,
-      icon: Trophy,
-      color: "text-amber-600",
-      bgColor: "bg-amber-500/10",
-    },
-    {
-      label: "Quizzes Taken",
-      value: `${data.quizzesTaken}`,
-      icon: FileCheck,
-      color: "text-blue-600",
-      bgColor: "bg-blue-500/10",
-    },
-    {
-      label: "Pass Rate",
-      value: `${data.passRate}%`,
-      icon: Target,
-      color: "text-violet-600",
-      bgColor: "bg-violet-500/10",
-    },
+    { label: "Average score", value: `${data.averageScore}%`, icon: TrendingUp, tone: "bg-success-soft text-success" },
+    { label: "Highest score", value: `${data.highestScore}%`, icon: Trophy, tone: "bg-warning-soft text-warning" },
+    { label: "Quizzes taken", value: `${data.quizzesTaken}`, icon: FileCheck, tone: "bg-info-soft text-info" },
+    { label: "Pass rate", value: `${data.passRate}%`, icon: Target, tone: "bg-primary-soft text-primary-soft-foreground" },
   ];
 
-
   const scores = data.scoreTrend.map((d) => d.score);
-  const minScore = Math.min(...scores);
-  const maxScore = Math.max(...scores);
-
-
-  
+  const hasData = scores.length > 0;
+  const minScore = hasData ? Math.min(...scores) : 0;
+  const maxScore = hasData ? Math.max(...scores) : 100;
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">
-          Quiz Performance Analytics
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.label} className="rounded-2xl border p-3">
-                <div
-                  className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${stat.bgColor}`}
-                >
-                  <Icon className={`h-4.5 w-4.5 ${stat.color}`} />
-                </div>
-                <p className="text-lg font-extrabold text-foreground">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+    <Panel title="Quiz performance" description="How your scores are trending">
+      {!hasData ? (
+        <EmptyState
+          icon={FileCheck}
+          title="No quiz attempts yet"
+          description="Finish a quiz and your score trend will appear here."
+          className="py-10"
+        />
+      ) : (
+        <div className="space-y-6">
+          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {stats.map(({ label, value, icon: Icon, tone }) => (
+              <div key={label} className="rounded-xl border p-4">
+                <span className={`mb-3 flex size-9 items-center justify-center rounded-lg ${tone}`}>
+                  <Icon className="size-[18px]" aria-hidden />
+                </span>
+                <dd className="font-heading text-2xl font-extrabold tabular-nums tracking-tight">{value}</dd>
+                <dt className="text-[13px] text-muted-foreground">{label}</dt>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </dl>
 
-        {/* Chart */}
-        <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">
-            Score Trend Over Time
-          </p>
-          <ChartContainer config={chartConfig} className="h-48 w-full">
-            <AreaChart
-              data={data.scoreTrend}
-              margin={{ left: -20, right: 8, top: 8, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="hsl(var(--border))"
-              />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(value) =>
-                  new Date(value).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
-                }
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11 }}
-              />
-              <YAxis
-                domain={[
-                  Math.max(0, minScore - 2),
-                  Math.min(100, maxScore + 2),
-                ]}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                type="monotone"
-                dataKey="score"
-                stroke="#10B981"
-                strokeWidth={2.5}
-                fill="url(#scoreFill)"
-                dot={{ fill: "#10B981", r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </AreaChart>
-          </ChartContainer>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Score over time
+            </p>
+            <ChartContainer config={chartConfig} className="h-52 w-full">
+              <AreaChart data={data.scoreTrend} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-score)" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="var(--color-score)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) =>
+                    new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  }
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
+                  domain={[Math.max(0, minScore - 5), Math.min(100, maxScore + 5)]}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="var(--color-score)"
+                  strokeWidth={2.5}
+                  fill="url(#scoreFill)"
+                  dot={{ fill: "var(--color-score)", r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </Panel>
   );
 }

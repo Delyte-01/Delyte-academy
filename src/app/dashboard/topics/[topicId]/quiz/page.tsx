@@ -1,210 +1,189 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-ArrowLeft,
-ClipboardList,
-Clock,
-Award,
-Target,
-RotateCcw,
-ListChecks,
-
+  ArrowLeft,
+  Award,
+  ClipboardList,
+  Clock,
+  ListChecks,
+  Play,
+  RotateCcw,
+  Target,
+  type LucideIcon,
 } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
+import { Kbd } from "@/components/ui/kbd";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Reveal } from "@/components/motion";
+import { EmptyQuizState } from "@/components/dashboard-components/Quiz-component/empty-quiz-state";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useQuestion } from "@/hooks/useQuestion";
-import FullPageLoader from "@/components/loading/Loading";
+
+interface Fact {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: string;
+}
 
 export default function QuizLandingPage() {
-const { topicId } = useParams();
-const router = useRouter();
+  const { topicId } = useParams();
+  const { quiz, loading } = useQuiz(topicId as string);
+  const { questions, loading: questionsLoading } = useQuestion(quiz?.id ?? "");
 
-const { quiz, loading } = useQuiz(topicId as string);
-const { questions } = useQuestion(quiz?.id ?? "");
+  if (loading || (quiz && questionsLoading)) {
+    return (
+      <div className="mx-auto w-full max-w-5xl space-y-8" role="status" aria-label="Loading quiz">
+        <Skeleton className="h-4 w-40" />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-12 w-3/4" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-12 w-44 rounded-xl" />
+          </div>
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
-if (loading) {
-return <FullPageLoader />;
-}
+  if (!quiz) return <EmptyQuizState topicId={topicId as string} />;
 
-if (!quiz) {
-return ( <div className="p-8 text-center"> <h2 className="text-xl font-semibold">No Quiz Available</h2> <p className="text-muted-foreground mt-2">
-This topic does not have a quiz yet. </p> </div>
-);
-}
+  const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+  const timed = quiz.time_limit > 0;
+  const playerHref = `/dashboard/topics/${topicId}/quiz/player`;
+  const topicHref = `/dashboard/topics/${topicId}`;
 
-const stats = [
-{
-icon: ListChecks,
-label: "Questions",
-value: `${questions.length}`,
-color: "text-blue-600",
-bgColor: "bg-blue-500/10",
-},
-{
-icon: Clock,
-label: "Estimated Time",
-value: `${quiz.time_limit} min`,
-color: "text-emerald-600",
-bgColor: "bg-emerald-500/10",
-},
-{
-icon: Award,
-label: "Total Points",
-value: `${questions.reduce((sum, q) => sum + q.points, 0)}`,
-color: "text-amber-600",
-bgColor: "bg-amber-500/10",
-},
-{
-icon: Target,
-label: "Passing Score",
-value: `${quiz.passing_score}%`,
-color: "text-rose-600",
-bgColor: "bg-rose-500/10",
-},
-];
+  const facts: Fact[] = [
+    {
+      icon: ListChecks,
+      label: "Questions",
+      value: `${questions.length}`,
+      tone: "bg-info-soft text-info",
+    },
+    {
+      icon: Clock,
+      label: "Time limit",
+      value: timed ? `${quiz.time_limit} min` : "No time limit",
+      tone: "bg-success-soft text-success",
+    },
+    {
+      icon: Award,
+      label: "Total points",
+      value: `${totalPoints}`,
+      tone: "bg-warning-soft text-warning",
+    },
+    {
+      icon: Target,
+      label: "Pass mark",
+      value: `${quiz.passing_score}%`,
+      tone: "bg-primary-soft text-primary-soft-foreground",
+    },
+  ];
 
-return ( <div className="space-y-6">
-{/* <QuizHeader
-courseName="Course"
-courseId=""
-topicTitle="Topic"
-topicId={topicId as string}
-quizTitle={quiz.title}
-/> */}
+  const shortcuts: { keys: string[]; label: string }[] = [
+    { keys: ["A", "–", "D"], label: "Choose an answer" },
+    { keys: ["←", "→"], label: "Previous / next question" },
+    { keys: ["M"], label: "Mark for review" },
+  ];
 
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-10 pb-10">
+      <Link
+        href={topicHref}
+        className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to topic
+      </Link>
 
-  <div className="flex justify-center">
-    <div className="w-full max-w-3xl space-y-6">
-      <Card className="overflow-hidden border-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-emerald-900 text-white shadow-xl">
-        <CardContent className="relative p-8 text-center lg:p-12">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm">
-              <ClipboardList className="h-8 w-8 text-emerald-300" />
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-2xl font-extrabold tracking-tight lg:text-3xl">
-                {quiz.title}
-              </h1>
-
-              <p className="mx-auto max-w-lg text-sm leading-relaxed text-emerald-100">
+      <Reveal on="mount" selector="[data-reveal]" stagger={0.09} className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-12">
+        <div className="space-y-8">
+          <div data-reveal className="space-y-5">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-primary-soft-foreground">
+              <ClipboardList className="size-3.5" aria-hidden />
+              Quiz
+            </p>
+            <h1 className="text-balance font-heading text-[34px] font-extrabold leading-[1.1] tracking-tight sm:text-5xl">
+              {quiz.title}
+            </h1>
+            {quiz.description && (
+              <p className="max-w-xl text-[17px] leading-relaxed text-muted-foreground">
                 {quiz.description}
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-              {/* <Badge
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white"
-              >
-                <Target className="mr-1 h-3 w-3" />
-                {quiz.description}
-              </Badge> */}
-
-              <Badge
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white"
-              >
-                <Clock className="mr-1 h-3 w-3" />
-                {quiz.time_limit} min
-              </Badge>
-
-              <Badge
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white"
-              >
-                <ListChecks className="mr-1 h-3 w-3" />
-                {questions.length} Questions
-              </Badge>
-            </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+          <div data-reveal className="flex flex-col gap-3 sm:flex-row">
+            <Button variant="brand" size="lg" className="sm:min-w-44" asChild>
+              <Link href={playerHref}>
+                <Play className="fill-current" />
+                Start quiz
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href={topicHref}>Review the lesson first</Link>
+            </Button>
+          </div>
 
-          return (
-            <Card key={stat.label}>
-              <CardContent className="flex flex-col items-center gap-2 p-4 text-center">
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bgColor}`}
-                >
-                  <Icon className={`h-5 w-5 ${stat.color}`} />
+          {quiz.instructions && quiz.instructions.trim() && (
+            <section data-reveal aria-labelledby="instructions-heading" className="space-y-3 border-t pt-8">
+              <h2 id="instructions-heading" className="font-heading text-lg font-extrabold tracking-tight">
+                Instructions
+              </h2>
+              <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
+                {quiz.instructions}
+              </p>
+            </section>
+          )}
+        </div>
+
+        <aside data-reveal className="space-y-4 lg:sticky lg:top-24">
+          <section aria-label="Quiz details" className="rounded-2xl border bg-card p-2 shadow-card">
+            <dl className="divide-y">
+              {facts.map(({ icon: Icon, label, value, tone }) => (
+                <div key={label} className="flex items-center gap-3.5 px-3 py-3.5">
+                  <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+                    <Icon className="size-5" aria-hidden />
+                  </span>
+                  <dt className="flex-1 text-[15px] font-semibold text-muted-foreground">{label}</dt>
+                  <dd className="font-heading text-lg font-extrabold tabular-nums">{value}</dd>
                 </div>
+              ))}
+            </dl>
+          </section>
 
-                <p className="text-xl font-extrabold text-foreground">
-                  {stat.value}
-                </p>
-
-                <p className="text-xs text-muted-foreground">
-                  {stat.label}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card>
-        <CardHeader >
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <ClipboardList className="h-5 w-5 text-primary" />
-            Instructions
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <div className="space-y-3 text-sm text-muted-foreground whitespace-pre-line">
-            {quiz.instructions}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="flex items-center gap-3 p-4">
-          <RotateCcw className="h-5 w-5 flex-shrink-0 text-primary" />
-
-          <p className="text-sm text-muted-foreground">
-            You have
-            <span className="font-bold text-foreground mx-1">
-              {quiz.attempt_limit}
+          <p className="flex items-start gap-3 rounded-xl bg-primary-soft p-4 text-[15px] text-primary-soft-foreground">
+            <RotateCcw className="mt-0.5 size-5 shrink-0" aria-hidden />
+            <span>
+              <span className="font-bold">{quiz.attempt_limit}</span>{" "}
+              {quiz.attempt_limit === 1 ? "attempt" : "attempts"} allowed for this quiz.
             </span>
-            attempts allowed for this quiz.
           </p>
-        </CardContent>
-      </Card>
 
-      <div className="flex  gap-3 sm:flex-row sm:justify-center">
-        <Button
-          size="lg"
-          className="flex-1 sm:flex-none"
-          onClick={() =>
-            router.push(`/dashboard/topics/${topicId}/quiz/player`)
-          }
-        >
-          <ClipboardList className="mr-2 h-4 w-4" />
-          Start Quiz
-        </Button>
-
-        <Button variant="outline" size="lg" asChild className="flex-1 sm:flex-none" >
-          <Link href={`/dashboard/topics/${topicId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Topic
-          </Link>
-        </Button>
-      </div>
+          <section aria-label="Keyboard shortcuts" className="hidden space-y-3 rounded-xl border p-4 lg:block">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Keyboard shortcuts
+            </h2>
+            <ul className="space-y-2.5">
+              {shortcuts.map((s) => (
+                <li key={s.label} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">{s.label}</span>
+                  <span className="flex items-center gap-1">
+                    {s.keys.map((k, i) => (
+                      <Kbd key={i}>{k}</Kbd>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </Reveal>
     </div>
-  </div>
-</div>
-
-
-);
+  );
 }

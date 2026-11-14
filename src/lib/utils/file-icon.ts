@@ -3,11 +3,7 @@ import {
   File,
   FileText,
   FileArchive,
-  FileImage,
-  FileVideo,
-  FileSpreadsheet,
   Presentation,
-  FileCode2,
 } from "lucide-react";
 
 export function getAttachmentMeta(fileName: string) {

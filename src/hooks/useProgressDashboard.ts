@@ -7,17 +7,15 @@ import type {
   Achievement,
   ActivityItem,
   CourseProgressItem,
-  OverviewStat,
+  ProgressSummary,
   QuizAnalytics,
   StreakData,
   WeakArea,
   WeeklyGoalData,
 } from "@/types/progress";
 import {
-  TrendingUp,
   CheckCircle2,
   ClipboardCheck,
-  Clock,
   BookOpen,
   Award,
   Trophy,
@@ -84,10 +82,12 @@ export function useProgressDashboard(studentId?: string) {
     enrollments: any[];
     topicProgress: any[];
     quizAttempts: any[];
+    courseTopics: { id: string; course_id: string }[];
   }>({
     enrollments: [],
     topicProgress: [],
     quizAttempts: [],
+    courseTopics: [],
   });
 
   useEffect(() => {
@@ -147,22 +147,29 @@ export function useProgressDashboard(studentId?: string) {
     return date.toLocaleDateString();
   }
 
-  const overviewStats: OverviewStat[] = useMemo(() => {
-    const completedTopics = data.topicProgress.filter(
-      (t: any) => t.completed,
-    ).length;
-
-    const totalTopics = data.topicProgress.length;
+  const summary: ProgressSummary = useMemo(() => {
+    const completedIds = new Set(
+      data.topicProgress.filter((t: any) => t.completed).map((t: any) => t.topic_id),
+    );
+    const completedTopics = completedIds.size;
+    // Prefer the real number of published topics; fall back to completed rows if that lookup was unavailable.
+    const totalTopics =
+      data.courseTopics.length > 0
+        ? Math.max(data.courseTopics.length, completedTopics)
+        : completedTopics;
 
     const quizzesTaken = data.quizAttempts.length;
+    const quizzesPassed = data.quizAttempts.filter(
+      (a: any) => a.score >= (a.quiz?.passing_score ?? 70),
+    ).length;
+    const averageScore = quizzesTaken
+      ? Math.round(
+          data.quizAttempts.reduce((sum: number, a: any) => sum + a.score, 0) /
+            quizzesTaken,
+        )
+      : null;
 
-    const passed = data.quizAttempts.filter((a: any) => {
-      const passing = a.quiz?.passing_score ?? 70;
-
-      return a.score >= passing;
-    }).length;
-
-    const overall =
+    const overallPercent =
       data.enrollments.length === 0
         ? 0
         : Math.round(
@@ -172,44 +179,15 @@ export function useProgressDashboard(studentId?: string) {
             ) / data.enrollments.length,
           );
 
-    return [
-      {
-        id: "overall",
-        label: "Overall Progress",
-        value: `${overall}%`,
-        sublabel: "Across enrolled courses",
-        icon: TrendingUp,
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-500/10",
-      },
-      {
-        id: "topics",
-        label: "Topics Completed",
-        value: `${completedTopics}/${totalTopics}`,
-        sublabel: "Lessons finished",
-        icon: CheckCircle2,
-        color: "text-blue-600",
-        bgColor: "bg-blue-500/10",
-      },
-      {
-        id: "quizzes",
-        label: "Quizzes Passed",
-        value: `${passed}/${quizzesTaken}`,
-        sublabel: "Assessments completed",
-        icon: ClipboardCheck,
-        color: "text-violet-600",
-        bgColor: "bg-violet-500/10",
-      },
-      {
-        id: "study-time",
-        label: "Study Time",
-        value: "32h 45m",
-        sublabel: "This month",
-        icon: Clock,
-        color: "text-amber-600",
-        bgColor: "bg-amber-500/10",
-      },
-    ];
+    return {
+      overallPercent,
+      completedTopics,
+      totalTopics,
+      quizzesPassed,
+      quizzesTaken,
+      averageScore,
+      currentStreak: calculateStreak(data.topicProgress).current,
+    };
   }, [data]);
 
   const courseProgress: CourseProgressItem[] = useMemo(() => {
@@ -220,10 +198,13 @@ export function useProgressDashboard(studentId?: string) {
         (tp: any) => tp.topic?.course?.id === courseId,
       );
 
-      const totalTopics = courseTopics.length;
       const completedTopics = courseTopics.filter(
         (tp: any) => tp.completed,
       ).length;
+      const publishedCount = data.courseTopics.filter(
+        (t) => t.course_id === courseId,
+      ).length;
+      const totalTopics = Math.max(publishedCount, completedTopics);
 
       const lastCompleted = courseTopics
         .filter((tp: any) => tp.completed_at)
@@ -258,9 +239,10 @@ export function useProgressDashboard(studentId?: string) {
         title: "Enrolled in a new course",
         detail: enrollment.course?.title ?? "Course",
         time: formatRelative(enrollment.enrolled_at),
+        at: enrollment.enrolled_at ?? null,
         icon: BookOpen,
-        color: "text-blue-600",
-        bgColor: "bg-blue-500/10",
+        color: "text-info",
+        bgColor: "bg-info-soft",
       });
     }
 
@@ -270,10 +252,10 @@ export function useProgressDashboard(studentId?: string) {
         title: "Completed topic",
         detail: tp.topic?.title ?? "Topic",
         time: formatRelative(tp.completed_at),
+        at: tp.completed_at ?? null,
         icon: CheckCircle2,
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-500/10",
-        // no extra props
+        color: "text-success",
+        bgColor: "bg-success-soft",
       });
     }
 
@@ -283,17 +265,18 @@ export function useProgressDashboard(studentId?: string) {
         title: `Scored ${attempt.score}% on quiz`,
         detail: attempt.quiz?.title ?? "Quiz",
         time: formatRelative(attempt.completed_at),
+        at: attempt.completed_at ?? null,
         icon: ClipboardCheck,
-        color: "text-violet-600",
-        bgColor: "bg-violet-500/10",
+        color: "text-primary-soft-foreground",
+        bgColor: "bg-primary-soft",
       });
     }
 
     return items
-      .sort((a: any, b: any) => {
-        const ta = new Date(a.time).getTime();
-        const tb = new Date(b.time).getTime();
-
+      // Order by the real timestamp (the display string is relative text like "2 hours ago").
+      .sort((a, b) => {
+        const ta = a.at ? new Date(a.at).getTime() : 0;
+        const tb = b.at ? new Date(b.at).getTime() : 0;
         return tb - ta;
       })
       .slice(0, 10);
@@ -324,10 +307,15 @@ export function useProgressDashboard(studentId?: string) {
               100,
           );
 
-    const scoreTrend = data.quizAttempts.map((a: any) => ({
-      date: a.completed_at,
-      score: a.score,
-    }));
+    const scoreTrend = [...data.quizAttempts]
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime(),
+      )
+      .map((a: any) => ({
+        date: a.completed_at,
+        score: a.score,
+      }));
 
     return {
       averageScore,
@@ -377,11 +365,16 @@ export function useProgressDashboard(studentId?: string) {
       sessions: 0,
     }));
 
-    // Count completed topics in the last 7 days
+    // Only the current Monday-first week; older completions must not light up this week's days.
+    const monday = new Date();
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+
     data.topicProgress.forEach((tp: any) => {
       if (!tp.completed || !tp.completed_at) return;
 
       const d = new Date(tp.completed_at);
+      if (d < monday) return;
 
       const index = (d.getDay() + 6) % 7; // Monday-first
 
@@ -430,8 +423,8 @@ export function useProgressDashboard(studentId?: string) {
         progress: completedCourses,
         target: 1,
         icon: Trophy,
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-500/10",
+        color: "text-success",
+        bgColor: "bg-success-soft",
       },
       {
         id: "five-topics",
@@ -441,8 +434,8 @@ export function useProgressDashboard(studentId?: string) {
         progress: completedTopics,
         target: 5,
         icon: BookOpen,
-        color: "text-blue-600",
-        bgColor: "bg-blue-500/10",
+        color: "text-info",
+        bgColor: "bg-info-soft",
       },
       {
         id: "quiz-master",
@@ -452,8 +445,8 @@ export function useProgressDashboard(studentId?: string) {
         progress: quizzesPassed,
         target: 10,
         icon: ClipboardCheck,
-        color: "text-violet-600",
-        bgColor: "bg-violet-500/10",
+        color: "text-primary-soft-foreground",
+        bgColor: "bg-primary-soft",
       },
       {
         id: "seven-day-streak",
@@ -463,8 +456,8 @@ export function useProgressDashboard(studentId?: string) {
         progress: streak.current,
         target: 7,
         icon: Flame,
-        color: "text-orange-600",
-        bgColor: "bg-orange-500/10",
+        color: "text-warning",
+        bgColor: "bg-warning-soft",
       },
       {
         id: "thirty-day-learner",
@@ -474,8 +467,8 @@ export function useProgressDashboard(studentId?: string) {
         progress: streak.current,
         target: 30,
         icon: Award,
-        color: "text-amber-600",
-        bgColor: "bg-amber-500/10",
+        color: "text-warning",
+        bgColor: "bg-warning-soft",
       },
     ];
   }, [data]);
@@ -526,7 +519,7 @@ export function useProgressDashboard(studentId?: string) {
 
   return {
     loading,
-    overviewStats,
+    summary,
     courseProgress,
     recentActivity,
     quizAnalytics,

@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BookOpen, ChevronDown, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, ChevronDown, ClipboardCheck, ListTree } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { ProgressRing } from "@/components/motion/progress-ring";
+import { EASE, gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 import { Topic } from "@/types/topic";
 import type { Heading } from "./richcontent-viewer";
 
+/** Scroll-spy: the heading nearest the top of the reading area. */
 function useActiveHeading(headings: Heading[]) {
   const [active, setActive] = useState<string | null>(null);
 
@@ -33,9 +37,8 @@ function useActiveHeading(headings: Heading[]) {
 }
 
 function scrollToHeading(id: string) {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.getElementById(id)?.scrollIntoView({
-    behavior: reduce ? "auto" : "smooth",
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
     block: "start",
   });
 }
@@ -48,12 +51,41 @@ function OutlineList({
   onSelect?: () => void;
 }) {
   const active = useActiveHeading(headings);
+  const list = useRef<HTMLOListElement>(null);
+  const indicator = useRef<HTMLSpanElement>(null);
+  const items = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const placed = useRef(false);
+
+  // A single brand marker slides to the active entry (transform + height only).
+  useGSAP(
+    () => {
+      const el = active ? items.current[active] : null;
+      const mark = indicator.current;
+      if (!el || !mark) return;
+      const to = { y: el.offsetTop, height: el.offsetHeight, opacity: 1 };
+      if (!placed.current || prefersReducedMotion()) {
+        gsap.set(mark, to);
+        placed.current = true;
+        return;
+      }
+      gsap.to(mark, { ...to, duration: 0.35, ease: EASE.out });
+    },
+    { dependencies: [active, headings], scope: list },
+  );
 
   return (
-    <ol className="border-l border-border">
+    <ol ref={list} className="relative border-l border-border">
+      <span
+        ref={indicator}
+        aria-hidden
+        className="bg-brand-gradient absolute -left-px top-0 w-0.5 rounded-full opacity-0"
+      />
       {headings.map((h) => (
         <li key={h.id}>
           <a
+            ref={(node) => {
+              items.current[h.id] = node;
+            }}
             href={`#${h.id}`}
             onClick={(e) => {
               e.preventDefault();
@@ -62,11 +94,11 @@ function OutlineList({
             }}
             aria-current={active === h.id ? "location" : undefined}
             className={cn(
-              "-ml-px block border-l-2 py-1.5 pr-2 text-sm leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
-              h.level === 3 ? "pl-6" : "pl-3",
+              "block rounded-r-lg py-2 pr-2 text-[14px] leading-snug transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+              h.level === 3 ? "pl-7" : "pl-4",
               active === h.id
-                ? "border-emerald-500 font-medium text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
+                ? "font-semibold text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {h.text}
@@ -77,20 +109,23 @@ function OutlineList({
   );
 }
 
-/* Mobile: collapsible outline at the top of the lesson */
+/** Below xl: collapsible outline at the top of the lesson. */
 export function MobileOutline({ headings }: { headings: Heading[] }) {
   const [open, setOpen] = useState(false);
   if (headings.length < 3) return null;
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card lg:hidden">
+    <div className="rounded-xl border bg-card shadow-soft xl:hidden">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+        className="flex min-h-12 w-full items-center justify-between gap-2 rounded-xl px-4 text-[15px] font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
       >
-        On this page
+        <span className="flex items-center gap-2">
+          <ListTree className="size-4 text-primary" aria-hidden />
+          On this page
+        </span>
         <ChevronDown
           className={cn(
             "size-4 text-muted-foreground transition-transform motion-reduce:transition-none",
@@ -99,7 +134,7 @@ export function MobileOutline({ headings }: { headings: Heading[] }) {
         />
       </button>
       {open && (
-        <div className="border-t border-border/60 px-4 py-3">
+        <div className="border-t px-4 py-3">
           <OutlineList headings={headings} onSelect={() => setOpen(false)} />
         </div>
       )}
@@ -107,7 +142,7 @@ export function MobileOutline({ headings }: { headings: Heading[] }) {
   );
 }
 
-interface TopicSidebarProps {
+interface LessonRailProps {
   topic: Topic;
   headings: Heading[];
   progress: number;
@@ -115,72 +150,55 @@ interface TopicSidebarProps {
   totalTopics: number;
 }
 
-/* Desktop: sticky rail */
-export function TopicSidebar({
+/** xl and up: sticky left rail with course progress, scroll-spy outline and the quiz entry. */
+export function LessonRail({
   topic,
   headings,
   progress,
   completedCount,
   totalTopics,
-}: TopicSidebarProps) {
+}: LessonRailProps) {
   return (
-    <aside className="hidden lg:block">
-      <div className="sticky top-6 max-h-[calc(100vh-3rem)] space-y-5 overflow-y-auto pb-2">
-        <section className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold">Your progress</h2>
-            <span className="text-sm font-semibold tabular-nums">
-              {progress}%
-            </span>
+    <aside className="hidden xl:block">
+      <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-7 overflow-y-auto pb-2 pr-1">
+        <Link
+          href={`/dashboard/courses/${topic.course_id}`}
+          className="group inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40"
+        >
+          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none" />
+          Back to course
+        </Link>
+
+        <section
+          aria-label="Course progress"
+          className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-card"
+        >
+          <ProgressRing value={progress} size={60} stroke={6} label="Course progress">
+            <span className="text-[13px] font-extrabold tabular-nums">{progress}%</span>
+          </ProgressRing>
+          <div className="min-w-0">
+            <p className="text-sm font-bold">Your progress</p>
+            <p className="text-[13px] text-muted-foreground">
+              {completedCount} of {totalTopics} topics done
+            </p>
           </div>
-          <div
-            className="h-1.5 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Course progress"
-          >
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-[width] duration-700 motion-reduce:transition-none"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {completedCount} of {totalTopics} topics done
-          </p>
-          <Button variant="outline" className="w-full" asChild>
-            <Link href={`/dashboard/courses/${topic.course_id}`}>
-              <BookOpen className="mr-2 size-4" />
-              Back to course
-            </Link>
-          </Button>
         </section>
 
         {headings.length >= 2 && (
-          <nav aria-label="On this page" className="space-y-3 px-1">
-            <h2 className="text-sm font-semibold">On this page</h2>
+          <nav aria-label="On this page" className="space-y-3">
+            <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              On this page
+            </h2>
             <OutlineList headings={headings} />
           </nav>
         )}
 
-        <section className="space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-          <div className="space-y-1">
-            <h2 className="text-sm font-semibold">Test yourself</h2>
-            <p className="text-sm text-muted-foreground">
-              Check what you&apos;ve learned with a short quiz.
-            </p>
-          </div>
-          <Button
-            className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
-            asChild
-          >
-            <Link href={`/dashboard/topics/${topic.id}/quiz`}>
-              <ClipboardCheck className="mr-2 size-4" />
-              Take quiz
-            </Link>
-          </Button>
-        </section>
+        <Button variant="soft" className="w-full" asChild>
+          <Link href={`/dashboard/topics/${topic.id}/quiz`}>
+            <ClipboardCheck />
+            Test yourself
+          </Link>
+        </Button>
       </div>
     </aside>
   );

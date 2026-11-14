@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { ActivityItem } from "@/types/progress";
+import { Panel } from "./panel";
 
 interface ActivityTimelineProps {
   activities: ActivityItem[];
@@ -21,14 +21,11 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
     : activities.slice(0, COLLAPSED_COUNT);
 
   return (
-    <Card className="border-border/60">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+    <Panel title="Recent activity">
+      <div>
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No recent activity yet.
+            Nothing yet. Enroll in a course or finish a topic and it will appear here.
           </p>
         ) : (
           <>
@@ -60,7 +57,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
                       {/* Content */}
                       <div className="flex-1 min-w-0 pt-1">
                         <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-                          <p className="text-sm font-semibold text-foreground break-words">
+                          <p className="text-sm font-bold text-foreground break-words">
                             {activity.title}
                           </p>
                           <span className="flex-shrink-0 text-xs text-muted-foreground">
@@ -104,7 +101,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Panel>
   );
 }

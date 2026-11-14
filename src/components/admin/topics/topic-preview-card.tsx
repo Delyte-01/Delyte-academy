@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
+import { useGSAP, gsap } from "@/lib/gsap";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,9 +13,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TopicDifficulty, TopicStatus } from "./topic-form";
-
-gsap.registerPlugin(useGSAP);
-
 interface TopicPreviewCardProps {
   courseName: string;
   courseCode: string;
@@ -30,14 +27,14 @@ interface TopicPreviewCardProps {
 }
 
 const difficultyStyles: Record<TopicDifficulty, string> = {
-  beginner: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  intermediate: "border-amber-500/30 bg-amber-500/15 text-amber-700",
-  advanced: "border-rose-500/30 bg-rose-500/15 text-rose-700",
+  beginner: "border-primary/30 bg-primary/15 text-primary",
+  intermediate: "border-warning/30 bg-warning/15 text-warning",
+  advanced: "border-destructive/30 bg-destructive/15 text-destructive",
 };
 
 const statusStyles: Record<TopicStatus, string> = {
-  draft: "border-amber-500/30 bg-amber-500/15 text-amber-700",
-  published: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
+  draft: "border-warning/30 bg-warning/15 text-warning",
+  published: "border-primary/30 bg-primary/15 text-primary",
 };
 
 export function TopicPreviewCard({
@@ -70,9 +67,9 @@ export function TopicPreviewCard({
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Live Preview
       </p>
-      <Card className="overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
+      <Card className="overflow-hidden transition-all duration-300 hover:-translate-y-0.5">
         {/* Gradient banner */}
-        <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-blue-500/25 via-muted to-muted">
+        <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-primary/15 via-muted to-muted">
           {thumbnail && (
             <img
               src={thumbnail}
@@ -151,7 +148,7 @@ export function TopicPreviewCard({
                   className="flex items-start gap-1.5 text-xs text-muted-foreground animate-slide-in-right"
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
-                  <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-primary" />
                   <span className="line-clamp-1">{obj}</span>
                 </li>
               ))}

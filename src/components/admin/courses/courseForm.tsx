@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +52,8 @@ interface CourseFormProps {
     value: CourseFormData[K]
   ) => void;
   children?: React.ReactNode;
+  /** Show every error, not just those on touched fields (set after a failed submit). */
+  submitAttempted?: boolean;
 }
 
 const MAX_DESCRIPTION_LENGTH = 500;
@@ -64,8 +66,8 @@ function SectionTitle({
   children: React.ReactNode;
 }) {
   return (
-    <CardTitle className="flex items-center gap-2.5 text-base font-bold">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <CardTitle className="flex items-center gap-2.5 text-lg font-bold">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
         <Icon className="h-3.5 w-3.5" />
       </span>
       {children}
@@ -78,8 +80,10 @@ export function CourseForm({
   errors,
   onChange,
   children,
+  submitAttempted = false,
 }: CourseFormProps) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const show = (field: string) => touched[field] || submitAttempted;
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -139,7 +143,7 @@ export function CourseForm({
       {/* Course Information */}
       <Card
         data-form-section
-        className="border-border/60 transition-colors focus-within:border-primary/30"
+        className="transition-colors focus-within:border-primary/30"
       >
         <CardHeader className="pb-4">
           <SectionTitle icon={Info}>Course Information</SectionTitle>
@@ -155,22 +159,24 @@ export function CourseForm({
               value={data.title}
               onChange={(e) => onChange("title", e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, title: true }))}
+              aria-invalid={show("title") && !!errors.title}
+              aria-describedby={show("title") && errors.title ? "title-error" : undefined}
               placeholder="Introduction to Computer Science"
               className={cn(
-                "transition-shadow dark:text-white/80",
-                touched.title &&
+                "transition-shadow",
+                show("title") &&
                   errors.title &&
                   "border-destructive focus-visible:ring-destructive"
               )}
             />
-            {touched.title && errors.title && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("title") && errors.title && (
+              <p id="title-error" role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.title}
               </p>
             )}
-            {touched.title && !errors.title && data.title && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-600 duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("title") && !errors.title && data.title && (
+              <p className="flex items-center gap-1.5 text-[13px] font-medium text-success duration-200 animate-in fade-in slide-in-from-top-1">
                 <CheckCircle2 className="h-3 w-3" />
                 Looks good
               </p>
@@ -187,22 +193,24 @@ export function CourseForm({
               value={data.code}
               onChange={(e) => onChange("code", e.target.value.toUpperCase())}
               onBlur={() => setTouched((t) => ({ ...t, code: true }))}
+              aria-invalid={show("code") && !!errors.code}
+              aria-describedby={show("code") && errors.code ? "code-error" : undefined}
               placeholder="CSC101"
               className={cn(
-                "font-mono transition-shadow dark:text-white/80",
-                touched.code &&
+                "font-mono transition-shadow",
+                show("code") &&
                   errors.code &&
                   "border-destructive focus-visible:ring-destructive"
               )}
             />
-            {touched.code && errors.code && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("code") && errors.code && (
+              <p id="code-error" role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.code}
               </p>
             )}
-            {touched.code && !errors.code && data.code && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-600 duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("code") && !errors.code && data.code && (
+              <p className="flex items-center gap-1.5 text-[13px] font-medium text-success duration-200 animate-in fade-in slide-in-from-top-1">
                 <CheckCircle2 className="h-3 w-3" />
                 Valid course code
               </p>
@@ -219,7 +227,7 @@ export function CourseForm({
                 className={cn(
                   "text-xs tabular-nums",
                   data.description.length > MAX_DESCRIPTION_LENGTH - 50
-                    ? "font-medium text-amber-600"
+                    ? "font-medium text-warning"
                     : "text-muted-foreground"
                 )}
               >
@@ -237,9 +245,11 @@ export function CourseForm({
               onBlur={() => setTouched((t) => ({ ...t, description: true }))}
               placeholder="Provide a brief description of what students will learn in this course..."
               rows={4}
+              aria-invalid={show("description") && !!errors.description}
+              aria-describedby={show("description") && errors.description ? "description-error" : undefined}
               className={cn(
                 "resize-none transition-shadow",
-                touched.description &&
+                show("description") &&
                   errors.description &&
                   "border-destructive focus-visible:ring-destructive"
               )}
@@ -251,20 +261,20 @@ export function CourseForm({
                   descriptionPct >= 100
                     ? "bg-destructive"
                     : descriptionPct > 80
-                    ? "bg-amber-500"
-                    : "bg-gradient-to-r from-primary to-indigo-500"
+                    ? "bg-warning"
+                    : "bg-primary"
                 )}
                 style={{ width: `${descriptionPct}%` }}
               />
             </div>
-            {touched.description && errors.description && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("description") && errors.description && (
+              <p id="description-error" role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.description}
               </p>
             )}
-            {touched.description && !errors.description && data.description && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-600 duration-200 animate-in fade-in slide-in-from-top-1">
+            {show("description") && !errors.description && data.description && (
+              <p className="flex items-center gap-1.5 text-[13px] font-medium text-success duration-200 animate-in fade-in slide-in-from-top-1">
                 <CheckCircle2 className="h-3 w-3" />
                 Description looks good
               </p>
@@ -277,7 +287,7 @@ export function CourseForm({
             onChange={(v) => onChange("status", v)}
           />
           {errors.status && (
-            <p className="flex items-center gap-1.5 text-xs text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
+            <p className="flex items-center gap-1.5 text-[13px] font-medium text-destructive duration-200 animate-in fade-in slide-in-from-top-1">
               <AlertCircle className="h-3 w-3" />
               {errors.status}
             </p>
@@ -286,7 +296,7 @@ export function CourseForm({
       </Card>
 
       {/* Banner */}
-      <Card data-form-section className="border-border/60">
+      <Card data-form-section>
         <CardHeader className="pb-4">
           <SectionTitle icon={ImageIcon}>Course Banner</SectionTitle>
         </CardHeader>
@@ -306,7 +316,7 @@ export function CourseForm({
       </Card>
 
       {/* Thumbnail */}
-      <Card data-form-section className="border-border/60">
+      <Card data-form-section>
         <CardHeader className="pb-4">
           <SectionTitle icon={ImageIcon}>Course Thumbnail</SectionTitle>
         </CardHeader>
@@ -317,7 +327,6 @@ export function CourseForm({
             recommendedSize="400 x 400"
             value={data.thumbnail}
             onChange={(file, preview) => {
-              console.log("Preview:", preview);
               onChange("thumbnail", preview);
               onChange("thumbnailFile", file ?? undefined);
             }}

@@ -25,29 +25,29 @@ const upcomingModules = [
     icon: PlayCircle,
     label: "Lessons",
     description: "Add video lessons & walkthroughs",
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
+    color: "text-info",
+    bgColor: "bg-info/10",
   },
   {
     icon: FileText,
     label: "Resources",
     description: "Attach PDFs & worksheets",
-    color: "text-rose-600",
-    bgColor: "bg-rose-500/10",
+    color: "text-destructive",
+    bgColor: "bg-destructive/10",
   },
   {
     icon: HelpCircle,
     label: "Practice Questions",
     description: "Build the question bank",
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
   {
     icon: ClipboardList,
     label: "Quiz",
     description: "Create quizzes & assessments",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
 ];
 
@@ -58,7 +58,6 @@ export default function EditTopicPage() {
   const id = params.id as string;
   const topicId = params.topicsId as string;
 
-  console.log(id, topicId);
   const [saving, setSaving] = useState(false);
   const [savingMessage, setSavingMessage] = useState("");
   const { course } = useCourse(id);
@@ -75,6 +74,8 @@ export default function EditTopicPage() {
   });
 
   const [errors, setErrors] = useState<TopicFormErrors>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const errorCount = Object.values(errors).filter(Boolean).length;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/immutability
@@ -114,47 +115,51 @@ export default function EditTopicPage() {
   };
 
   const handleSaveDraft = async () => {
+    if (saving) return;
     const errs = validateTopic(data);
     setErrors(errs);
+    setSubmitAttempted(true);
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
     try {
       setSaving(true);
-
+      setSavingMessage("Saving topic...");
       await TopicService.updateTopic({
         id: topicId,
+        courseId: id,
         title: data.title,
         description: data.description,
         estimatedTime: Number(data.estimatedTime),
         difficulty: data.difficulty,
         status: "draft",
-        courseId: id,
       });
-      setSavingMessage("Saving Topic...");
       toast.success("Topic saved as draft.");
 
       router.push(`/admin/courses/${id}/?tab=topics`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save topic."
+      );
     } finally {
       setSaving(false);
+      setSavingMessage("");
     }
   };
 
   const handlePublish = async () => {
+    if (saving) return;
     const errs = validateTopic(data);
     setErrors(errs);
+    setSubmitAttempted(true);
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
     try {
       setSaving(true);
-      console.log("Sending topic:", {
-        status: data.status,
-        difficulty: data.difficulty,
-        data,
-      });
+      setSavingMessage("Publishing topic...");
       await TopicService.updateTopic({
         id: topicId,
         courseId: id,
@@ -164,19 +169,23 @@ export default function EditTopicPage() {
         difficulty: data.difficulty,
         status: "published",
       });
-      setSavingMessage("Saving Topic...");
-      toast.success("Topic Published.");
+      toast.success("Topic published.");
 
       router.push(`/admin/courses/${id}/?tab=topics`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to publish topic."
+      );
     } finally {
       setSaving(false);
+      setSavingMessage("");
     }
   };
 
   const handleCancel = () => router.push(`/admin/courses/${id}`);
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       <TopicHeader
         title="Edit Topic"
         subtitle="Edit existing topic to this course."
@@ -197,10 +206,15 @@ export default function EditTopicPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <TopicForm data={data} errors={errors} onChange={handleChange} />
+          <TopicForm
+            data={data}
+            errors={errors}
+            onChange={handleChange}
+            submitAttempted={submitAttempted}
+          />
           <ModulePlaceholders modules={upcomingModules} />
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:sticky lg:top-4 lg:col-span-1 lg:self-start">
           <TopicPreviewCard
             courseName={course?.title ?? "course title"}
             courseCode={course?.course_code ?? "course code "}
@@ -222,6 +236,8 @@ export default function EditTopicPage() {
         onPublish={handlePublish}
         saving={saving}
         savingMessage={savingMessage}
+        errorCount={submitAttempted ? errorCount : 0}
+        publishLabel="Publish topic"
       />
     </div>
   );

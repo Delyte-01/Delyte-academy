@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import FullPageLoader from "@/components/loading/Loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-states";
+import { cn } from "@/lib/utils";
 import { ExternalLinksSection } from "@/components/dashboard-components/topic-content/external-links";
 import { IntroductionCard } from "@/components/dashboard-components/topic-content/introduction-card";
 import { LearningObjectives } from "@/components/dashboard-components/topic-content/learning-objectives";
@@ -21,8 +23,8 @@ import { SummaryCard } from "@/components/dashboard-components/topic-content/sum
 import { TopicHeader } from "@/components/dashboard-components/topic-content/topic-header";
 import { TopicNavigation } from "@/components/dashboard-components/topic-content/topic-navigation";
 import {
+  LessonRail,
   MobileOutline,
-  TopicSidebar,
 } from "@/components/dashboard-components/topic-content/topic-sidebar";
 import { VideoSection } from "@/components/dashboard-components/topic-content/video-section";
 import { useAttachments } from "@/hooks/useAttachments";
@@ -33,6 +35,18 @@ import { useTopics } from "@/hooks/useTopic";
 import { useTopicProgress } from "@/hooks/useTopicProgress";
 import { useTopic } from "@/hooks/useTopics";
 import { studentNotificationService } from "@/services/student-notification";
+
+const FOCUS_KEY = "delyte:lesson-focus";
+
+/** Focus mode is a per-device reading preference, so browser storage is the right home. */
+function readFocusPref(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(FOCUS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export default function TopicContentPage() {
   const { topicId } = useParams();
@@ -50,6 +64,19 @@ export default function TopicContentPage() {
 
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [completing, setCompleting] = useState(false);
+  const [focus, setFocus] = useState(readFocusPref);
+
+  const toggleFocus = () => {
+    setFocus((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(FOCUS_KEY, next ? "1" : "0");
+      } catch {
+        /* storage unavailable: the preference just won't persist */
+      }
+      return next;
+    });
+  };
 
   const enrollment = enrollments.find((e) => e.course_id === topic?.course_id);
   const isCompleted = topic ? completedTopics.includes(topic.id) : false;
@@ -110,29 +137,56 @@ export default function TopicContentPage() {
     }
   };
 
-  if (loading) return <FullPageLoader />;
+  if (loading) {
+    return (
+      <div
+        className="mx-auto w-full max-w-6xl space-y-8"
+        role="status"
+        aria-label="Loading lesson"
+      >
+        <Skeleton className="h-4 w-48" />
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-40 rounded-full" />
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-5 w-1/2" />
+        </div>
+        <div className="grid gap-12 xl:grid-cols-[232px_minmax(0,1fr)]">
+          <Skeleton className="hidden h-72 rounded-xl xl:block" />
+          <div className="max-w-3xl space-y-3">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-11/12" />
+            <Skeleton className="h-5 w-4/5" />
+            <Skeleton className="mt-6 h-48 w-full rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!topic) {
     return (
-      <div className="flex flex-col items-center gap-4 py-24 text-center">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Topic not found</h1>
-          <p className="text-sm text-muted-foreground">
-            It may have been moved or removed.
-          </p>
-        </div>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/courses">Back to my courses</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="Topic not found"
+        description="It may have been moved or removed."
+        action={
+          <Button asChild>
+            <Link href="/dashboard/courses">Back to my courses</Link>
+          </Button>
+        }
+      />
     );
   }
 
   const topicNumber = currentIndex >= 0 ? currentIndex + 1 : topic.order_index;
 
   return (
-    // No overflow-x-hidden here: it breaks the sticky sidebar. Wide content scrolls inside its own container.
-    <div className="mx-auto w-full max-w-5xl pb-28 lg:pb-0">
+    // No overflow-x-hidden here: it breaks the sticky rail. Wide content scrolls inside its own container.
+    <div
+      className={cn(
+        "mx-auto w-full pb-28 xl:pb-0",
+        focus ? "max-w-3xl" : "max-w-6xl",
+      )}
+    >
       <ReadingProgress targetId="lesson-content" />
 
       <TopicHeader
@@ -141,10 +195,27 @@ export default function TopicContentPage() {
         topicNumber={topicNumber}
         totalTopics={totalTopics}
         isCompleted={isCompleted}
+        focus={focus}
+        onToggleFocus={toggleFocus}
       />
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-        <div className="min-w-0 space-y-10">
+      <div
+        className={cn(
+          "grid gap-12",
+          !focus && "xl:grid-cols-[232px_minmax(0,1fr)] xl:items-start",
+        )}
+      >
+        {!focus && (
+          <LessonRail
+            topic={topic}
+            headings={headings}
+            progress={progress}
+            completedCount={completedCount}
+            totalTopics={totalTopics}
+          />
+        )}
+
+        <div className="min-w-0 max-w-3xl space-y-10">
           <MobileOutline headings={headings} />
 
           <div className="space-y-6">
@@ -174,14 +245,6 @@ export default function TopicContentPage() {
             onComplete={handleMarkComplete}
           />
         </div>
-
-        <TopicSidebar
-          topic={topic}
-          headings={headings}
-          progress={progress}
-          completedCount={completedCount}
-          totalTopics={totalTopics}
-        />
       </div>
 
       <MobileLessonBar

@@ -26,8 +26,8 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
   return (
     <article
       className={cn(
-        "rounded-2xl border bg-card",
-        item.isCorrect ? "border-border/60" : "border-rose-500/25",
+        "rounded-xl border bg-card shadow-soft",
+        item.isCorrect ? "border-border" : "border-destructive/30",
       )}
     >
       <button
@@ -35,12 +35,12 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-start gap-3 rounded-2xl p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 sm:p-5"
+        className="flex w-full items-start gap-3 rounded-xl p-4 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 sm:p-5"
       >
         <span
           className={cn(
-            "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-white",
-            item.isCorrect ? "bg-emerald-500" : "bg-rose-500",
+            "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-primary-foreground",
+            item.isCorrect ? "bg-success" : "bg-destructive",
           )}
         >
           {item.isCorrect ? (
@@ -73,7 +73,7 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
       {open && (
         <div
           id={panelId}
-          className="space-y-3 border-t border-border/60 p-4 sm:p-5"
+          className="space-y-3 border-t border-border p-4 sm:p-5"
         >
           <ul className="space-y-2">
             {item.options.map((opt, i) => {
@@ -85,10 +85,10 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
                   className={cn(
                     "flex items-start gap-3 rounded-xl border p-3 text-sm",
                     opt.isCorrect
-                      ? "border-emerald-500/40 bg-emerald-500/10"
+                      ? "border-success/30 bg-success-soft"
                       : wrongPick
-                        ? "border-rose-500/40 bg-rose-500/10"
-                        : "border-border/60 text-muted-foreground",
+                        ? "border-destructive/30 bg-destructive/10"
+                        : "border-border text-muted-foreground",
                   )}
                 >
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-background text-xs font-semibold ring-1 ring-border/60">
@@ -102,8 +102,8 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
                       className={cn(
                         "shrink-0 text-xs font-medium",
                         opt.isCorrect
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-rose-700 dark:text-rose-400",
+                          ? "text-success "
+                          : "text-destructive ",
                       )}
                     >
                       {picked && opt.isCorrect
@@ -125,10 +125,10 @@ export function QuestionReviewCard({ item }: { item: ReviewItem }) {
           )}
 
           {item.explanation && item.explanation.trim() && (
-            <div className="flex items-start gap-2.5 rounded-xl bg-amber-500/10 p-3.5">
-              <Lightbulb className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+            <div className="flex items-start gap-2.5 rounded-xl bg-warning-soft p-3.5">
+              <Lightbulb className="mt-0.5 size-4 shrink-0 text-warning" />
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-500">
+                <p className="text-xs font-semibold text-warning">
                   Why
                 </p>
                 <p className="text-sm leading-relaxed text-foreground/80">

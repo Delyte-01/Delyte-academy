@@ -58,7 +58,7 @@ export function FilePreviewItem({ uploadedFile, loading, onRemove }: FilePreview
         </div>
       ) : (
         <div className="flex flex-shrink-0 items-center gap-1">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          <CheckCircle2 className="h-4 w-4 text-primary" />
           <Button
             variant="ghost"
             size="icon"

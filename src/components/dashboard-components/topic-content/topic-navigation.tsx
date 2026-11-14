@@ -1,14 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Check,
-  ClipboardCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { AnimatedCheck } from "@/components/motion/animated-check";
 import { cn } from "@/lib/utils";
 import { Topic } from "@/types/topic";
 
@@ -22,6 +18,7 @@ interface TopicNavigationProps {
   onComplete: () => void;
 }
 
+/** End of lesson: one clear completion moment, then previous / next. */
 export function TopicNavigation({
   topic,
   previousTopic,
@@ -32,24 +29,18 @@ export function TopicNavigation({
   onComplete,
 }: TopicNavigationProps) {
   return (
-    <div className="space-y-5 border-t border-border/60 pt-8">
-      <section className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div className="flex items-start gap-3">
-          <span
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
-              isCompleted
-                ? "bg-emerald-500 text-white"
-                : "bg-muted text-muted-foreground",
-            )}
-          >
-            <Check className="size-5" strokeWidth={2.5} />
-          </span>
-          <div className="space-y-0.5">
-            <h2 className="font-semibold">
+    <div className="space-y-6 border-t pt-10">
+      <section
+        aria-labelledby="complete-heading"
+        className="bg-brand-wash flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-7"
+      >
+        <div className="flex items-center gap-4">
+          <AnimatedCheck done={isCompleted} size={52} />
+          <div className="space-y-0.5" aria-live="polite">
+            <h2 id="complete-heading" className="font-heading text-lg font-extrabold tracking-tight">
               {isCompleted ? "Topic completed" : "Finished this topic?"}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[15px] text-muted-foreground">
               {isCompleted
                 ? "Nice work. Your course progress is up to date."
                 : "Mark it complete to update your course progress."}
@@ -59,19 +50,15 @@ export function TopicNavigation({
 
         <div className="flex flex-col gap-2 sm:flex-row">
           {hasQuiz && (
-            <Button variant="outline" asChild>
+            <Button variant={isCompleted ? "default" : "outline"} size="lg" asChild>
               <Link href={`/dashboard/topics/${topic.id}/quiz`}>
-                <ClipboardCheck className="mr-2 size-4" />
+                <ClipboardCheck />
                 Take quiz
               </Link>
             </Button>
           )}
           {!isCompleted && (
-            <Button
-              onClick={onComplete}
-              disabled={completing}
-              className="bg-emerald-600 text-white hover:bg-emerald-500"
-            >
+            <Button variant="brand" size="lg" onClick={onComplete} disabled={completing}>
               {completing ? "Saving…" : "Mark as complete"}
             </Button>
           )}
@@ -122,23 +109,22 @@ function NavCard({
   dir: "prev" | "next" | "end";
   className?: string;
 }) {
-  const Icon =
-    dir === "prev" ? ArrowLeft : dir === "next" ? ArrowRight : BookOpen;
+  const Icon = dir === "prev" ? ArrowLeft : dir === "next" ? ArrowRight : BookOpen;
   return (
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
+        "hover-lift group flex min-h-[72px] items-center gap-3 rounded-xl border bg-card p-4 shadow-soft outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
         dir !== "prev" && "flex-row-reverse text-right",
         className,
       )}
     >
-      <Icon className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-emerald-600" />
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground transition-transform group-hover:scale-105 motion-reduce:transition-none">
+        <Icon className="size-5" />
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-xs text-muted-foreground">{label}</span>
-        <span className="block truncate text-sm font-semibold capitalize">
-          {title}
-        </span>
+        <span className="block text-xs font-semibold text-muted-foreground">{label}</span>
+        <span className="block truncate text-[15px] font-bold capitalize">{title}</span>
       </span>
     </Link>
   );

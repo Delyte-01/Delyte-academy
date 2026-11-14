@@ -14,6 +14,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { TABLES } from "@/constants/database";
+import type { StatTone } from "@/components/ui/stat-card";
 
 export interface SystemMetric {
   id: string;
@@ -21,8 +22,7 @@ export interface SystemMetric {
   value: string;
   progress?: number;
   icon: LucideIcon;
-  color: string;
-  bgColor: string;
+  tone: StatTone;
 }
 
 export function useSystemSnapshot() {
@@ -72,32 +72,28 @@ export function useSystemSnapshot() {
             label: "Total Courses",
             value: String(courses.count ?? 0),
             icon: BookOpen,
-            color: "text-blue-600",
-            bgColor: "bg-blue-500/10",
+            tone: "info",
           },
           {
             id: "topics",
             label: "Learning Topics",
             value: String(topics.count ?? 0),
             icon: ListChecks,
-            color: "text-emerald-600",
-            bgColor: "bg-emerald-500/10",
+            tone: "success",
           },
           {
             id: "quizzes",
             label: "Quizzes",
             value: String(quizzes.count ?? 0),
             icon: ClipboardCheck,
-            color: "text-violet-600",
-            bgColor: "bg-violet-500/10",
+            tone: "brand",
           },
           {
             id: "students",
             label: "Students",
             value: String(dashboard.data?.students ?? 0),
             icon: Users,
-            color: "text-amber-600",
-            bgColor: "bg-amber-500/10",
+            tone: "warning",
           },
           {
             id: "completion",
@@ -105,8 +101,7 @@ export function useSystemSnapshot() {
             value: `${completionRate}%`,
             progress: completionRate,
             icon: TrendingUp,
-            color: "text-emerald-600",
-            bgColor: "bg-emerald-500/10",
+            tone: "success",
           },
           {
             id: "score",
@@ -114,8 +109,7 @@ export function useSystemSnapshot() {
             value: `${avgScore}%`,
             progress: avgScore,
             icon: Award,
-            color: "text-violet-600",
-            bgColor: "bg-violet-500/10",
+            tone: "brand",
           },
         ]);
       } catch (err) {

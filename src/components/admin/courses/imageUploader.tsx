@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { UploadCloud, ImageIcon, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ export function ImageUploader({
       {uploading ? (
         <div
           className={cn(
-            "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5",
+            "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5",
             aspect === "banner" ? "aspect-[2/1]" : "aspect-square max-w-[200px]"
           )}
         >
@@ -105,7 +105,7 @@ export function ImageUploader({
           <div className="w-2/3 space-y-1.5">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-[width] duration-150"
+                className="h-full rounded-full bg-primary transition-[width] duration-150"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -118,12 +118,12 @@ export function ImageUploader({
         <div
           ref={imageWrapRef}
           className={cn(
-            "group relative overflow-hidden rounded-2xl border border-border/60",
+            "group relative overflow-hidden rounded-xl border border-border/60",
             aspect === "banner" ? "aspect-[2/1]" : "aspect-square max-w-[200px]"
           )}
         >
           <img src={value} alt={label} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-foreground/50 text-background opacity-0 transition-opacity group-hover:opacity-100">
             <Button
               type="button"
               variant="secondary"
@@ -163,7 +163,7 @@ export function ImageUploader({
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition-colors",
+            "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors",
             aspect === "banner"
               ? "aspect-[2/1]"
               : "aspect-square max-w-[200px]",
@@ -174,7 +174,7 @@ export function ImageUploader({
         >
           <div
             className={cn(
-              "flex h-12 w-12 items-center justify-center rounded-2xl transition-colors",
+              "flex h-12 w-12 items-center justify-center rounded-xl transition-colors",
               dragging ? "bg-primary/10" : "bg-muted"
             )}
           >

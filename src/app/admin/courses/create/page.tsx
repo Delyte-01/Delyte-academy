@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import gsap from "gsap";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
 import { CourseHeader } from "@/components/admin/courses/courseHeader";
 import { ActionBar } from "@/components/admin/courses/actionBar";
@@ -37,15 +37,17 @@ export default function CreateCoursePage() {
     enableCertificates: false,
   });
   const [errors, setErrors] = useState<CourseFormErrors>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const errorCount = Object.values(errors).filter(Boolean).length;
   const pageRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!pageRef.current) return;
+    if (!pageRef.current || prefersReducedMotion()) return;
     gsap.fromTo(
       pageRef.current,
       { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", clearProps: "transform,opacity" }
     );
   }, []);
 
@@ -74,7 +76,6 @@ export default function CreateCoursePage() {
     field: K,
     value: CourseFormData[K]
   ) => {
-    console.log(field, value);
 
     setData((prev) => ({
       ...prev,
@@ -93,19 +94,21 @@ export default function CreateCoursePage() {
 
   const handleSaveDraft = async () => {
     if (saving) return;
-    setSaving(true);
-    setSavingMessage("Uploading images...");
     const errs = validateCourse(data);
     setErrors(errs);
+    setSubmitAttempted(true);
 
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
-    const { bannerUrl, thumbnailUrl } = await uploadCourseImages(data);
-    setSavingMessage("Saving course...");
 
+    setSaving(true);
+    setSavingMessage("Uploading images...");
     try {
+      const { bannerUrl, thumbnailUrl } = await uploadCourseImages(data);
+      setSavingMessage("Saving course...");
+
       await courseService.createCourse({
         title: data.title,
         courseCode: data.code,
@@ -131,16 +134,21 @@ export default function CreateCoursePage() {
   };
 
   const handlePublish = async () => {
+    if (saving) return;
     const errs = validateCourse(data);
     setErrors(errs);
+    setSubmitAttempted(true);
 
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
-    const { bannerUrl, thumbnailUrl } = await uploadCourseImages(data);
+
+    setSaving(true);
+    setSavingMessage("Uploading images...");
     try {
-      setSaving(true);
+      const { bannerUrl, thumbnailUrl } = await uploadCourseImages(data);
+      setSavingMessage("Publishing course...");
 
       await courseService.createCourse({
         title: data.title,
@@ -160,16 +168,17 @@ export default function CreateCoursePage() {
       );
     } finally {
       setSaving(false);
+      setSavingMessage("");
     }
   };
   const handleCancel = () => router.push("/admin/courses");
 
   return (
-    <div className="relative space-y-6 pb-20">
+    <div className="relative space-y-6">
       {/* Indeterminate save/publish progress bar */}
       <div
         ref={progressRef}
-        className="fixed left-0 top-0 z-50 h-0.5 w-full origin-left bg-gradient-to-r from-primary to-indigo-500 opacity-0"
+        className="fixed left-0 top-0 z-50 h-0.5 w-full origin-left bg-primary opacity-0"
       />
 
       <div ref={pageRef} className="space-y-6">
@@ -188,9 +197,14 @@ export default function CreateCoursePage() {
         />
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <CourseForm data={data} errors={errors} onChange={handleChange} />
+            <CourseForm
+              data={data}
+              errors={errors}
+              onChange={handleChange}
+              submitAttempted={submitAttempted}
+            />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-4 lg:col-span-1 lg:self-start">
             <PreviewCard
               title={data.title}
               code={data.code}
@@ -209,6 +223,7 @@ export default function CreateCoursePage() {
         onPublish={handlePublish}
         saving={saving}
         savingMessage={savingMessage}
+        errorCount={submitAttempted ? errorCount : 0}
       />
     </div>
   );

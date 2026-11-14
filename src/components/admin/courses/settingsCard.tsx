@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { LucideIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +65,7 @@ export function SettingsCard({ settings }: SettingsCardProps) {
                   <p className="text-sm font-medium text-foreground">{label}</p>
                   <p className="text-xs text-muted-foreground">{description}</p>
                   {label === "Enable Course Certificates" && (
-                    <p className="mt-0.5 text-[10px] font-medium text-amber-600">
+                    <p className="mt-0.5 text-[10px] font-medium text-warning">
                       Coming soon
                     </p>
                   )}

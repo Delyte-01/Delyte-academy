@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,32 +28,18 @@ interface TopicOverviewTabProps {
   updatedAt: string;
   author?: string;
   stats: { label: string; value: string }[];
-  recentActivity: { action: string; user: string; time: string }[];
 }
 
 const difficultyStyles: Record<Difficulty, string> = {
-  beginner: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  intermediate: "border-amber-500/30 bg-amber-500/15 text-amber-700",
-  advanced: "border-rose-500/30 bg-rose-500/15 text-rose-700",
+  beginner: "border-primary/30 bg-primary/15 text-primary",
+  intermediate: "border-warning/30 bg-warning/15 text-warning",
+  advanced: "border-destructive/30 bg-destructive/15 text-destructive",
 };
 
 const statusStyles: Record<Status, string> = {
-  published: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  draft: "border-amber-500/30 bg-amber-500/15 text-amber-700",
+  published: "border-primary/30 bg-primary/15 text-primary",
+  draft: "border-warning/30 bg-warning/15 text-warning",
 };
-
-const avatarPalette = [
-  { bg: "bg-blue-500/10", text: "text-blue-600" },
-  { bg: "bg-violet-500/10", text: "text-violet-600" },
-  { bg: "bg-emerald-500/10", text: "text-emerald-600" },
-  { bg: "bg-amber-500/10", text: "text-amber-600" },
-  { bg: "bg-rose-500/10", text: "text-rose-600" },
-];
-
-function avatarStyleFor(name: string) {
-  const idx = name.charCodeAt(0) % avatarPalette.length;
-  return avatarPalette[idx];
-}
 
 export function TopicOverviewTab({
   title,
@@ -66,7 +52,6 @@ export function TopicOverviewTab({
   updatedAt,
   author,
   stats,
-  recentActivity,
 }: TopicOverviewTabProps) {
   const leftColRef = useRef<HTMLDivElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
@@ -76,50 +61,50 @@ export function TopicOverviewTab({
       icon: FolderTree,
       label: "Topic Code",
       value: code,
-      color: "text-blue-600",
-      bg: "bg-blue-500/10",
+      color: "text-info",
+      bg: "bg-info/10",
     },
     {
       icon: BarChart2,
       label: "Difficulty",
       value: difficulty,
-      color: "text-amber-600",
-      bg: "bg-amber-500/10",
+      color: "text-warning",
+      bg: "bg-warning/10",
     },
     {
       icon: Clock,
       label: "Estimated Duration",
       value: duration,
-      color: "text-violet-600",
-      bg: "bg-violet-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       icon: FileText,
       label: "Status",
       value: status,
-      color: "text-emerald-600",
-      bg: "bg-emerald-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       icon: Calendar,
       label: "Created",
       value: createdAt,
-      color: "text-rose-600",
-      bg: "bg-rose-500/10",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
     },
     {
       icon: Calendar,
       label: "Last Updated",
       value: updatedAt,
-      color: "text-rose-600",
-      bg: "bg-rose-500/10",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
     },
     {
       icon: User,
       label: "Author",
       value: author,
-      color: "text-blue-600",
-      bg: "bg-blue-500/10",
+      color: "text-info",
+      bg: "bg-info/10",
     },
   ];
 
@@ -172,15 +157,6 @@ export function TopicOverviewTab({
       });
     });
 
-    const timelineDots = gsap.utils.toArray<HTMLElement>(
-      rightColRef.current?.querySelectorAll("[data-timeline-dot]") ?? []
-    );
-    tl.fromTo(
-      timelineDots,
-      { scale: 0 },
-      { scale: 1, duration: 0.3, stagger: 0.08, ease: "back.out(2.5)" },
-      0.3
-    );
   }, []);
 
   return (
@@ -261,41 +237,6 @@ export function TopicOverviewTab({
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        {/* Recent activity */}
-        <Card data-overview-card className="border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-bold">
-              Recent activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivity.map((activity, idx) => {
-              const style = avatarStyleFor(activity.user);
-              return (
-                <div key={idx} className="flex gap-3">
-                  <div className="relative flex flex-col items-center">
-                    <div
-                      data-timeline-dot
-                      className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${style.bg} ${style.text}`}
-                    >
-                      {activity.user.charAt(0)}
-                    </div>
-                    {idx < recentActivity.length - 1 && (
-                      <div className="mt-1 w-px flex-1 bg-gradient-to-b from-border to-transparent" />
-                    )}
-                  </div>
-                  <div className="pb-1">
-                    <p className="text-sm text-foreground">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.user} · {activity.time}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
           </CardContent>
         </Card>
       </div>

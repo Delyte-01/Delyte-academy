@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, FileText, Calendar, Clock, User } from "lucide-react";
 import { useCourseActivity } from "@/hooks/useCourseActivity";
@@ -10,7 +10,6 @@ interface OverviewTabProps {
   description: string;
   code: string;
   status: "draft" | "published";
-  recentActivity: { action: string; user: string; time: string }[];
   createdAt: string;
   updatedAt: string;
   id: string;
@@ -25,11 +24,11 @@ interface OverviewTabProps {
 }
 
 const avatarPalette = [
-  { bg: "bg-blue-500/10", text: "text-blue-600" },
-  { bg: "bg-violet-500/10", text: "text-violet-600" },
-  { bg: "bg-emerald-500/10", text: "text-emerald-600" },
-  { bg: "bg-amber-500/10", text: "text-amber-600" },
-  { bg: "bg-rose-500/10", text: "text-rose-600" },
+  { bg: "bg-info/10", text: "text-info" },
+  { bg: "bg-primary/10", text: "text-primary" },
+  { bg: "bg-primary/10", text: "text-primary" },
+  { bg: "bg-warning/10", text: "text-warning" },
+  { bg: "bg-destructive/10", text: "text-destructive" },
 ];
 
 function avatarStyleFor(name: string) {
@@ -55,37 +54,37 @@ export function OverviewTab({
       icon: BookOpen,
       label: "Course Code",
       value: code,
-      color: "text-blue-600",
-      bg: "bg-blue-500/10",
+      color: "text-info",
+      bg: "bg-info/10",
     },
     {
       icon: FileText,
       label: "Status",
       value: status,
-      color: "text-emerald-600",
-      bg: "bg-emerald-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       icon: Calendar,
       label: "Created",
       value: createdAt,
-      color: "text-violet-600",
-      bg: "bg-violet-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       icon: Clock,
       label: "Last Updated",
       value: updatedAt,
-      color: "text-amber-600",
-      bg: "bg-amber-500/10",
+      color: "text-warning",
+      bg: "bg-warning/10",
     },
     {
       icon: User,
       label: "Created By",
       value:
         creator?.full_name || creator?.username || creator?.email || "Unknown",
-      color: "text-rose-600",
-      bg: "bg-rose-500/10",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
     },
   ];
 

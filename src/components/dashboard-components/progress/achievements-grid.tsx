@@ -1,83 +1,61 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Check } from "lucide-react";
+import { Lock } from "lucide-react";
+
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
 import { Achievement } from "@/types/progress";
+import { Panel } from "./panel";
 
-interface AchievementWithDate extends Achievement {
-  date?: string;
-}
+export function AchievementsGrid({ achievements }: { achievements: Achievement[] }) {
+  const unlocked = achievements.filter((a) => a.unlocked).length;
 
-interface AchievementsGridProps {
-  achievements: AchievementWithDate[];
-}
-
-export function AchievementsGrid({ achievements }: AchievementsGridProps) {
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">Achievements</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {achievements.map((achievement) => {
-            const Icon = achievement.icon;
-            return (
-              <div
-                key={achievement.id}
-                className={cn(
-                  "flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all",
-                  achievement.unlocked
-                    ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 hover:shadow-md"
-                    : "border-border bg-muted/30 opacity-60",
-                )}
-              >
-                <div
+    <Panel
+      title="Achievements"
+      description={`${unlocked} of ${achievements.length} unlocked`}
+      className="h-full"
+    >
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {achievements.map((a) => {
+          const Icon = a.icon;
+          const pct = a.target > 0 ? Math.min(100, Math.round((a.progress / a.target) * 100)) : 0;
+          return (
+            <li
+              key={a.id}
+              className={cn(
+                "flex flex-col gap-3 rounded-xl border p-4",
+                a.unlocked ? "bg-primary-soft/50" : "bg-card",
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <span
                   className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-2xl",
-                    achievement.unlocked
-                      ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white"
-                      : "bg-muted text-muted-foreground",
+                    "flex size-11 shrink-0 items-center justify-center rounded-xl",
+                    a.unlocked ? "bg-brand-gradient shadow-brand" : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {achievement.unlocked ? (
-                    <Icon className="h-6 w-6" />
-                  ) : (
-                    <Lock className="h-5 w-5" />
-                  )}
+                  {a.unlocked ? <Icon className="size-5" aria-hidden /> : <Lock className="size-4" aria-hidden />}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-bold">{a.title}</p>
+                  <p className="text-[13px] leading-snug text-muted-foreground">{a.description}</p>
                 </div>
-                <div>
-                  <p
-                    className={cn(
-                      "text-xs font-bold",
-                      achievement.unlocked
-                        ? "text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {achievement.title}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {achievement.description}
-                  </p>
-                </div>
-                {(() => {
-                  const date = (achievement ).date as string | undefined;
-                  return (
-                    achievement.unlocked && date && (
-                      <div className="flex items-center gap-1 text-[10px] font-medium text-emerald-600">
-                        <Check className="h-3 w-3" />
-                        {date}
-                      </div>
-                    )
-                  );
-                })()}
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              {a.unlocked ? (
+                <p className="text-xs font-bold uppercase tracking-wider text-success">Unlocked</p>
+              ) : (
+                <div className="space-y-1.5">
+                  <ProgressBar value={pct} size="sm" label={`${a.title} progress`} />
+                  <p className="text-xs tabular-nums text-muted-foreground">
+                    {a.progress} / {a.target}
+                  </p>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
   );
 }

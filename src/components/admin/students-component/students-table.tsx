@@ -1,9 +1,21 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  BarChart3,
+  BookOpen,
+  HelpCircle,
+  MoreHorizontal,
+  Trash2,
+  User,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DataTableShell } from "@/components/ui/data-table-shell";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import {
   Table,
   TableBody,
@@ -13,264 +25,260 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  User,
-  BookOpen,
-  HelpCircle,
-  BarChart3,
- 
-  Trash2,
-  Inbox,
-} from "lucide-react";
+import { EmptyState } from "@/components/empty-states";
+import { deleteStudent } from "@/services/admin-students";
+import type { AdminStudent, StudentStatus } from "@/hooks/useAdminStudents";
 
-import { deleteStudent} from "@/services/admin-students";
-import { toast } from "sonner";
-import {
-  AdminStudent,
-  StudentStatus,
-  useAdminStudents,
-} from "@/hooks/useAdminStudents";
-
-const statusConfig: Record<StudentStatus, { className: string }> = {
-  active: {
-    className:
-      "border-0 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  },
-  inactive: { className: "border-0 bg-muted text-muted-foreground" },
-  suspended: {
-    className: "border-0 bg-rose-500/15 text-rose-700 dark:text-rose-400",
-  },
+const STATUS_VARIANT: Record<StudentStatus, "brand" | "muted" | "danger"> = {
+  active: "brand",
+  inactive: "muted",
+  suspended: "danger",
 };
 
 interface StudentsTableProps {
   students: AdminStudent[];
+  /** Total before filters, for the "Showing x of y" footer. */
+  total?: number;
   onSelectStudent: (student: AdminStudent) => void;
+  /** Called after a successful delete so the page can drop the row. */
+  onStudentDeleted?: (id: string) => void;
+}
+
+function StudentIdentity({ student }: { student: AdminStudent }) {
+  return (
+    <>
+      <Avatar className="size-11 shrink-0">
+        <AvatarImage src={student.avatar_url ?? undefined} alt="" />
+        <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary-soft-foreground">
+          {student.initials}
+        </AvatarFallback>
+      </Avatar>
+      <span className="min-w-0 text-left">
+        <span className="block truncate text-[15px] font-bold text-foreground">{student.full_name}</span>
+        <span className="block truncate text-[13px] text-muted-foreground">{student.email}</span>
+      </span>
+    </>
+  );
 }
 
 export function AdminStudentsTable({
   students,
+  total,
   onSelectStudent,
+  onStudentDeleted,
 }: StudentsTableProps) {
-  const { removeStudentLocal } = useAdminStudents();
+  const [toDelete, setToDelete] = useState<AdminStudent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async (student: AdminStudent) => {
-    const confirmed = window.confirm(
-      `Delete ${student.full_name}? This cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
+    setDeleting(true);
     try {
       await deleteStudent(student.id);
-
-      // Remove immediately from the table
-      removeStudentLocal(student.id);
-
+      onStudentDeleted?.(student.id);
       toast.success("Student deleted");
+      setToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? err.message : "Failed to delete student");
+    } finally {
+      setDeleting(false);
     }
   };
 
+  const rowMenu = (student: AdminStudent) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Actions for ${student.full_name}`}
+          className="size-10 text-muted-foreground"
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => onSelectStudent(student)}>
+          <User className="size-4" />
+          View profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSelectStudent(student)}>
+          <BookOpen className="size-4" />
+          Enrollments
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSelectStudent(student)}>
+          <HelpCircle className="size-4" />
+          Quiz history
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSelectStudent(student)}>
+          <BarChart3 className="size-4" />
+          Learning progress
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={() => setToDelete(student)}
+        >
+          <Trash2 className="size-4" />
+          Delete student
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  if (students.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="No students found"
+        description="No student matches the current search and filters. Try widening them."
+      />
+    );
+  }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        {students.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-muted">
-              <Inbox className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                No students found
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Try adjusting your filters or add a new student.
-              </p>
-            </div>
-            <Button size="sm">Add Student</Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="pl-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Student
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Email
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Courses
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Progress
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Last Active
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Joined
-                  </TableHead>
-                  <TableHead className="pr-5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((student) => (
-                  <TableRow
-                    key={student.id}
-                    className="cursor-pointer transition-colors hover:bg-muted/30"
+    <>
+      <DataTableShell
+        footer={
+          <p aria-live="polite">
+            Showing <span className="font-semibold tabular-nums text-foreground">{students.length}</span>
+            {total !== undefined && (
+              <>
+                {" "}
+                of <span className="tabular-nums">{total}</span>
+              </>
+            )}{" "}
+            students
+          </p>
+        }
+      >
+        {/* Desktop table */}
+        <Table className="hidden md:table">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="pl-5">Student</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Courses</TableHead>
+              <TableHead className="w-44">Progress</TableHead>
+              <TableHead>Last active</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead className="pr-3 text-right">
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {students.map((student) => (
+              <TableRow key={student.id} className="group">
+                <TableCell className="py-3 pl-5">
+                  <button
+                    type="button"
                     onClick={() => onSelectStudent(student)}
+                    className="flex max-w-[280px] items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <TableCell className="pl-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/15">
-                          <AvatarImage
-                            src={student.avatar_url ?? undefined}
-                            alt={student.full_name}
-                          />
-                          <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
-                            {student.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {student.full_name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            @{student.username}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
-                      {student.email}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          statusConfig[student.status]?.className ??
-                          "border-0 bg-muted text-muted-foreground"
-                        }
-                      >
-                        {student.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {student.enrolledCourses}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:block">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
-                            style={{ width: `${student.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">
-                          {student.progress}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {student.lastActive}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {student.created_at}
-                    </TableCell>
-                    <TableCell
-                      className="pr-5 text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">
-                            Actions
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onSelect={() => onSelectStudent(student)}
-                          >
-                            <User className="mr-2 h-3.5 w-3.5" />
-                            View Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onSelectStudent(student)}
-                          >
-                            <BookOpen className="mr-2 h-3.5 w-3.5" />
-                            View Enrollments
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onSelectStudent(student)}
-                          >
-                            <HelpCircle className="mr-2 h-3.5 w-3.5" />
-                            View Quiz History
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onSelectStudent(student)}
-                          >
-                            <BarChart3 className="mr-2 h-3.5 w-3.5" />
-                            View Learning Progress
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                    <StudentIdentity student={student} />
+                  </button>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={STATUS_VARIANT[student.status] ?? "muted"} className="capitalize">
+                    {student.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-foreground">
+                  {student.enrolledCourses}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <ProgressBar
+                      value={student.progress}
+                      size="sm"
+                      label={`${student.full_name} average progress`}
+                    />
+                    <span className="w-10 text-right text-sm font-bold tabular-nums text-foreground">
+                      {student.progress}%
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                  {student.lastActive}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+                  {student.created_at}
+                </TableCell>
+                <TableCell className="pr-3 text-right">{rowMenu(student)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-                          {/* {student.status === "suspended" ? (
-                            <DropdownMenuItem
-                              onSelect={() => handleReactivate(student)}
-                            >
-                              <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-600" />
-                              Reactivate Account
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onSelect={() => handleSuspend(student)}
-                            >
-                              <Ban className="mr-2 h-3.5 w-3.5 text-amber-600" />
-                              Suspend Account
-                            </DropdownMenuItem>
-                          )} */}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={() => handleDelete(student)}
-                          >
-                            <Trash2 className="mr-2 h-3.5 w-3.5" />
-                            Delete Student
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        {/* Mobile: stacked rows */}
+        <ul className="divide-y md:hidden">
+          {students.map((student) => (
+            <li key={student.id} className="flex items-start gap-1 p-4">
+              <button
+                type="button"
+                onClick={() => onSelectStudent(student)}
+                className="min-w-0 flex-1 space-y-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <span className="flex items-center gap-3">
+                  <StudentIdentity student={student} />
+                </span>
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted-foreground">
+                  <Badge variant={STATUS_VARIANT[student.status] ?? "muted"} size="sm" className="capitalize">
+                    {student.status}
+                  </Badge>
+                  <span className="tabular-nums">{student.enrolledCourses} courses</span>
+                  <span>Active {student.lastActive}</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <ProgressBar value={student.progress} size="sm" label="Average progress" />
+                  <span className="text-sm font-bold tabular-nums text-foreground">{student.progress}%</span>
+                </span>
+              </button>
+              {rowMenu(student)}
+            </li>
+          ))}
+        </ul>
+      </DataTableShell>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && !deleting && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this student?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toDelete?.full_name} will be permanently removed. This can’t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                if (toDelete) void handleDelete(toDelete);
+              }}
+            >
+              {deleting ? "Deleting…" : "Delete student"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

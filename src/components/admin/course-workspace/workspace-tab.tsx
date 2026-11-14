@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import {
-  LucideIcon,
+  type LucideIcon,
   LayoutGrid,
   FolderTree,
-  FileText,
-  ClipboardList,
   Users,
   BarChart3,
   Settings,
@@ -19,6 +16,8 @@ export interface WorkspaceTabItem {
   value: string;
   label: string;
   icon: LucideIcon;
+  /** Real count shown as a small badge. Omit when unknown. */
+  count?: number;
 }
 
 interface WorkspaceTabsProps {
@@ -27,88 +26,109 @@ interface WorkspaceTabsProps {
   onChange: (value: string) => void;
 }
 
+/**
+ * Underline tab bar shared by the course and topic workspaces. Sticks to the
+ * top of the admin scroll area; a single GSAP-slid indicator tracks the active
+ * tab. Arrow / Home / End keys move between tabs.
+ */
 export function WorkspaceTabs({ tabs, value, onChange }: WorkspaceTabsProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const pillRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const hasAnimatedPill = useRef(false);
+  const placed = useRef(false);
 
-  const movePill = (animate: boolean) => {
-    const pill = pillRef.current;
-    const activeEl = triggerRefs.current[value];
-    if (!pill || !activeEl) return;
-
-    gsap.to(pill, {
-      x: activeEl.offsetLeft,
-      y: activeEl.offsetTop,
-      width: activeEl.offsetWidth,
-      height: activeEl.offsetHeight,
-      duration: animate ? 0.35 : 0.01,
+  const place = (animate: boolean) => {
+    const el = triggerRefs.current[value];
+    const indicator = indicatorRef.current;
+    if (!el || !indicator) return;
+    gsap.to(indicator, {
+      x: el.offsetLeft,
+      width: el.offsetWidth,
+      duration: animate && !prefersReducedMotion() ? 0.35 : 0,
       ease: "power3.out",
     });
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
   };
 
-  // Track the active trigger with the sliding pill
   useLayoutEffect(() => {
-    movePill(hasAnimatedPill.current);
-    hasAnimatedPill.current = true;
+    place(placed.current);
+    placed.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, tabs]);
 
-  // Trigger widths change at the `sm` breakpoint (labels show/hide), so
-  // reposition the pill on resize without animating the snap.
   useEffect(() => {
-    const handleResize = () => movePill(false);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const onResize = () => place(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Entrance for the whole tab bar
-  useEffect(() => {
-    if (!rootRef.current) return;
-    gsap.fromTo(
-      rootRef.current,
-      { opacity: 0, y: -6 },
-      { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
-    );
-  }, []);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const i = tabs.findIndex((t) => t.value === value);
+    let next = i;
+    if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    onChange(tabs[next].value);
+    triggerRefs.current[tabs[next].value]?.focus();
+  };
 
   return (
-    <div ref={rootRef}>
-      <Tabs value={value} onValueChange={onChange}>
-        <div className="overflow-x-auto">
-          <TabsList
-            ref={listRef}
-            className="relative h-auto w-fit gap-1 border border-border/60 bg-muted/60 p-1"
-          >
-            {/* Sliding active pill */}
-            <div
-              ref={pillRef}
-              className="pointer-events-none absolute left-0 top-0 z-0 rounded-md bg-background shadow-sm ring-1 ring-border/60"
-              style={{ willChange: "transform, width, height" }}
-            />
-            {tabs.map(({ value: v, label, icon: Icon }) => (
-              <TabsTrigger
-                key={v}
-                value={v}
-                ref={(el) => {
-                  triggerRefs.current[v] = el;
-                }}
-                className={cn(
-                  "relative z-10 flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground transition-colors duration-200",
-                  "data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none",
-                  "hover:text-foreground",
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-      </Tabs>
+    <div className="sticky top-0 z-20 -mx-4 border-b bg-background/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div
+        ref={barRef}
+        role="tablist"
+        aria-label="Workspace sections"
+        onKeyDown={onKeyDown}
+        className="relative flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map(({ value: v, label, icon: Icon, count }) => {
+          const active = v === value;
+          return (
+            <button
+              key={v}
+              ref={(el) => {
+                triggerRefs.current[v] = el;
+              }}
+              role="tab"
+              type="button"
+              id={`tab-${v}`}
+              aria-selected={active}
+              aria-controls={`panel-${v}`}
+              tabIndex={active ? 0 : -1}
+              onClick={() => onChange(v)}
+              className={cn(
+                "relative inline-flex min-h-12 shrink-0 items-center gap-2 px-3.5 text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset",
+                active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" aria-hidden />
+              {label}
+              {count !== undefined && (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums",
+                    active
+                      ? "bg-primary-soft text-primary-soft-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        <span
+          ref={indicatorRef}
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-primary"
+          style={{ willChange: "transform, width" }}
+        />
+      </div>
     </div>
   );
 }
@@ -116,7 +136,6 @@ export function WorkspaceTabs({ tabs, value, onChange }: WorkspaceTabsProps) {
 export const courseTabs: WorkspaceTabItem[] = [
   { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "topics", label: "Topics", icon: FolderTree },
-
   { value: "students", label: "Students", icon: Users },
   { value: "analytics", label: "Analytics", icon: BarChart3 },
   { value: "settings", label: "Settings", icon: Settings },

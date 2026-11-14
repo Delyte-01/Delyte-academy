@@ -11,7 +11,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import {
   Card,
   CardContent,
@@ -74,7 +74,7 @@ export function AccountSection() {
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[72px] animate-pulse rounded-2xl border border-border/60 bg-muted/40"
+              className="h-[72px] animate-pulse rounded-xl border border-border/60 bg-muted/40"
             />
           ))}
         </CardContent>
@@ -118,18 +118,18 @@ export function AccountSection() {
       </CardHeader>
       <CardContent ref={contentRef} className="space-y-4">
         {/* Email verification */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div
               className={cn(
                 "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl",
-                isVerified ? "bg-emerald-500/10" : "bg-amber-500/10",
+                isVerified ? "bg-success/10" : "bg-warning/10",
               )}
             >
               <Mail
                 className={cn(
                   "h-5 w-5",
-                  isVerified ? "text-emerald-600" : "text-amber-600",
+                  isVerified ? "text-success" : "text-warning",
                 )}
               />
             </div>
@@ -147,8 +147,8 @@ export function AccountSection() {
             className={cn(
               "w-fit flex-shrink-0 border-0",
               isVerified
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                ? "bg-success/15 text-success"
+                : "bg-warning/15 text-warning",
             )}
           >
             <ShieldCheck className="mr-1 h-3 w-3" />
@@ -157,7 +157,7 @@ export function AccountSection() {
         </div>
 
         {/* Connected providers */}
-        <div className="rounded-2xl border border-border/60 p-4">
+        <div className="rounded-xl border border-border/60 p-4">
           <p className="mb-3 text-sm font-semibold text-foreground">
             Connected Login Providers
           </p>
@@ -194,7 +194,7 @@ export function AccountSection() {
 
         {/* Account metadata */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-3 rounded-2xl border border-border/60 p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-border/60 p-4">
             <Hash className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Account ID</p>
@@ -213,13 +213,13 @@ export function AccountSection() {
               aria-label="Copy account ID"
             >
               {copied ? (
-                <Check className="h-4 w-4 text-emerald-600" />
+                <Check className="h-4 w-4 text-success" />
               ) : (
                 <Copy className="h-4 w-4" />
               )}
             </Button>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-border/60 p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-border/60 p-4">
             <Calendar className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Member Since</p>
@@ -231,10 +231,10 @@ export function AccountSection() {
         </div>
 
         {/* Account status */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-success/10">
+              <ShieldCheck className="h-5 w-5 text-success" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">
@@ -247,7 +247,7 @@ export function AccountSection() {
               </p>
             </div>
           </div>
-          <Badge className="w-fit flex-shrink-0 border-0 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+          <Badge className="w-fit flex-shrink-0 border-0 bg-success/15 text-success">
             Active
           </Badge>
         </div>

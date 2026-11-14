@@ -87,7 +87,7 @@ export function NotificationBell() {
               )}
             </SheetTitle>
 
-            <div className="flex items-center gap-1 mr-6 rounded-3xl shadow ">
+            <div className="flex items-center gap-1 mr-6 rounded-xl shadow ">
               <Button
                 variant="ghost"
                 size="sm"
@@ -162,10 +162,10 @@ function NotificationSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="flex items-start gap-3 rounded-3xl border bg-card p-4"
+          className="flex items-start gap-3 rounded-xl border bg-card p-4"
         >
           {" "}
-          <div className="h-11 w-11 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-11 w-11 animate-pulse rounded-xl bg-muted" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-1/2 animate-pulse rounded-full bg-muted" />
             <div className="h-3 w-3/4 animate-pulse rounded-full bg-muted" />

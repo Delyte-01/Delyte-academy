@@ -1,46 +1,53 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { ScrollTrigger, gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 
-/** Thin bar pinned to the top of the viewport that fills as the lesson is read. */
+/**
+ * Thin brand bar pinned to the top of the viewport. Its fill is scrubbed to the
+ * scroll position through the lesson body (GSAP ScrollTrigger, transform only).
+ * Under reduced motion the bar still tracks scroll exactly, just without easing.
+ */
 export function ReadingProgress({ targetId }: { targetId: string }) {
   const bar = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    let raf = 0;
+  useGSAP(
+    () => {
+      const target = document.getElementById(targetId);
+      const el = bar.current;
+      if (!target || !el) return;
 
-    const update = () => {
-      raf = 0;
-      const el = document.getElementById(targetId);
-      if (!el || !bar.current) return;
-      const rect = el.getBoundingClientRect();
-      const denom = Math.max(rect.height - window.innerHeight * 0.6, 1);
-      const p = Math.min(
-        1,
-        Math.max(0, (window.innerHeight * 0.2 - rect.top) / denom),
-      );
-      bar.current.style.transform = `scaleX(${p})`;
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+      gsap.set(el, { scaleX: 0, transformOrigin: "0% 50%" });
+      gsap.to(el, {
+        scaleX: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: target,
+          start: "top 25%",
+          end: "bottom 70%",
+          scrub: prefersReducedMotion() ? true : 0.35,
+        },
+      });
 
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [targetId]);
+      // Images, maths and embeds change the lesson height after first paint.
+      let raf = 0;
+      const ro = new ResizeObserver(() => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+      });
+      ro.observe(target);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        ro.disconnect();
+      };
+    },
+    { dependencies: [targetId], scope: bar },
+  );
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5"
-    >
-      <div ref={bar} className="h-full origin-left scale-x-0 bg-emerald-500" />
+    <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[3px]">
+      <div ref={bar} className="bg-brand-gradient h-full w-full origin-left scale-x-0" />
     </div>
   );
 }

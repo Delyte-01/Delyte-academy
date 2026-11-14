@@ -1,65 +1,52 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowRight } from 'lucide-react';
-import { WeakArea } from '@/types/progress';
+import Link from "next/link";
+import { ArrowRight, PartyPopper } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { WeakArea } from "@/types/progress";
+import { Panel } from "./panel";
 
-interface WeakAreasCardProps {
-  areas: WeakArea[];
-}
-
-export function WeakAreasCard({ areas }: WeakAreasCardProps) {
+export function WeakAreasCard({ areas }: { areas: WeakArea[] }) {
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <AlertCircle className="h-5 w-5 text-amber-600" />
-          Weak Areas & Improvement
-        </CardTitle>
-        <CardDescription>Topics where your quiz scores need attention. Practice to improve.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {areas.map((area) => {
-          const Icon = area.icon;
-          return (
-            <div
-              key={area.id}
-              className="flex flex-col gap-3 rounded-2xl border p-4 transition-all hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
-                  <Icon className="h-5 w-5 text-amber-600" />
+    <Panel
+      title="Needs practice"
+      description="Topics where your average quiz score is under 70%"
+      className="h-full"
+    >
+      {areas.length === 0 ? (
+        <p className="flex items-start gap-3 rounded-xl bg-success-soft p-4 text-[15px] text-success">
+          <PartyPopper className="mt-0.5 size-5 shrink-0" aria-hidden />
+          Nothing here. Topics you score under 70% on will show up so you can retry them.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {areas.map((area) => {
+            const Icon = area.icon;
+            return (
+              <li key={area.id} className="space-y-3 rounded-xl border p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning">
+                    <Icon className="size-5" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-bold capitalize">{area.topic}</p>
+                    <p className="truncate text-[13px] text-muted-foreground">{area.course}</p>
+                  </div>
+                  <span className="text-lg font-extrabold tabular-nums text-warning">{area.score}%</span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{area.topic}</p>
-                  <p className="text-xs text-muted-foreground">{area.course}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* Score */}
-                <div className="text-right">
-                  <p className="text-sm font-extrabold text-amber-600">{area.score}%</p>
-                  <p className="text-[10px] text-muted-foreground">Last quiz</p>
-                </div>
-                {/* Score bar */}
-                <div className="hidden h-2 w-20 overflow-hidden rounded-full bg-muted sm:block">
-                  <div
-                    className="h-full rounded-full bg-amber-500"
-                    style={{ width: `${area.score}%` }}
-                  />
-                </div>
-                <Button variant="outline" size="sm" className="flex-shrink-0">
-                  Practice Now
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                <ProgressBar value={area.score} tone="warning" size="sm" label={`${area.topic} average score`} />
+                <Button variant="soft" size="sm" className="w-full" asChild>
+                  <Link href={`/dashboard/topics/${area.topicId}/quiz`}>
+                    Practice again <ArrowRight />
+                  </Link>
                 </Button>
-              </div>
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
   );
 }

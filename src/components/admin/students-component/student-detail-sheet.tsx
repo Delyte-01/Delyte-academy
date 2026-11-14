@@ -1,87 +1,80 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  Ban,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  Flame,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Target,
+  Trash2,
+  Trophy,
+  UserCheck,
+  UserCog,
+  type LucideIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Clock,
-  BookOpen,
-  CheckCircle2,
-  HelpCircle,
-  Trophy,
-  Target,
-  Flame,
-  UserPlus,
-  UserCheck,
-  UserCog,
-  MessageSquare,
-  Ban,
-  Trash2,
-  ClipboardCheck,
-} from "lucide-react";
-import type {
-  AdminStudent as Student,
-  StudentStatus,
-} from "@/hooks/useAdminStudents";
-import { toast } from "sonner";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { AdminStudent as Student, StudentStatus } from "@/hooks/useAdminStudents";
 import { deleteStudent, updateStudent } from "@/services/admin-students";
 import { formatRelative } from "@/hooks/useAdminAnalytics";
-import { useEffect, useState } from "react";
 import { enrollmentService } from "@/services/enrollment";
 import { Enrollment } from "@/types/enrollment";
-import Image from "next/image";
-import {  RecentActivityItem } from "@/services/dashboard";
+import type { RecentActivityItem } from "@/services/dashboard";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { cn } from "@/lib/utils";
 
-const statusConfig: Record<StudentStatus, { className: string }> = {
-  active: {
-    className:
-      "border-0 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  },
-  inactive: {
-    className: "border-0 bg-muted text-muted-foreground",
-  },
-  suspended: {
-    className: "border-0 bg-rose-500/15 text-rose-700 dark:text-rose-400",
-  },
+const STATUS_VARIANT: Record<StudentStatus, "brand" | "muted" | "danger"> = {
+  active: "brand",
+  inactive: "muted",
+  suspended: "danger",
 };
 
-const activityIcon = (type: RecentActivityItem["type"]) => {
-  switch (type) {
-    case "enrollment":
-      return <BookOpen className="h-4 w-4" />;
-    case "topic_completed":
-      return <CheckCircle2 className="h-4 w-4" />;
-    case "quiz_completed":
-      return <ClipboardCheck className="h-4 w-4" />;
-    default:
-      return <Clock className="h-4 w-4" />;
-  }
+const ACTIVITY: Record<string, { icon: LucideIcon; tone: string }> = {
+  enrollment: { icon: BookOpen, tone: "bg-primary-soft text-primary-soft-foreground" },
+  topic_completed: { icon: CheckCircle2, tone: "bg-info-soft text-info" },
+  quiz_completed: { icon: ClipboardCheck, tone: "bg-warning-soft text-warning" },
 };
+const activityMeta = (type: RecentActivityItem["type"]) =>
+  ACTIVITY[type] ?? { icon: Clock, tone: "bg-muted text-muted-foreground" };
 
-const activityStyle = (type: RecentActivityItem["type"]) => {
-  switch (type) {
-    case "enrollment":
-      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
-    case "topic_completed":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300";
-    case "quiz_completed":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
+type Confirm = "delete" | "grant" | "revoke" | "suspend" | null;
+
+const CONFIRM_COPY: Record<Exclude<Confirm, null>, { title: string; action: string; destructive: boolean }> = {
+  delete: { title: "Delete this student?", action: "Delete student", destructive: true },
+  grant: { title: "Make this student an admin?", action: "Grant admin", destructive: false },
+  revoke: { title: "Remove admin access?", action: "Revoke admin", destructive: true },
+  suspend: { title: "Suspend this account?", action: "Suspend", destructive: true },
 };
 
 interface StudentDetailSheetProps {
@@ -101,15 +94,12 @@ export function StudentDetailSheet({
 }: StudentDetailSheetProps) {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
-
-  // const [loadingActivity, setLoadingActivity] = useState(false);
-  const { activities, loading: loadingActivity } = useRecentActivity(
-    student?.id,
-  );
+  const [confirm, setConfirm] = useState<Confirm>(null);
+  const [working, setWorking] = useState(false);
+  const { activities, loading: loadingActivity } = useRecentActivity(student?.id);
 
   useEffect(() => {
     if (!student || !open) return;
-
     const load = async () => {
       try {
         setLoadingEnrollments(true);
@@ -122,461 +112,327 @@ export function StudentDetailSheet({
         setLoadingEnrollments(false);
       }
     };
-
     load();
   }, [student, open]);
 
-  console.log(enrollments, "enrolme");
-
-  console.log(activities, "activities");
   if (!student) return null;
 
-  const stats = [
-    {
-      label: "Courses Enrolled",
-      value: student.enrolledCourses,
-      icon: BookOpen,
-      color: "text-blue-600",
-      bgColor: "bg-blue-500/10",
-    },
-    {
-      label: "Courses Completed",
-      value: student.completedCourses,
-      icon: CheckCircle2,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-500/10",
-    },
-    {
-      label: "Course Progress",
-      value: `${student.progress}%`,
-      icon: Target,
-      color: "text-violet-600",
-      bgColor: "bg-violet-500/10",
-    },
-    {
-      label: "Average Quiz Score",
-      value: `${student.averageScore}%`,
-      icon: Trophy,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-500/10",
-    },
-    {
-      label: "Current Streak",
-      value: `${student.streak} days`,
-      icon: Flame,
-      color: "text-orange-600",
-      bgColor: "bg-orange-500/10",
-    },
+  const stats: { label: string; value: string | number; icon: LucideIcon; tone: string }[] = [
+    { label: "Enrolled", value: student.enrolledCourses, icon: BookOpen, tone: "bg-info-soft text-info" },
+    { label: "Completed", value: student.completedCourses, icon: CheckCircle2, tone: "bg-success-soft text-success" },
+    { label: "Progress", value: `${student.progress}%`, icon: Target, tone: "bg-primary-soft text-primary-soft-foreground" },
+    { label: "Avg. quiz score", value: `${student.averageScore}%`, icon: Trophy, tone: "bg-primary-soft text-primary-soft-foreground" },
+    { label: "Streak", value: `${student.streak} days`, icon: Flame, tone: "bg-warning-soft text-warning" },
   ];
 
-  const handleGrantAdmin = async () => {
+  const run = async (fn: () => Promise<void>) => {
+    setWorking(true);
     try {
-      await updateStudent(student.id, { role: "admin" });
-      onStudentUpdated?.({ role: "admin" });
-      toast.success("Student promoted to admin");
+      await fn();
+      setConfirm(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setWorking(false);
     }
   };
 
-  const handleRevokeAdmin = async () => {
-    try {
-      await updateStudent(student.id, { role: "student" });
-      onStudentUpdated?.({ role: "student" });
-      toast.success("Admin privileges removed");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    }
+  const performConfirmed = () => {
+    if (!confirm) return;
+    void run(async () => {
+      if (confirm === "grant") {
+        await updateStudent(student.id, { role: "admin" });
+        onStudentUpdated?.({ role: "admin" });
+        toast.success("Student promoted to admin");
+      } else if (confirm === "revoke") {
+        await updateStudent(student.id, { role: "student" });
+        onStudentUpdated?.({ role: "student" });
+        toast.success("Admin privileges removed");
+      } else if (confirm === "suspend") {
+        await updateStudent(student.id, { status: "suspended" });
+        onStudentUpdated?.({ status: "suspended" });
+        toast.success("Account suspended");
+      } else {
+        await deleteStudent(student.id);
+        onStudentDeleted?.();
+        toast.success("Student deleted");
+      }
+    });
   };
-  const handleSuspend = async () => {
-    try {
-      await updateStudent(student.id, { status: "suspended" });
-      onStudentUpdated?.({ status: "suspended" });
-      toast.success("Account suspended");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    }
-  };
-  const handleReactivate = async () => {
-    try {
+
+  const handleReactivate = () =>
+    run(async () => {
       await updateStudent(student.id, { status: "active" });
       onStudentUpdated?.({ status: "active" });
       toast.success("Account reactivated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    }
-  };
-  const handleDelete = async () => {
-    if (
-      !window.confirm(`Delete ${student.full_name}? This cannot be undone.`)
-    ) {
-      return;
-    }
+    });
 
-    try {
-      await deleteStudent(student.id);
-      onStudentDeleted?.();
-      toast.success("Student deleted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    }
-  };
+  const lastLogin = new Date(student.lastLoginAt).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const details: { icon: LucideIcon; label: string; value: string }[] = [
+    { icon: Mail, label: "Email", value: student.email },
+    { icon: Phone, label: "Phone", value: student.phone || "Not provided" },
+    { icon: MapPin, label: "Country", value: student.country || "Not provided" },
+    { icon: Calendar, label: "Joined", value: student.created_at },
+    { icon: Clock, label: "Last login", value: `${student.lastActive} · ${lastLogin}` },
+  ];
+
+  const copy = confirm ? CONFIRM_COPY[confirm] : null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex h-screen w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        {/* Header with profile */}
-        <SheetHeader className="flex-shrink-0 space-y-0 border-b p-6">
-          <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/15">
-              <AvatarImage
-                src={student.avatar_url ?? undefined}
-                alt={student.full_name}
-              />
-              <AvatarFallback className="bg-primary/10 text-lg font-bold text-primary">
-                {student.initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <SheetTitle className="truncate text-lg font-bold">
-                {student.full_name}
-              </SheetTitle>
-              <SheetDescription className="truncate">
-                @{student.username}
-              </SheetDescription>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge
-                  className={
-                    statusConfig[student.status]?.className ??
-                    "border-0 bg-muted text-muted-foreground"
-                  }
-                >
-                  {student.status}
-                </Badge>
-                {student.role === "admin" && (
-                  <Badge className="border-0 bg-violet-500/15 text-violet-700 dark:text-violet-400">
-                    Admin
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="flex h-dvh w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <SheetHeader className="shrink-0 space-y-0 border-b bg-brand-wash p-5 pr-14 sm:p-6 sm:pr-14">
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16 shrink-0 ring-4 ring-card">
+                <AvatarImage src={student.avatar_url ?? undefined} alt="" />
+                <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary-soft-foreground">
+                  {student.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <SheetTitle className="truncate font-heading text-xl font-extrabold">
+                  {student.full_name}
+                </SheetTitle>
+                <SheetDescription className="truncate text-[15px]">@{student.username}</SheetDescription>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={STATUS_VARIANT[student.status] ?? "muted"} className="capitalize">
+                    {student.status}
                   </Badge>
-                )}
+                  {student.role === "admin" && <Badge variant="brand">Admin</Badge>}
+                </div>
               </div>
             </div>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        {/* Scrollable content */}
-        <ScrollArea className="h-0 flex-1">
-          <div className="space-y-6 p-6">
-            {/* Profile details */}
-            <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Profile
-              </h3>
-              <div className="space-y-2.5 rounded-2xl border p-4">
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Mail className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <span className="truncate text-foreground">
-                    {student.email}
+          <Tabs defaultValue="overview" className="min-h-0 flex-1 gap-0">
+            <div className="shrink-0 border-b px-3 sm:px-5">
+              <TabsList variant="line" className="h-12 w-full justify-start gap-1">
+                <TabsTrigger value="overview" className="flex-none px-3 text-[15px]">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="courses" className="flex-none px-3 text-[15px]">
+                  Courses
+                  <span className="rounded-full bg-muted px-1.5 text-xs font-bold tabular-nums">
+                    {student.enrolledCourses}
                   </span>
-                </div>
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex-none px-3 text-[15px]">
+                  Activity
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Calendar className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <span className="text-foreground">
-                    Joined {student.created_at}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <span className="text-foreground">
-                    Last login {student.lastActive} (
-                    {new Date(student.lastLoginAt).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: true,
-                    })}
-                    )
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <InfoRow
-                    icon={<Phone className="h-4 w-4" />}
-                    label="Phone"
-                    value={student.phone || "Not provided"}
-                  />
-
-                  <InfoRow
-                    icon={<MapPin className="h-4 w-4" />}
-                    label="Country"
-                    value={student.country || "Not provided"}
-                  />
-                </div>
-
-                {student.bio && (
-                  <p className="border-t pt-2.5 text-sm text-muted-foreground">
-                    {student.bio}
-                  </p>
-                )}
-              </div>
-            </section>
-
-            {/* Learning stats */}
-            <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Learning Stats
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                {stats.map((stat) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={stat.label} className="rounded-2xl border p-3">
-                      <div
-                        className={`mb-2 flex h-8 w-8 items-center justify-center rounded-xl ${stat.bgColor}`}
-                      >
-                        <Icon className={`h-4 w-4 ${stat.color}`} />
-                      </div>
-                      <p className="text-lg font-extrabold text-foreground">
-                        {stat.value}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {stat.label}
-                      </p>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <TabsContent value="overview" className="space-y-6 p-5 sm:p-6">
+                <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {stats.map(({ label, value, icon: Icon, tone }) => (
+                    <div key={label} className="rounded-xl border bg-card p-3.5 shadow-soft">
+                      <span className={cn("mb-2.5 flex size-9 items-center justify-center rounded-lg", tone)}>
+                        <Icon className="size-[18px]" aria-hidden />
+                      </span>
+                      <dd className="font-heading text-xl font-extrabold tabular-nums text-foreground">{value}</dd>
+                      <dt className="text-[13px] text-muted-foreground">{label}</dt>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Current enrollments */}
-            <div className="rounded-2xl border p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">
-                  Current enrollments
-                </h3>
-                <Badge variant="outline">{enrollments.length} courses</Badge>
-              </div>
-
-              {loadingEnrollments ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-16 animate-pulse rounded-xl bg-muted"
-                    />
                   ))}
-                </div>
-              ) : enrollments.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
+                </dl>
+
+                <section aria-labelledby="profile-heading">
+                  <h3 id="profile-heading" className="mb-3 text-[13px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Profile
+                  </h3>
+                  <dl className="divide-y rounded-xl border bg-card">
+                    {details.map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="flex items-start gap-3 px-4 py-3">
+                        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <div className="min-w-0">
+                          <dt className="text-[13px] text-muted-foreground">{label}</dt>
+                          <dd className="break-words text-[15px] font-medium text-foreground">{value}</dd>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
+                  {student.bio && (
+                    <p className="mt-3 rounded-xl bg-muted/50 p-4 text-[15px] leading-relaxed text-muted-foreground">
+                      {student.bio}
+                    </p>
+                  )}
+                </section>
+              </TabsContent>
+
+              <TabsContent value="courses" className="p-5 sm:p-6">
+                {loadingEnrollments ? (
+                  <div className="space-y-3" role="status" aria-label="Loading enrollments">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-[76px] rounded-xl" />
+                    ))}
+                  </div>
+                ) : enrollments.length === 0 ? (
+                  <p className="rounded-xl border border-dashed p-8 text-center text-[15px] text-muted-foreground">
                     This student is not enrolled in any courses yet.
                   </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {enrollments.map((enrollment) => (
-                    <div
-                      key={enrollment.id}
-                      className="flex items-center gap-3 rounded-xl border border-border/60 p-3"
-                    >
-                      <Image
-                        src={
-                          enrollment.course?.thumbnail ||
-                          "/placeholder-course.png"
-                        }
-                        alt={enrollment.course?.title ?? ""}
-                        width={500}
-                        height={200}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate font-medium text-foreground">
-                            {enrollment.course?.title}
+                ) : (
+                  <ul className="space-y-3">
+                    {enrollments.map((enrollment) => (
+                      <li key={enrollment.id} className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-soft">
+                        <Image
+                          src={enrollment.course?.thumbnail || "/placeholder-course.png"}
+                          alt=""
+                          width={96}
+                          height={96}
+                          className="size-14 shrink-0 rounded-lg object-cover"
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-[15px] font-bold text-foreground">
+                              {enrollment.course?.title}
+                            </p>
+                            {enrollment.completed ? (
+                              <Badge variant="success" size="sm">Completed</Badge>
+                            ) : (
+                              <Badge variant="info" size="sm">In progress</Badge>
+                            )}
+                          </div>
+                          <p className="text-[13px] text-muted-foreground">
+                            {enrollment.course?.course_code || "Course"} · Enrolled{" "}
+                            {formatRelative(enrollment.enrolled_at)}
                           </p>
-                          {enrollment.completed ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                              Completed
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline">In progress</Badge>
-                          )}
-                        </div>
-
-                        <p className="text-xs text-muted-foreground">
-                          {enrollment.course?.course_code || "Course"} •
-                          Enrolled {formatRelative(enrollment.enrolled_at)}
-                        </p>
-
-                        {!enrollment.completed &&
-                          typeof enrollment.progress === "number" && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                                <div
-                                  className="h-full rounded-full bg-primary transition-all"
-                                  style={{
-                                    width: `${Math.min(
-                                      100,
-                                      Math.max(0, enrollment.progress),
-                                    )}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="shrink-0 text-xs text-muted-foreground">
+                          {!enrollment.completed && typeof enrollment.progress === "number" && (
+                            <div className="flex items-center gap-2 pt-1">
+                              <ProgressBar value={enrollment.progress} size="sm" label="Course progress" />
+                              <span className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground">
                                 {Math.round(enrollment.progress)}%
                               </span>
                             </div>
                           )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Recent activity timeline */}
-            <div className="rounded-2xl border p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">
-                  Recent activity
-                </h3>
-                <Badge variant="outline">{activities.length} events</Badge>
-              </div>
-
-              {loadingActivity ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-                        <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : activities.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No recent activity available yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activities.map((item, idx) => (
-                    <div key={item.id} className="flex gap-3">
-                      <div className="relative flex flex-col items-center">
-                        <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-full ${activityStyle(item.type)}`}
-                        >
-                          {activityIcon(item.type)}
                         </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </TabsContent>
 
-                        {idx < activities.length - 1 && (
-                          <div className="mt-1 h-full w-px bg-gradient-to-b from-border to-transparent" />
-                        )}
+              <TabsContent value="activity" className="p-5 sm:p-6">
+                {loadingActivity ? (
+                  <div className="space-y-5" role="status" aria-label="Loading activity">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex gap-3">
+                        <Skeleton className="size-9 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-3.5 w-1/2" />
+                          <Skeleton className="h-3.5 w-1/3" />
+                        </div>
                       </div>
-
-                      <div className="pb-2">
-                        <p className="text-sm font-medium text-foreground">
-                          {item.text}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.course}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {item.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : activities.length === 0 ? (
+                  <p className="rounded-xl border border-dashed p-8 text-center text-[15px] text-muted-foreground">
+                    No recent activity yet.
+                  </p>
+                ) : (
+                  <ol>
+                    {activities.map((item, idx) => {
+                      const { icon: Icon, tone } = activityMeta(item.type);
+                      return (
+                        <li key={item.id} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", tone)}>
+                              <Icon className="size-4" aria-hidden />
+                            </span>
+                            {idx < activities.length - 1 && <span className="my-1 w-px flex-1 bg-border" />}
+                          </div>
+                          <div className="pb-5">
+                            <p className="text-[15px] font-semibold text-foreground">{item.text}</p>
+                            <p className="text-sm text-muted-foreground">{item.course}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{item.time}</p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+              </TabsContent>
             </div>
+          </Tabs>
 
-            {/* Admin controls */}
-            <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Admin Controls
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+          {/* Admin controls — always reachable, destructive action separated */}
+          <footer className="shrink-0 space-y-2 border-t bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" asChild>
+                <a href={`mailto:${student.email}`}>
+                  <MessageSquare className="size-4" />
                   Message
+                </a>
+              </Button>
+              {student.role === "admin" ? (
+                <Button variant="outline" onClick={() => setConfirm("revoke")}>
+                  <UserCheck className="size-4" />
+                  Revoke admin
                 </Button>
-                {student.role === "admin" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRevokeAdmin}
-                  >
-                    <UserCheck className="mr-1.5 h-3.5 w-3.5" />
-                    Revoke Admin
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGrantAdmin}
-                  >
-                    <UserCog className="mr-1.5 h-3.5 w-3.5" />
-                    Grant Admin
-                  </Button>
-                )}
-
-                {student.status === "suspended" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReactivate}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-                    Reactivate
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={handleSuspend}>
-                    <Ban className="mr-1.5 h-3.5 w-3.5 text-amber-600" />
-                    Suspend
-                  </Button>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={handleDelete}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Delete
+              ) : (
+                <Button variant="outline" onClick={() => setConfirm("grant")}>
+                  <UserCog className="size-4" />
+                  Grant admin
                 </Button>
-              </div>
-            </section>
-          </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
-  );
-}
+              )}
+              {student.status === "suspended" ? (
+                <Button variant="outline" onClick={handleReactivate} disabled={working}>
+                  <CheckCircle2 className="size-4 text-success" />
+                  Reactivate
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => setConfirm("suspend")}>
+                  <Ban className="size-4 text-warning" />
+                  Suspend
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setConfirm("delete")}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </div>
+          </footer>
+        </SheetContent>
+      </Sheet>
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border bg-background p-3">
-      <div className="mt-0.5 text-muted-foreground">{icon}</div>
-
-      <div className="min-w-0">
-        <p className="text-xs text-muted-foreground">{label}</p>
-
-        <p className="mt-0.5 break-words text-sm font-medium">{value}</p>
-      </div>
-    </div>
+      <AlertDialog open={!!confirm} onOpenChange={(o) => !o && !working && setConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "delete" && `${student.full_name} will be permanently removed. This can’t be undone.`}
+              {confirm === "grant" && `${student.full_name} will be able to manage courses and content.`}
+              {confirm === "revoke" && `${student.full_name} will lose admin access and become a regular student.`}
+              {confirm === "suspend" && `${student.full_name} won’t be able to use their account until it’s reactivated.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={working}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant={copy?.destructive ? "destructive" : "default"}
+              disabled={working}
+              onClick={(e) => {
+                e.preventDefault();
+                performConfirmed();
+              }}
+            >
+              {working ? "Working…" : copy?.action}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

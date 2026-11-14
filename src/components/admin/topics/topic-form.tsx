@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
+import { useGSAP, gsap } from "@/lib/gsap";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +19,6 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-gsap.registerPlugin(useGSAP);
-
 export type TopicDifficulty = "beginner" | "intermediate" | "advanced";
 export type TopicStatus = "draft" | "published";
 
@@ -51,22 +48,24 @@ interface TopicFormProps {
     field: keyof TopicFormData,
     value: string | boolean | string[]
   ) => void;
+  /** Show every error, not only touched fields (set after a failed submit). */
+  submitAttempted?: boolean;
 }
 
 const MAX_DESCRIPTION_LENGTH = 500;
 
 const difficultyConfig: Record<TopicDifficulty, { color: string }> = {
   beginner: {
-    color: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
+    color: "border-primary/30 bg-primary/15 text-primary",
   },
-  intermediate: { color: "border-amber-500/30 bg-amber-500/15 text-amber-700" },
-  advanced: { color: "border-rose-500/30 bg-rose-500/15 text-rose-700" },
+  intermediate: { color: "border-warning/30 bg-warning/15 text-warning" },
+  advanced: { color: "border-destructive/30 bg-destructive/15 text-destructive" },
 };
 
 const statusConfig: Record<TopicStatus, { color: string }> = {
-  draft: { color: "border-amber-500/30 bg-amber-500/15 text-amber-700" },
+  draft: { color: "border-warning/30 bg-warning/15 text-warning" },
   published: {
-    color: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
+    color: "border-primary/30 bg-primary/15 text-primary",
   },
 };
 
@@ -79,8 +78,14 @@ function slugify(text: string): string {
     .replace(/-+/g, "-");
 }
 
-export function TopicForm({ data, errors, onChange }: TopicFormProps) {
+export function TopicForm({
+  data,
+  errors,
+  onChange,
+  submitAttempted = false,
+}: TopicFormProps) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const show = (field: string) => touched[field] || submitAttempted;
   const [objectiveInput, setObjectiveInput] = useState("");
   const [prerequisiteInput, setPrerequisiteInput] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -130,7 +135,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
     <div ref={ref} className="space-y-6">
       <Card className="form-card">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold">Topic Details</CardTitle>
+          <CardTitle className="text-lg font-bold">Topic Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Title */}
@@ -148,20 +153,20 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
               onBlur={() => setTouched((t) => ({ ...t, title: true }))}
               placeholder="Introduction to Java Syntax"
               className={cn(
-                "dark:text-white",
-                touched.title &&
+                "text-foreground",
+                show("title") &&
                   errors.title &&
                   "border-destructive focus-visible:ring-destructive "
               )}
             />
-            {touched.title && errors.title && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive">
+            {show("title") && errors.title && (
+              <p role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 {errors.title}
               </p>
             )}
-            {touched.title && !errors.title && data.title && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-600">
+            {show("title") && !errors.title && data.title && (
+              <p className="flex items-center gap-1.5 text-[13px] font-medium text-success">
                 <CheckCircle2 className="h-3 w-3" />
                 Looks good
               </p>
@@ -199,7 +204,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
                 className={cn(
                   "text-xs",
                   data.description.length > MAX_DESCRIPTION_LENGTH - 50
-                    ? "text-amber-600"
+                    ? "text-warning"
                     : "text-muted-foreground"
                 )}
               >
@@ -219,13 +224,13 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
               rows={4}
               className={cn(
                 "resize-none",
-                touched.description &&
+                show("description") &&
                   errors.description &&
                   "border-destructive focus-visible:ring-destructive"
               )}
             />
-            {touched.description && errors.description && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive">
+            {show("description") && errors.description && (
+              <p role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 {errors.description}
               </p>
@@ -248,11 +253,11 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
                     setTouched((t) => ({ ...t, estimatedTime: true }))
                   }
                   placeholder="45 min"
-                  className="pl-9 dark:text-white"
+                  className="pl-9"
                 />
               </div>
-              {touched.estimatedTime && errors.estimatedTime && (
-                <p className="flex items-center gap-1.5 text-xs text-destructive">
+              {show("estimatedTime") && errors.estimatedTime && (
+                <p role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
                   <AlertCircle className="h-3 w-3" />
                   {errors.estimatedTime}
                 </p>
@@ -281,7 +286,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
                 ))}
               </div>
               {errors.difficulty && (
-                <p className="flex items-center gap-1.5 text-xs text-destructive">
+                <p role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
                   <AlertCircle className="h-3 w-3" />
                   {errors.difficulty}
                 </p>
@@ -311,7 +316,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
                 className={cn(
                   "px-3 py-1.5 text-xs font-semibold",
                   statusConfig[data.status]?.color ??
-                    "border-gray-300 bg-gray-100 text-gray-700"
+                    "border-muted-foreground bg-muted-foreground text-muted-foreground"
                 )}
               >
                 {data.status}
@@ -324,7 +329,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
       {/* Learning Objectives */}
       <Card className="form-card">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold">
+          <CardTitle className="text-lg font-bold">
             Learning Objectives
           </CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -363,7 +368,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <GripVertical className="h-4 w-4 flex-shrink-0 cursor-grab text-muted-foreground/40" />
-                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">
+                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-info/10 text-xs font-semibold text-info">
                     {idx + 1}
                   </span>
                   <span className="flex-1 text-sm text-foreground">{obj}</span>
@@ -389,7 +394,7 @@ export function TopicForm({ data, errors, onChange }: TopicFormProps) {
       {/* Prerequisites */}
       <Card className="form-card">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold">Prerequisites</CardTitle>
+          <CardTitle className="text-lg font-bold">Prerequisites</CardTitle>
           <p className="text-xs text-muted-foreground">
             Topics or knowledge students should have before starting this one.
           </p>

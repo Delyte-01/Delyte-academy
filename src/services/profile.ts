@@ -12,8 +12,6 @@ async function getCurrentProfile(): Promise<Profile | null> {
     error: userError,
   } = await supabase.auth.getUser();
 
-  console.log("AUTH USER:", user);
-  console.log("AUTH ERROR:", userError);
 
   if (!user) return null;
 
@@ -23,8 +21,6 @@ async function getCurrentProfile(): Promise<Profile | null> {
     .eq("id", user.id)
     .maybeSingle();
 
-  console.log("PROFILE QUERY DATA:", data);
-  console.log("PROFILE QUERY ERROR:", error);
 
   if (error) throw error;
 

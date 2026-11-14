@@ -15,6 +15,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Kbd } from "@/components/ui/kbd";
+import { EASE, gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 
 import { useQuiz } from "@/hooks/useQuiz";
 import { useQuestion } from "@/hooks/useQuestion";
@@ -68,6 +70,7 @@ export default function QuizPlayerPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const stageRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
   const autoTriedRef = useRef(false);
   const submitRef = useRef<(auto?: boolean) => Promise<void>>(async () => {});
@@ -290,6 +293,20 @@ export default function QuizPlayerPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [confirmOpen, submitting, mapped, current]);
 
+  /* ---- Question change: short fade/slide (transform + opacity only) ---- */
+  useGSAP(
+    () => {
+      const el = stageRef.current;
+      if (!el || prefersReducedMotion()) return;
+      gsap.fromTo(
+        el,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.28, ease: EASE.out, clearProps: "opacity,transform" },
+      );
+    },
+    { dependencies: [current] },
+  );
+
   /* ---- Render ---- */
   if (quizLoading || questionLoading) return <FullPageLoader />;
   if (!quiz || mapped.length === 0)
@@ -339,94 +356,103 @@ export default function QuizPlayerPage() {
         quizTitle={quiz.title}
       />
 
-      {/* Title, timer and progress stay in view while scrolling */}
-      <div className="sticky top-0 z-20 -mx-4 mt-4 space-y-3 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="truncate text-base font-semibold sm:text-lg">
-            {quiz.title}
-          </h1>
-
-          {timeLeft !== null && (
-            <div
-              role="timer"
-              className={cn(
-                "flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 transition-colors",
-                critical
-                  ? "border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                  : "border-border bg-muted/40",
-              )}
-            >
-              <Clock
-                className={cn(
-                  "size-4",
-                  critical && "motion-safe:animate-pulse",
-                )}
-              />
-              <span className="font-mono text-sm font-semibold tabular-nums">
-                {formatTime(timeLeft)}
-              </span>
-              <span className="sr-only" aria-live="polite">
-                {announce}
-              </span>
-            </div>
-          )}
-        </div>
-        <QuizProgress
-          current={current + 1}
-          total={total}
-          answered={answeredCount}
-        />
-      </div>
-
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-        <div className="space-y-6">
-          <QuestionCard
-            question={question}
-            marked={marked.has(question.id)}
-            onToggleMark={toggleMark}
-          />
-
-          <div
-            role="radiogroup"
-            aria-labelledby="current-question"
-            className="space-y-3"
-          >
-            {question.options.map((option, i) => (
-              <OptionCard
-                key={option.id}
-                option={option}
-                letter={LETTERS[i]}
-                selected={answers[question.id] === option.id}
-                onSelect={() => select(option.id)}
-              />
-            ))}
+      {/* Position, title, answered count and timer stay in view. Sits under the 64px app header. */}
+      <div className="sticky top-16 z-20 -mx-4 mt-4 overflow-hidden border-b bg-background/85 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:shadow-soft">
+        <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              Question <span className="tabular-nums">{current + 1}</span> of{" "}
+              <span className="tabular-nums">{total}</span>
+            </p>
+            <h1 className="truncate font-heading text-base font-extrabold tracking-tight sm:text-lg">
+              {quiz.title}
+            </h1>
           </div>
 
-          <div className="hidden items-center justify-between lg:flex">
-            <Button variant="outline" onClick={prev} disabled={current === 0}>
-              <ArrowLeft className="mr-2 size-4" />
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="hidden text-sm tabular-nums text-muted-foreground sm:inline">
+              {answeredCount} answered
+            </span>
+            {timeLeft !== null && (
+              <div
+                role="timer"
+                className={cn(
+                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 transition-colors",
+                  critical
+                    ? "border-destructive/30 bg-destructive/10 text-destructive"
+                    : "bg-card shadow-soft",
+                )}
+              >
+                <Clock className="size-4" aria-hidden />
+                <span className="font-heading text-sm font-extrabold tabular-nums">
+                  {formatTime(timeLeft)}
+                </span>
+                <span className="sr-only" aria-live="polite">
+                  {announce}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        <QuizProgress total={total} answered={answeredCount} />
+      </div>
+
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="space-y-8">
+          <div ref={stageRef} className="space-y-7">
+            <QuestionCard
+              question={question}
+              marked={marked.has(question.id)}
+              onToggleMark={toggleMark}
+            />
+
+            <div
+              role="radiogroup"
+              aria-labelledby="current-question"
+              className="space-y-3"
+            >
+              {question.options.map((option, i) => (
+                <OptionCard
+                  key={option.id}
+                  option={option}
+                  letter={LETTERS[i]}
+                  selected={answers[question.id] === option.id}
+                  onSelect={() => select(option.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden items-center justify-between border-t pt-6 lg:flex">
+            <Button variant="outline" size="lg" onClick={prev} disabled={current === 0}>
+              <ArrowLeft />
               Previous
             </Button>
             {isLast ? (
               <Button
-                className="bg-emerald-600 text-white hover:bg-emerald-500"
+                variant="brand"
+                size="lg"
                 onClick={() => setConfirmOpen(true)}
                 disabled={submitting}
               >
-                <Send className="mr-2 size-4" />
+                <Send />
                 {submitting ? "Submitting…" : "Finish quiz"}
               </Button>
             ) : (
-              <Button onClick={next}>
+              <Button size="lg" onClick={next}>
                 Next
-                <ArrowRight className="ml-2 size-4" />
+                <ArrowRight />
               </Button>
             )}
           </div>
 
-          <p className="hidden text-xs text-muted-foreground lg:block">
-            Shortcuts: {LETTERS[0]}–{LETTERS[question.options.length - 1]} to
-            answer, ← → to move, M to mark.
+          <p className="hidden items-center gap-2 text-xs text-muted-foreground lg:flex">
+            <Kbd>{LETTERS[0]}</Kbd>–<Kbd>{LETTERS[question.options.length - 1]}</Kbd> answer
+            <span aria-hidden>·</span>
+            <Kbd>←</Kbd>
+            <Kbd>→</Kbd> move
+            <span aria-hidden>·</span>
+            <Kbd>M</Kbd> mark
           </p>
         </div>
 
@@ -463,8 +489,8 @@ export default function QuizPlayerPage() {
 
           <div className="mt-5 flex flex-col gap-2">
             <Button
+              variant="brand"
               size="lg"
-              className="bg-emerald-600 text-white hover:bg-emerald-500"
               onClick={() => handleSubmit()}
               disabled={submitting}
             >

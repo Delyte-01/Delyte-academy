@@ -17,8 +17,18 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "images.pexels.com",
+        pathname: "/photos/**", // Free stock photos from Pexels
+      },
+      {
+        protocol: "https",
         hostname: "lh3.googleusercontent.com",
         pathname: "/**", // Allow all images from Googleusercontent
+      },
+      {
+        protocol: "https",
+        hostname: "media.istockphoto.com",
+        pathname: "/photos/**", // istock photos
       },
     ],
   },

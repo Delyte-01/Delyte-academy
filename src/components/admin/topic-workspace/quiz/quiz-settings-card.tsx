@@ -60,7 +60,7 @@ export function QuizSettingsCard({
       </CardHeader>
       <CardContent className="space-y-5">
         {/* Text fields */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="quiz-title" className="text-sm font-semibold">
               Quiz Title
@@ -118,7 +118,7 @@ export function QuizSettingsCard({
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="quiz-time-limit" className="text-sm font-semibold">
               Time Limit (minutes)

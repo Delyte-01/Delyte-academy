@@ -33,6 +33,12 @@ export function EmailVerificationModal({
   // Entrance choreography — runs fresh every time the modal opens.
   useEffect(() => {
     if (!open) return;
+    // Reduced motion: leave everything visible, skip the entrance.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
 
     // Guard: bail if refs aren't attached yet
     if (!containerRef.current || !iconWrapRef.current) return;
@@ -87,27 +93,6 @@ export function EmailVerificationModal({
           { opacity: 1, y: 0, duration: 0.5 },
           "-=0.3",
         );
-
-      gsap.to(iconWrapRef.current, {
-        y: -6,
-        duration: 2.2,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
-        delay: tl.duration(),
-      });
-
-      if (rings.length) {
-        gsap.to(rings, {
-          scale: 1.18,
-          opacity: 0,
-          duration: 2.4,
-          ease: "power1.out",
-          repeat: -1,
-          stagger: { each: 0.6, repeat: -1 },
-          delay: tl.duration() + 0.2,
-        });
-      }
     }, containerRef);
 
     return () => {
@@ -120,11 +105,11 @@ export function EmailVerificationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         ref={containerRef}
-        className="overflow-hidden border-border/60 bg-background/95 backdrop-blur-xl sm:max-w-md"
+        className="overflow-hidden border-border/60 bg-background sm:max-w-md"
       >
         <div
           ref={barRef}
-          className="absolute inset-x-0 top-0 h-1 origin-left bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500"
+          className="absolute inset-x-0 top-0 h-1 origin-left bg-gradient-to-r from-primary/70 to-primary"
         />
 
         <DialogHeader className="items-center pt-2 text-center">
@@ -135,12 +120,12 @@ export function EmailVerificationModal({
                 ref={(el) => {
                   ringRefs.current[i] = el; // remove the `if (el)` guard, allow null to clear it
                 }}
-                className="absolute inset-0 rounded-2xl border-2 border-emerald-500/30"
+                className="absolute inset-0 rounded-xl border-2 border-primary/30"
               />
             ))}
             <div
               ref={iconWrapRef}
-              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600"
+              className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-primary"
             >
               <MailCheck className="h-8 w-8" />
             </div>
@@ -160,10 +145,10 @@ export function EmailVerificationModal({
 
         <div
           ref={infoRef}
-          className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground"
+          className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground"
         >
           <div className="mb-2 flex items-center gap-2 font-medium text-foreground">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <ShieldCheck className="h-4 w-4 text-primary" />
             One quick step remaining
           </div>
           Click the verification link in your email before logging in. If you

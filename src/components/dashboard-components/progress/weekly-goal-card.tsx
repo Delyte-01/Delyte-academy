@@ -1,68 +1,37 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles } from "lucide-react";
+
+import { CountUp } from "@/components/motion/count-up";
+import { ProgressRing } from "@/components/motion/progress-ring";
 import { WeeklyGoalData } from "@/types/progress";
-import { Target, Calendar, Sparkles } from "lucide-react";
+import { Panel } from "./panel";
 
-
-interface WeeklyGoalCardProps {
-  goal: WeeklyGoalData;
-}
-
-export function WeeklyGoalCard({ goal }: WeeklyGoalCardProps) {
-  const percent = Math.round((goal.current / goal.target) * 100);
-  const isClose = percent >= 60;
+export function WeeklyGoalCard({ goal }: { goal: WeeklyGoalData }) {
+  const percent = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+  const done = goal.current >= goal.target;
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <Target className="h-5 w-5 text-primary" />
-          Weekly Goal Tracker
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Goal header */}
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-2xl font-extrabold tracking-tight text-foreground">
-              {goal.current} / {goal.target}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Topics completed this week
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5">
-            <Target className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold text-primary">{percent}%</span>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-3 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-
-        {/* Estimated completion */}
-        <div className="flex items-center gap-2 rounded-xl bg-muted/40 p-3 text-xs">
-          <Calendar className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          <span className="text-muted-foreground">Estimated completion:</span>
-          <span className="font-semibold text-foreground">
-            {goal.estimatedCompletion}
+    <Panel title="Weekly goal" description="Topics completed in the last 7 days" className="h-full">
+      <div className="flex items-center gap-5">
+        <ProgressRing value={percent} size={104} stroke={9} tone={done ? "success" : "brand"} label="Weekly goal">
+          <span className="font-heading text-xl font-extrabold tabular-nums">
+            <CountUp value={percent} suffix="%" />
           </span>
+        </ProgressRing>
+        <div>
+          <p className="font-heading text-3xl font-extrabold leading-none tabular-nums tracking-tight">
+            {goal.current}
+            <span className="text-lg font-bold text-muted-foreground"> / {goal.target}</span>
+          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">{done ? "Goal achieved" : "topics this week"}</p>
         </div>
+      </div>
 
-        {/* Encouraging message */}
-        {isClose && (
-          <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
-            <Sparkles className="h-4 w-4 flex-shrink-0 text-primary" />
-            <p className="text-xs text-foreground">{goal.message}</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <p className="mt-5 flex items-start gap-2.5 rounded-lg bg-primary-soft p-3 text-sm text-primary-soft-foreground">
+        <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
+        {goal.message}
+      </p>
+    </Panel>
   );
 }

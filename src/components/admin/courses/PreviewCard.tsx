@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, ImageIcon } from "lucide-react";
@@ -66,8 +66,8 @@ export function PreviewCard({
     <div className="space-y-3 lg:sticky lg:top-24">
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
         Live Preview
       </p>
@@ -100,8 +100,8 @@ export function PreviewCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-info/10">
+                  <BookOpen className="h-4 w-4 text-info" />
                 </div>
                 <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground">
                   {code || "CSC101"}
@@ -116,8 +116,8 @@ export function PreviewCard({
               className={cn(
                 "flex-shrink-0 text-xs",
                 status === "published"
-                  ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700"
-                  : "border-amber-500/30 bg-amber-500/15 text-amber-700"
+                  ? "border-primary/30 bg-primary/15 text-primary"
+                  : "border-warning/30 bg-warning/15 text-warning"
               )}
             >
               {status}

@@ -48,7 +48,7 @@ export function RichContentViewer({
     return (
       <div
         id="lesson-content"
-        className="rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center"
+        className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center"
       >
         <p className="text-sm font-semibold">
           This lesson doesn&apos;t have content yet

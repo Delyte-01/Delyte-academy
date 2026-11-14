@@ -1,91 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, ArrowRight } from "lucide-react";
-// import type { CourseProgressItem } from "./progress-data";
 import Image from "next/image";
+import { ArrowRight, Clock, Compass, GraduationCap } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { EmptyState } from "@/components/empty-states";
 import { CourseProgressItem } from "@/types/progress";
+import { Panel } from "./panel";
 
-interface CourseProgressSectionProps {
-  courses: CourseProgressItem[];
-}
-
-export function CourseProgressSection({ courses }: CourseProgressSectionProps) {
+export function CourseProgressSection({ courses }: { courses: CourseProgressItem[] }) {
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">Course Progress</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {courses.map((course) => (
-          <div
-            key={course.id}
-            className="flex flex-col gap-4 rounded-2xl border p-4 transition-all hover:shadow-sm sm:flex-row sm:items-center"
-          >
-            {/* Thumbnail */}
-            <div className="h-16 w-full flex-shrink-0 overflow-hidden rounded-xl sm:w-24">
-              {course.thumbnail ? (
-                <Image
-                  src={course.thumbnail}
-                  alt={course.title}
-                  width={96}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">
-                  No image
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-bold text-foreground">
-                  {course.title}
-                </h3>
-                <span className="flex-shrink-0 text-sm font-extrabold text-emerald-600">
-                  {course.progress}%
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
-                  style={{ width: `${course.progress}%` }}
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>
-                  {course.completedTopics} / {course.totalTopics} topics
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  Last studied {course.lastStudied}
-                </span>
-              </div>
-            </div>
-
-            {/* Continue button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-shrink-0"
-              asChild
-            >
-              <Link href={`/dashboard/courses/${course.id}`}>
-                Continue
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+    <Panel
+      title="Your courses"
+      description="Progress and where to pick up next"
+      action={
+        courses.length > 0 ? (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/dashboard/courses">
+              All courses <ArrowRight />
+            </Link>
+          </Button>
+        ) : undefined
+      }
+    >
+      {courses.length === 0 ? (
+        <EmptyState
+          icon={GraduationCap}
+          title="No courses yet"
+          description="Enroll in a course and your progress will show up here."
+          className="py-10"
+          action={
+            <Button asChild>
+              <Link href="/dashboard/courses">
+                <Compass /> Browse courses
               </Link>
             </Button>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          }
+        />
+      ) : (
+        <ul className="divide-y">
+          {courses.map((course) => (
+            <li key={course.id} className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
+              <div className="h-16 w-full shrink-0 overflow-hidden rounded-xl bg-primary-soft sm:w-28">
+                {course.thumbnail ? (
+                  <Image
+                    src={course.thumbnail}
+                    alt=""
+                    width={112}
+                    height={64}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-brand-gradient flex size-full items-center justify-center">
+                    <GraduationCap className="size-6 opacity-80" aria-hidden />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="truncate text-[15px] font-bold">{course.title}</h3>
+                  <span className="shrink-0 text-sm font-extrabold tabular-nums text-primary">
+                    {course.progress}%
+                  </span>
+                </div>
+                <ProgressBar value={course.progress} label={`${course.title} progress`} />
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+                  <span className="tabular-nums">
+                    {course.completedTopics} / {course.totalTopics} topics
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="size-3" aria-hidden />
+                    Last studied {course.lastStudied}
+                  </span>
+                </div>
+              </div>
+
+              <Button variant="soft" size="sm" className="shrink-0" asChild>
+                <Link href={`/dashboard/courses/${course.id}`}>
+                  {course.progress >= 100 ? "Review" : "Continue"}
+                  <ArrowRight />
+                </Link>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }

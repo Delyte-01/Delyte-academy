@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, User, Clock, FileEdit, Target } from "lucide-react";
+import { Calendar, Clock, User } from "lucide-react";
 import {
   CourseForm,
   CourseFormData,
@@ -11,7 +11,6 @@ import {
 } from "@/components/admin/courses/courseForm";
 import { CourseHeader } from "@/components/admin/courses/courseHeader";
 import { PreviewCard } from "@/components/admin/courses/PreviewCard";
-import { StatisticsCard } from "@/components/admin/courses/statisticsCard";
 import { ActionBar } from "@/components/admin/courses/actionBar";
 import { toast } from "sonner";
 import { courseService } from "@/services/course";
@@ -19,76 +18,7 @@ import { validateCourse } from "@/lib/validators/course";
 import { uploadCourseImages } from "@/lib/courses/image-upload-images";
 import { Course } from "@/types/course";
 import { uploadService } from "@/services/upload";
-
-const mockCourse = {
-  title: "Advanced Mathematics",
-  code: "MATH101",
-  description:
-    "A comprehensive course covering algebra, calculus, geometry, and statistics. Designed for students preparing for JAMB, WAEC, and NECO examinations. Includes 24 topics with video lessons, practice questions, and downloadable resources.",
-  status: "Published" as const,
-  banner:
-    "https://images.pexels.com/photos/3729557/pexels-photo-3729557.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  thumbnail:
-    "https://images.pexels.com/photos/3729557/pexels-photo-3729557.jpeg?auto=compress&cs=tinysrgb&w=400",
-  allowDownloads: true,
-  allowPracticeBeforeTopics: false,
-  showOnHomepage: true,
-  enableCertificates: false,
-};
-
-const mockMetadata = {
-  createdBy: "Super Admin",
-  createdDate: "Jan 15, 2025",
-  lastUpdated: "Jul 8, 2025",
-  topics: 24,
-  practiceSets: 12,
-  questions: 320,
-};
-
-const mockStats = [
-  {
-    label: "Topics",
-    value: "24",
-    icon: FileEdit,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10",
-  },
-  {
-    label: "Practice Sets",
-    value: "12",
-    icon: Target,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-  },
-  {
-    label: "Questions",
-    value: "320",
-    icon: FileEdit,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    label: "Resources",
-    value: "8",
-    icon: FileEdit,
-    color: "text-rose-600",
-    bgColor: "bg-rose-500/10",
-  },
-  {
-    label: "Enrolled",
-    value: "1,240",
-    icon: User,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-  },
-  {
-    label: "Completion",
-    value: "68%",
-    icon: Target,
-    color: "text-cyan-600",
-    bgColor: "bg-cyan-500/10",
-  },
-];
+import { formatReadableDate } from "@/constants/date-format";
 
 export default function EditCoursePage() {
   const router = useRouter();
@@ -110,6 +40,8 @@ export default function EditCoursePage() {
     enableCertificates: false,
   });
   const [errors, setErrors] = useState<CourseFormErrors>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const errorCount = Object.values(errors).filter(Boolean).length;
 
   const params = useParams();
 
@@ -126,7 +58,6 @@ export default function EditCoursePage() {
       setSaving(true);
 
       const course = await courseService.getCourseById(id);
-      console.log(course);
       setOriginalCourse(course);
 
       setData({
@@ -161,15 +92,16 @@ export default function EditCoursePage() {
   };
 
   const handleSaveDraft = async () => {
-    setSavingMessage("Uploading images...");
     const errs = validateCourse(data);
     setErrors(errs);
+    setSubmitAttempted(true);
 
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
 
+    setSavingMessage("Uploading images...");
     const { bannerUrl, thumbnailUrl, bannerChanged, thumbnailChanged } =
       await uploadCourseImages(data);
     setSavingMessage("Saving course...");
@@ -215,14 +147,15 @@ export default function EditCoursePage() {
   };
 
   const handlePublish = async () => {
-    setSavingMessage("Uploading images...");
     const errs = validateCourse(data);
     setErrors(errs);
+    setSubmitAttempted(true);
 
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors");
       return;
     }
+    setSavingMessage("Uploading images...");
     const { bannerUrl, thumbnailUrl, bannerChanged, thumbnailChanged } =
       await uploadCourseImages(data);
     setSavingMessage("Saving course...");
@@ -268,13 +201,13 @@ export default function EditCoursePage() {
   const handleCancel = () => router.push("/admin/courses");
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       <CourseHeader
         title="Edit course"
         subtitle="Update and manage this academic course."
         breadcrumbs={[
           { label: "Courses", href: "/admin/courses" },
-          { label: mockCourse.title },
+          { label: data.title || "Course" },
           { label: "Edit" },
         ]}
         onSaveDraft={handleSaveDraft}
@@ -286,64 +219,59 @@ export default function EditCoursePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <CourseForm data={data} errors={errors} onChange={handleChange} />
+          <CourseForm
+            data={data}
+            errors={errors}
+            onChange={handleChange}
+            submitAttempted={submitAttempted}
+          />
 
-          {/* Metadata */}
-          <Card className="overflow-hidden rounded-2xl border-slate-100">
-            <CardHeader className="pb-4">
-              <CardTitle className="font-[var(--font-display)] text-base font-bold text-slate-900">
-                Course metadata
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-              {[
-                {
-                  icon: User,
-                  label: "Created by",
-                  value: mockMetadata.createdBy,
-                },
-                {
-                  icon: Calendar,
-                  label: "Created date",
-                  value: mockMetadata.createdDate,
-                },
-                {
-                  icon: Clock,
-                  label: "Last updated",
-                  value: mockMetadata.lastUpdated,
-                },
-                { icon: FileEdit, label: "Topics", value: mockMetadata.topics },
-                {
-                  icon: Target,
-                  label: "Practice sets",
-                  value: mockMetadata.practiceSets,
-                },
-                {
-                  icon: FileEdit,
-                  label: "Questions",
-                  value: mockMetadata.questions,
-                },
-              ].map(({ icon: Icon, label, value }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 p-3.5 transition-colors hover:bg-violet-50/40"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50">
-                    <Icon className="h-4 w-4 text-[#6D5BF5]" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11.5px] text-slate-400">{label}</p>
-                    <p className="truncate text-[13.5px] font-semibold text-slate-800">
-                      {value}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {/* Metadata — real values from the course record */}
+          {originalCourse && (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold">Course metadata</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {[
+                    {
+                      icon: User,
+                      label: "Created by",
+                      value:
+                        originalCourse.creator?.full_name ||
+                        originalCourse.creator?.username ||
+                        originalCourse.creator?.email ||
+                        "Unknown",
+                    },
+                    {
+                      icon: Calendar,
+                      label: "Created",
+                      value: formatReadableDate(originalCourse.created_at),
+                    },
+                    {
+                      icon: Clock,
+                      label: "Last updated",
+                      value: formatReadableDate(originalCourse.updated_at),
+                    },
+                  ].map(({ icon: Icon, label, value }) => (
+                    <div key={label} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3.5">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <dt className="text-[13px] text-muted-foreground">{label}</dt>
+                        <dd className="truncate text-[15px] font-semibold text-foreground">{value}</dd>
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        <div className="space-y-6 lg:col-span-1">
+        <div className="space-y-6 lg:sticky lg:top-4 lg:col-span-1 lg:self-start">
           <PreviewCard
             title={data.title}
             code={data.code}
@@ -354,13 +282,14 @@ export default function EditCoursePage() {
           />
         </div>
       </div>
-      <StatisticsCard stats={mockStats} />
       <ActionBar
         onCancel={handleCancel}
         onSaveDraft={handleSaveDraft}
         onPublish={handlePublish}
         saving={saving}
         savingMessage={savingMessage}
+        errorCount={submitAttempted ? errorCount : 0}
+        publishLabel="Save & publish"
       />
     </div>
   );

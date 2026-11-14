@@ -33,7 +33,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadService } from "@/services/upload";
 import { toast } from "sonner";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/context/profile-context";
 import { useAuth } from "@/hooks/useAuth";
@@ -283,7 +283,7 @@ export function ProfileSection() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground hover:text-rose-600"
+                  className="text-muted-foreground hover:text-destructive"
                   onClick={handleRemovePhoto}
                   disabled={uploadingAvatar}
                 >
@@ -389,7 +389,7 @@ export function ProfileSection() {
               <span
                 className={cn(
                   "text-xs tabular-nums",
-                  bioNearLimit ? "text-amber-600" : "text-muted-foreground",
+                  bioNearLimit ? "text-warning" : "text-muted-foreground",
                 )}
               >
                 {bioCount}/{BIO_MAX_LENGTH}
@@ -419,9 +419,20 @@ export function ProfileSection() {
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-end">
+        <div
+          className={cn(
+            "flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end",
+            isDirty
+              ? "sticky bottom-4 z-10 -mx-2 rounded-xl border bg-card/95 p-3 shadow-float backdrop-blur-md"
+              : "border-t border-border/60 pt-4",
+          )}
+        >
           {isDirty && (
-            <span className="mr-auto hidden text-xs text-muted-foreground sm:inline">
+            <span
+              role="status"
+              className="mr-auto flex items-center gap-2 text-sm font-semibold text-foreground"
+            >
+              <span aria-hidden className="size-2 rounded-full bg-warning" />
               You have unsaved changes
             </span>
           )}

@@ -34,6 +34,7 @@ export function useFeaturedCourses(limit = 6) {
             `
             id,
             title,
+            status,
             description,
             thumbnail,
             topics(count),
@@ -43,8 +44,6 @@ export function useFeaturedCourses(limit = 6) {
           .eq("status", "published")
           .limit(limit);
         
-        console.log("COURSES:", data);
-        console.log("COURSES ERROR:", error);
 
         if (error) throw error;
 

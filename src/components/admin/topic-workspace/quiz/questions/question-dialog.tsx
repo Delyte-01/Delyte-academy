@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import {
   HelpCircle,
+  AlertCircle,
   ListChecks,
   ToggleLeft,
   Type,
@@ -68,9 +69,9 @@ const createDefaultOptions = (): QuizOption[] => [
 ];
 
 const difficultyStyles: Record<Difficulty, string> = {
-  easy: "text-emerald-600",
-  medium: "text-amber-600",
-  hard: "text-rose-600",
+  easy: "text-primary",
+  medium: "text-warning",
+  hard: "text-destructive",
 };
 
 export function QuestionDialog({
@@ -91,12 +92,15 @@ export function QuestionDialog({
   const [options, setOptions] = useState<QuizOption[]>([]);
 
   const [explanation, setExplanation] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const formRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSubmitted(false);
 
     if (editingQuestion) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -172,7 +176,24 @@ export function QuestionDialog({
     }
   };
 
+  const questionError = !question.trim() ? "Enter the question text." : undefined;
+  const optionsError = (() => {
+    if (type === "short_answer") {
+      return options.some((o) => o.option_text.trim())
+        ? undefined
+        : "Enter the correct answer.";
+    }
+    if (options.some((o) => !o.option_text.trim())) return "Fill in every option.";
+    if (!options.some((o) => o.is_correct)) return "Mark one option as correct.";
+    return undefined;
+  })();
+
   const handleSave = () => {
+    setSubmitted(true);
+    if (questionError || optionsError) {
+      if (questionError) document.getElementById("q-text")?.focus();
+      return;
+    }
     onSave({
       id: editingQuestion?.id,
 
@@ -200,10 +221,10 @@ export function QuestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg gap-0 overflow-y-auto rounded-2xl p-0 sm:max-w-xl">
-        <DialogHeader className="flex-row items-start gap-3 space-y-0 border-b border-border/60 px-6 pb-4 pt-6">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <HelpCircle className="h-4.5 w-4.5" />
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="flex-row items-start gap-3 space-y-0 shrink-0 border-b px-6 pb-4 pt-6">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
+            <HelpCircle className="size-5" />
           </div>
           <div className="space-y-1">
             <DialogTitle className="text-lg font-bold tracking-tight">
@@ -217,7 +238,7 @@ export function QuestionDialog({
           </div>
         </DialogHeader>
 
-        <div ref={formRef} className="space-y-5 px-6 py-5">
+        <div ref={formRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
           {/* Question text */}
           <div data-field className="space-y-2">
             <Label htmlFor="q-text" className="text-sm font-semibold">
@@ -228,8 +249,16 @@ export function QuestionDialog({
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Enter your question..."
+              aria-invalid={submitted && !!questionError}
+              aria-describedby={submitted && questionError ? "q-text-error" : undefined}
               className="min-h-[80px] resize-y transition-shadow"
             />
+            {submitted && questionError && (
+              <p id="q-text-error" role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
+                <AlertCircle className="size-3.5" aria-hidden />
+                {questionError}
+              </p>
+            )}
           </div>
 
           {/* Type, Difficulty, Points */}
@@ -240,25 +269,25 @@ export function QuestionDialog({
                 value={type}
                 onValueChange={(v) => handleTypeChange(v as QuestionType)}
               >
-                <SelectTrigger className="h-10 rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="multiple_choice">
                     <span className="flex items-center gap-2">
-                      <ListChecks className="h-3.5 w-3.5 text-blue-600" />
+                      <ListChecks className="h-3.5 w-3.5 text-info" />
                       Multiple Choice
                     </span>
                   </SelectItem>
                   <SelectItem value="true_false">
                     <span className="flex items-center gap-2">
-                      <ToggleLeft className="h-3.5 w-3.5 text-violet-600" />
+                      <ToggleLeft className="h-3.5 w-3.5 text-primary" />
                       True / False
                     </span>
                   </SelectItem>
                   <SelectItem value="short_answer">
                     <span className="flex items-center gap-2">
-                      <Type className="h-3.5 w-3.5 text-emerald-600" />
+                      <Type className="h-3.5 w-3.5 text-primary" />
                       Short Answer
                     </span>
                   </SelectItem>
@@ -273,7 +302,7 @@ export function QuestionDialog({
               >
                 <SelectTrigger
                   className={cn(
-                    "h-10 rounded-xl font-medium",
+                    "font-medium",
                     difficultyStyles[difficulty]
                   )}
                 >
@@ -281,20 +310,20 @@ export function QuestionDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="easy">
-                    <span className="flex items-center gap-2 text-emerald-600">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="flex items-center gap-2 text-primary">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                       Easy
                     </span>
                   </SelectItem>
                   <SelectItem value="medium">
-                    <span className="flex items-center gap-2 text-amber-600">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    <span className="flex items-center gap-2 text-warning">
+                      <span className="h-1.5 w-1.5 rounded-full bg-warning" />
                       Medium
                     </span>
                   </SelectItem>
                   <SelectItem value="hard">
-                    <span className="flex items-center gap-2 text-rose-600">
-                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                    <span className="flex items-center gap-2 text-destructive">
+                      <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
                       Hard
                     </span>
                   </SelectItem>
@@ -354,6 +383,12 @@ export function QuestionDialog({
                   onChange={setOptions}
                   quizId={quizId}
                 />
+                {submitted && optionsError && (
+                  <p role="alert" className="flex items-center gap-1.5 text-[13px] font-medium text-destructive">
+                    <AlertCircle className="size-3.5" aria-hidden />
+                    {optionsError}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -373,21 +408,18 @@ export function QuestionDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t border-border/60 px-6 py-4">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="rounded-xl"
-          >
+        <DialogFooter className="shrink-0 gap-2 border-t bg-card px-6 py-4 sm:items-center">
+          {submitted && (questionError || optionsError) && (
+            <p role="status" className="mr-auto hidden text-[13px] font-medium text-destructive sm:block">
+              Fix the highlighted fields to save.
+            </p>
+          )}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!question.trim()}
-            className="rounded-xl shadow-sm shadow-primary/20 transition-shadow hover:shadow-md hover:shadow-primary/30"
-          >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
-            Save Question
+          <Button variant="brand" onClick={handleSave}>
+            <Save className="size-4" />
+            Save question
           </Button>
         </DialogFooter>
       </DialogContent>

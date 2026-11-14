@@ -31,8 +31,8 @@ interface ContentSidebarProps {
 }
 
 const statusStyles: Record<Status, string> = {
-  published: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700",
-  draft: "border-amber-500/30 bg-amber-500/15 text-amber-700",
+  published: "border-primary/30 bg-primary/15 text-primary",
+  draft: "border-warning/30 bg-warning/15 text-warning",
 };
 
 const checklist = [
@@ -168,11 +168,11 @@ export function ContentSidebar({
                 key={item.label}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors",
-                  item.done ? "bg-emerald-500/5" : "hover:bg-muted/50"
+                  item.done ? "bg-primary/5" : "hover:bg-muted/50"
                 )}
               >
                 {item.done ? (
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                 ) : (
                   <Circle className="h-4 w-4 flex-shrink-0 text-muted-foreground/40" />
                 )}

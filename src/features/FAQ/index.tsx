@@ -1,18 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
-
-const INK = "#0B1220";
-const BLUE = "#2454FF";
-const SKY = "#F8F8F8";
-const SLATE = "#64748B";
-const TINT = "#F8FAFC";
+import { Mail } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SectionIntro } from "../section-intro";
 
 const FAQS = [
   {
@@ -33,7 +25,7 @@ const FAQS = [
   },
   {
     q: "Will I receive updates when new content is added?",
-    a: "Yes. When instructors publish new courses, topics, quizzes, or announcements, enrolled students receive notifications directly in their dashboard so they don't miss important updates.",
+    a: "Yes. When instructors publish new courses, topics, quizzes, or announcements, enrolled students receive notifications directly in their dashboard so they don’t miss important updates.",
   },
   {
     q: "Can I use Delyte Academy on my phone?",
@@ -45,205 +37,104 @@ const FAQS = [
   },
 ];
 
-export function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const eyebrowRef = useRef<HTMLParagraphElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const contentRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const chevronRefs = useRef<Array<HTMLDivElement | null>>([]);
-
-  useGSAP(
-    () => {
-      const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-      const items = listRef.current ? Array.from(listRef.current.children) : [];
-
-      if (reduceMotion) {
-        gsap.set([eyebrowRef.current, headingRef.current, ...items], {
-          clearProps: "all",
-          opacity: 1,
-        });
-        return;
-      }
-
-      gsap.set([eyebrowRef.current, headingRef.current], {
-        autoAlpha: 0,
-        y: 24,
-      });
-      gsap.set(items, { autoAlpha: 0, y: 24 });
-
-      gsap.to([eyebrowRef.current, headingRef.current], {
-        autoAlpha: 1,
-        y: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 80%",
-          once: true,
-        },
-      });
-
-      ScrollTrigger.batch(items, {
-        start: "top 92%",
-        once: true,
-        onEnter: (batch) =>
-          gsap.to(batch, {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.5,
-            stagger: 0.08,
-            ease: "power3.out",
-            overwrite: true,
-          }),
-      });
-
-      const revealAll = () => {
-        ScrollTrigger.refresh();
-        window.setTimeout(() => {
-          gsap.to([eyebrowRef.current, headingRef.current, ...items], {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.4,
-            overwrite: false,
-          });
-        }, 1200);
-      };
-      window.addEventListener("load", revealAll);
-
-      return () => window.removeEventListener("load", revealAll);
-    },
-    { scope: sectionRef }
+function FaqItem({
+  q,
+  a,
+  open,
+  onToggle,
+}: {
+  q: string;
+  a: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const id = useId();
+  return (
+    <div
+      className={cn(
+        "mb-3 rounded-2xl border bg-card px-5 transition-[border-color,box-shadow] duration-300 sm:px-7",
+        open ? "border-primary/40 shadow-card" : "hover:border-foreground/20",
+      )}
+    >
+      <h3>
+        <button
+          type="button"
+          id={`${id}-button`}
+          aria-expanded={open}
+          aria-controls={`${id}-panel`}
+          onClick={onToggle}
+          className="flex min-h-16 w-full items-center justify-between gap-6 rounded-lg py-5 text-left font-headline text-lg font-extrabold tracking-[-0.015em] text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/40 sm:text-xl"
+        >
+          {q}
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 motion-reduce:transition-none",
+              open
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-secondary text-foreground",
+            )}
+          >
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform duration-300 motion-reduce:transition-none",
+                open && "rotate-180",
+              )}
+            />
+          </span>
+        </button>
+      </h3>
+      <div
+        id={`${id}-panel`}
+        role="region"
+        aria-labelledby={`${id}-button`}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <p className="max-w-2xl pb-5 pr-6 text-base sm:pb-6 sm:pr-14 leading-relaxed text-muted-foreground">
+            {a}
+          </p>
+        </div>
+      </div>
+    </div>
   );
+}
 
-  const toggle = (index: number) => {
-    const isOpening = openIndex !== index;
-    const nextOpenIndex = isOpening ? index : null;
-
-    // Close the currently open item (if different from the one clicked)
-    if (openIndex !== null && openIndex !== index) {
-      const prevEl = contentRefs.current[openIndex];
-      const prevChevron = chevronRefs.current[openIndex];
-      if (prevEl) {
-        gsap.to(prevEl, { height: 0, duration: 0.3, ease: "power2.inOut" });
-      }
-      if (prevChevron) {
-        gsap.to(prevChevron, {
-          rotate: 0,
-          duration: 0.3,
-          ease: "power2.inOut",
-        });
-      }
-    }
-
-    const el = contentRefs.current[index];
-    const chevron = chevronRefs.current[index];
-    if (!el) {
-      setOpenIndex(nextOpenIndex);
-      return;
-    }
-
-    if (isOpening) {
-      gsap.set(el, { height: "auto" });
-      const targetHeight = el.offsetHeight;
-      gsap.fromTo(
-        el,
-        { height: 0 },
-        {
-          height: targetHeight,
-          duration: 0.4,
-          ease: "power2.out",
-          onComplete: () => gsap.set(el, { height: "auto" }),
-        }
-      );
-      if (chevron)
-        gsap.to(chevron, { rotate: 180, duration: 0.4, ease: "power2.out" });
-    } else {
-      gsap.to(el, { height: 0, duration: 0.3, ease: "power2.inOut" });
-      if (chevron)
-        gsap.to(chevron, { rotate: 0, duration: 0.3, ease: "power2.inOut" });
-    }
-
-    setOpenIndex(nextOpenIndex);
-  };
+export function FAQ() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section
-      ref={sectionRef}
-      className="py-20 sm:py-28"
-      style={{ background: TINT }}
-    >
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center sm:mb-14">
-          <p
-            ref={eyebrowRef}
-            className="mb-2 text-xs font-semibold uppercase tracking-widest"
-            style={{ color: BLUE }}
-          >
-            FAQ
-          </p>
-          <h2
-            ref={headingRef}
-            className="font-heading text-3xl font-extrabold tracking-tight sm:text-4xl"
-            style={{ color: INK }}
-          >
-            Your questions, <span style={{ color: BLUE }}>answered</span>
-          </h2>
+    <section id="faq" className="scroll-mt-16 bg-background py-16 sm:py-24 lg:py-28">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
+        <div className="lg:col-span-4">
+          <div className="lg:sticky lg:top-32">
+            <SectionIntro eyebrow="FAQ" title="Questions, answered" />
+            <p className="mt-6 text-[15px] leading-relaxed text-muted-foreground sm:mt-8">
+              Can’t find what you’re looking for?
+            </p>
+            <a
+              href="mailto:delyte780@gmail.com"
+              className="mt-2 inline-flex items-center gap-2 rounded-lg text-[15px] font-bold text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            >
+              <Mail className="size-4" aria-hidden />
+              Email us
+            </a>
+          </div>
         </div>
 
-        <div ref={listRef} className="space-y-3">
-          {FAQS.map((faq, i) => {
-            const isOpen = openIndex === i;
-            return (
-              <div
-                key={faq.q}
-                className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm shadow-slate-900/[0.02] transition-colors"
-                style={{ borderColor: isOpen ? "#BFD6FF" : undefined }}
-              >
-                <button
-                  onClick={() => toggle(i)}
-                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-slate-50"
-                  aria-expanded={isOpen}
-                >
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: INK }}
-                  >
-                    {faq.q}
-                  </span>
-                  <div
-                    ref={(node) => {
-                      chevronRefs.current[i] = node;
-                    }}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-                    style={{ background: isOpen ? BLUE : SKY }}
-                  >
-                    <ChevronDown
-                      className="h-3.5 w-3.5"
-                      style={{ color: isOpen ? "white" : BLUE }}
-                    />
-                  </div>
-                </button>
-                <div
-                  ref={(node) => {
-                    contentRefs.current[i] = node;
-                  }}
-                  style={{ height: 0, overflow: "hidden" }}
-                >
-                  <p
-                    className="px-6 pb-5 text-sm leading-relaxed"
-                    style={{ color: SLATE }}
-                  >
-                    {faq.a}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+        <div className="lg:col-span-8">
+          {FAQS.map((item, i) => (
+            <FaqItem
+              key={item.q}
+              q={item.q}
+              a={item.a}
+              open={openIndex === i}
+              onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+            />
+          ))}
         </div>
       </div>
     </section>

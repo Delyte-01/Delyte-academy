@@ -45,7 +45,7 @@ export function QuestionCard({
   return (
     <div
       className={cn(
-        "group rounded-2xl border bg-card transition-all duration-200",
+        "group rounded-xl border bg-card transition-all duration-200",
         isSelected && "border-primary/50 ring-1 ring-primary/20",
         isExpanded ? "shadow-sm" : "hover:shadow-sm",
       )}
@@ -187,12 +187,12 @@ export function QuestionCard({
                   className={cn(
                     "flex items-center gap-2.5 rounded-xl border p-2.5 text-sm",
                     option.is_correct
-                      ? "border-emerald-500/40 bg-emerald-500/10"
+                      ? "border-primary/40 bg-primary/10"
                       : "border-border bg-muted/20",
                   )}
                 >
                   {option.is_correct ? (
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                   ) : (
                     <div className="h-4 w-4 flex-shrink-0 rounded-full border-2 border-muted-foreground/30" />
                   )}
@@ -208,7 +208,7 @@ export function QuestionCard({
                   {option.is_correct && (
                     <Badge
                       variant="outline"
-                      className="ml-auto border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-400"
+                      className="ml-auto border-primary/30 bg-primary/10 text-xs text-primary"
                     >
                       Correct
                     </Badge>

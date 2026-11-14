@@ -13,7 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import gsap from "gsap";
+import { gsap } from "@/lib/gsap";
 import {
   Card,
   CardContent,
@@ -224,7 +224,7 @@ export function PreferencesSection() {
             <div
               ref={themeIndicatorRef}
               aria-hidden="true"
-              className="pointer-events-none absolute z-0 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 opacity-0 shadow-sm"
+              className="pointer-events-none absolute z-0 rounded-xl border-2 border-primary bg-primary/10 opacity-0 shadow-sm"
               style={{ top: 0, left: 0, width: 0, height: 0 }}
             />
             {themeOptions.map((opt) => {
@@ -242,7 +242,7 @@ export function PreferencesSection() {
                   onClick={() => handleThemeSelect(opt.value)}
                   aria-pressed={isActive}
                   className={cn(
-                    "relative z-10 flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent p-3.5 transition-colors duration-200 sm:p-4",
+                    "relative z-10 flex flex-col items-center gap-2 rounded-xl border-2 border-transparent p-3.5 transition-colors duration-200 sm:p-4",
                     !isActive && "hover:bg-muted/30",
                   )}
                 >
@@ -270,8 +270,8 @@ export function PreferencesSection() {
         <div className="space-y-3">
           <ToggleRow
             icon={Play}
-            iconColor="text-blue-600"
-            iconBg="bg-blue-500/10"
+            iconColor="text-info"
+            iconBg="bg-info/10"
             title="Autoplay Videos"
             description="Automatically play topic videos when you open a lesson."
             checked={preferences.autoplay_videos}
@@ -281,8 +281,8 @@ export function PreferencesSection() {
           />
           <ToggleRow
             icon={Sigma}
-            iconColor="text-violet-600"
-            iconBg="bg-violet-500/10"
+            iconColor="text-primary"
+            iconBg="bg-primary/10"
             title="Mathematical Notation Rendering"
             description="Render LaTeX math formulas in lessons and quizzes."
             checked={preferences.math_rendering}
@@ -292,8 +292,8 @@ export function PreferencesSection() {
           />
           <ToggleRow
             icon={Bell}
-            iconColor="text-amber-600"
-            iconBg="bg-amber-500/10"
+            iconColor="text-warning"
+            iconBg="bg-warning/10"
             title="Email Notifications"
             description="Receive course updates and announcements via email."
             checked={preferences.email_notifications}
@@ -306,8 +306,8 @@ export function PreferencesSection() {
           />
           <ToggleRow
             icon={Clock}
-            iconColor="text-rose-600"
-            iconBg="bg-rose-500/10"
+            iconColor="text-destructive"
+            iconBg="bg-destructive/10"
             title="Quiz Reminder Notifications"
             description="Get reminded about pending and upcoming quizzes."
             checked={preferences.quiz_reminders}
@@ -401,7 +401,7 @@ function ToggleRow({
   return (
     <div
       data-animate-item
-      className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-3.5 transition-colors duration-200 hover:bg-muted/30 sm:p-4"
+      className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3.5 transition-colors duration-200 hover:bg-muted/30 sm:p-4"
     >
       <div className="flex min-w-0 items-center gap-3">
         <div

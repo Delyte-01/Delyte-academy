@@ -1,13 +1,15 @@
 import { LucideIcon } from "lucide-react";
 
-export interface OverviewStat {
-  id: string;
-  label: string;
-  value: string;
-  sublabel: string;
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;
+/** Headline numbers for the progress page. Every value is derived from real rows. */
+export interface ProgressSummary {
+  overallPercent: number;
+  completedTopics: number;
+  totalTopics: number;
+  quizzesPassed: number;
+  quizzesTaken: number;
+  /** null until the student has taken a quiz (never a made-up number). */
+  averageScore: number | null;
+  currentStreak: number;
 }
 
 export interface WeeklyGoalData {
@@ -31,6 +33,8 @@ export interface ActivityItem {
   title: string;
   detail: string;
   time: string;
+  /** Raw ISO timestamp, used for ordering. */
+  at: string | null;
   icon: LucideIcon;
   color: string;
   bgColor: string;

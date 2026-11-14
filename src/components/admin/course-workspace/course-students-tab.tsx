@@ -1,13 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, TrendingUp, Eye } from "lucide-react";
+import { CheckCircle2, Eye, Search, TrendingUp, Users, X } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { DataTableShell } from "@/components/ui/data-table-shell";
 import { Input } from "@/components/ui/input";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/empty-states";
+import { StatStrip } from "@/components/admin/workspace/stat-strip";
 import { Enrollment } from "@/types/enrollment";
 
 interface CourseStudentsTabProps {
@@ -16,7 +27,7 @@ interface CourseStudentsTabProps {
 }
 
 function formatEnrolledDate(dateString?: string) {
-  if (!dateString) return "recently";
+  if (!dateString) return "Recently";
   return new Date(dateString).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -24,203 +35,193 @@ function formatEnrolledDate(dateString?: string) {
   });
 }
 
-export function CourseStudentsTab({
-  students,
-  onViewStudent,
-}: CourseStudentsTabProps) {
+function initialsOf(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+export function CourseStudentsTab({ students, onViewStudent }: CourseStudentsTabProps) {
   const [query, setQuery] = useState("");
 
-  const filteredStudents = useMemo(() => {
-    if (!query.trim()) return students;
-
-    const q = query.toLowerCase();
-
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return students;
     return students.filter((item) => {
-      const name = item.profiles?.full_name?.toLowerCase() ?? "";
-      const email = item.profiles?.email?.toLowerCase() ?? "";
-      const username = item.profiles?.username?.toLowerCase() ?? "";
-
-      return name.includes(q) || email.includes(q) || username.includes(q);
+      const p = item.profiles;
+      return (
+        (p?.full_name?.toLowerCase() ?? "").includes(q) ||
+        (p?.email?.toLowerCase() ?? "").includes(q) ||
+        (p?.username?.toLowerCase() ?? "").includes(q)
+      );
     });
   }, [students, query]);
 
-  const totalStudents = students.length;
   const completedCount = students.filter((s) => s.completed).length;
   const averageProgress =
     students.length > 0
-      ? Math.round(
-          students.reduce((sum, s) => sum + (s.progress ?? 0), 0) /
-            students.length,
-        )
+      ? Math.round(students.reduce((sum, s) => sum + (s.progress ?? 0), 0) / students.length)
       : 0;
 
+  if (students.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="No students enrolled yet"
+        description="Once students enroll in this course, their progress shows up here."
+      />
+    );
+  }
+
+  const identity = (enrollment: Enrollment) => {
+    const profile = enrollment.profiles;
+    const name = profile?.full_name || "Student";
+    return (
+      <span className="flex min-w-0 items-center gap-3">
+        <Avatar className="size-11 shrink-0">
+          <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />
+          <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary-soft-foreground">
+            {initialsOf(name)}
+          </AvatarFallback>
+        </Avatar>
+        <span className="min-w-0">
+          <span className="block truncate text-[15px] font-bold text-foreground">{name}</span>
+          <span className="block truncate text-[13px] text-muted-foreground">
+            {profile?.email || "No email"}
+          </span>
+        </span>
+      </span>
+    );
+  };
+
+  const viewButton = (enrollment: Enrollment) =>
+    onViewStudent && (
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={`View ${enrollment.profiles?.full_name || "student"}`}
+        className="size-10"
+        onClick={() => onViewStudent(enrollment.student_id)}
+      >
+        <Eye className="size-4" />
+      </Button>
+    );
+
   return (
-    <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-border/60 shadow-sm">
-          <CardContent className="flex items-center justify-between p-5">
-            <div>
-              <p className="text-sm text-muted-foreground">Total enrolled</p>
-              <p className="text-2xl font-bold text-foreground">
-                {totalStudents}
-              </p>
-            </div>
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <Users className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-5">
+      <StatStrip
+        items={[
+          { label: "Enrolled", value: students.length, icon: Users, tone: "info" },
+          { label: "Completed", value: completedCount, icon: CheckCircle2, tone: "success" },
+          { label: "Average progress (%)", value: averageProgress, icon: TrendingUp, tone: "brand" },
+        ]}
+      />
 
-        <Card className="border-border/60 shadow-sm">
-          <CardContent className="flex items-center justify-between p-5">
-            <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-foreground">
-                {completedCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-emerald-500/10 p-3 text-emerald-600">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 shadow-sm">
-          <CardContent className="flex items-center justify-between p-5">
-            <div>
-              <p className="text-sm text-muted-foreground">Average progress</p>
-              <p className="text-2xl font-bold text-foreground">
-                {averageProgress}%
-              </p>
-            </div>
-            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-600">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <Card className="border-border/60 shadow-sm">
-        <CardContent className="p-5">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <DataTableShell
+        toolbar={
+          <div className="relative w-full sm:max-w-sm">
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
             <Input
+              type="search"
+              aria-label="Search enrolled students"
+              placeholder="Search name, email or username"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search students by name, email, or username..."
-              className="pl-9"
+              className="pl-10 pr-10"
             />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+                className="absolute right-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Student List */}
-      <Card className="border-border/60 shadow-sm">
-        <CardContent className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Enrolled students</h3>
-            <Badge variant="outline">{filteredStudents.length} students</Badge>
-          </div>
-
-          {filteredStudents.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-              <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-              <p className="font-medium text-foreground">No students found</p>
-              <p className="text-sm text-muted-foreground">
-                Try adjusting your search or wait for students to enroll.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredStudents.map((enrollment) => {
-                const profile = enrollment.profiles;
-
-                const name = profile?.full_name || "Student";
-                const email = profile?.email || "No email";
-                const initials = name
-                  .split(" ")
-                  .filter(Boolean)
-                  .map((part) => part[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase();
-
-                return (
-                  <div
-                    key={enrollment.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/20 md:flex-row md:items-center"
-                  >
-                    <Avatar className="h-12 w-12 ring-2 ring-primary/10">
-                      <AvatarImage
-                        src={profile?.avatar_url ?? undefined}
-                        alt={name}
-                      />
-                      <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-foreground">{name}</p>
-                        {enrollment.completed ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                            Completed
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">In progress</Badge>
-                        )}
+        }
+        footer={
+          <p aria-live="polite">
+            Showing <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span> of{" "}
+            <span className="tabular-nums">{students.length}</span> students
+          </p>
+        }
+      >
+        {filtered.length === 0 ? (
+          <p className="px-6 py-14 text-center text-[15px] text-muted-foreground">
+            No student matches “{query}”.
+          </p>
+        ) : (
+          <>
+            <Table className="hidden md:table">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-5">Student</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-52">Progress</TableHead>
+                  <TableHead>Enrolled</TableHead>
+                  {onViewStudent && (
+                    <TableHead className="pr-3 text-right">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell className="py-3 pl-5">{identity(e)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={e.completed ? "completed" : "in_progress"} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <ProgressBar value={e.progress ?? 0} size="sm" label="Course progress" />
+                        <span className="w-10 text-right text-sm font-bold tabular-nums text-foreground">
+                          {Math.round(e.progress ?? 0)}%
+                        </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                      {formatEnrolledDate(e.enrolled_at)}
+                    </TableCell>
+                    {onViewStudent && <TableCell className="pr-3 text-right">{viewButton(e)}</TableCell>}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-                      <p className="text-sm text-muted-foreground">{email}</p>
-
-                      <div className="mt-2">
-                        <div className="mb-1 flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            Progress
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {enrollment.progress ?? 0}%
-                          </span>
-                        </div>
-
-                        <div className="h-2 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-primary transition-all duration-500"
-                            style={{
-                              width: `${enrollment.progress ?? 0}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-start gap-2 md:items-end">
-                      <p className="text-xs text-muted-foreground">
-                        Enrolled {formatEnrolledDate(enrollment.enrolled_at)}
-                      </p>
-
-                      {onViewStudent && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={() => onViewStudent(enrollment.student_id)}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </Button>
-                      )}
-                    </div>
+            <ul className="divide-y md:hidden">
+              {filtered.map((e) => (
+                <li key={e.id} className="space-y-3 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    {identity(e)}
+                    {viewButton(e)}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="flex items-center gap-3">
+                    <ProgressBar value={e.progress ?? 0} size="sm" label="Course progress" />
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      {Math.round(e.progress ?? 0)}%
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground">
+                    <StatusBadge status={e.completed ? "completed" : "in_progress"} />
+                    <span>Enrolled {formatEnrolledDate(e.enrolled_at)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </DataTableShell>
     </div>
   );
 }

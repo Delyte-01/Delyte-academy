@@ -53,7 +53,6 @@ async function createAdminNotification(params: {
   link?: string | null;
   courseId?: string | null;
 }) {
-  console.log("Creating admin notification:", params);
 
   const { error } = await supabase.from("notifications").insert({
     recipient_role: "admin",

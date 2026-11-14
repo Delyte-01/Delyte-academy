@@ -82,9 +82,9 @@ export function DangerZoneSection() {
   };
 
   return (
-    <Card id="danger" className="scroll-mt-6 border-rose-500/30">
+    <Card id="danger" className="scroll-mt-6 border-destructive/30">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base font-bold text-rose-700 dark:text-rose-400">
+        <CardTitle className="flex items-center gap-2 text-base font-bold text-destructive">
           <Trash2 className="h-5 w-5" />
           Danger Zone
         </CardTitle>
@@ -95,10 +95,10 @@ export function DangerZoneSection() {
 
       <CardContent className="space-y-4">
         {/* Export data */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
-              <Download className="h-5 w-5 text-rose-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+              <Download className="h-5 w-5 text-destructive" />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">
@@ -114,7 +114,7 @@ export function DangerZoneSection() {
             variant="outline"
             onClick={handleExport}
             disabled={exporting}
-            className="border-rose-500/30 text-rose-600 hover:bg-rose-500/10 hover:text-rose-600"
+            className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             {exporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {exporting ? "Exporting..." : "Export Data"}
@@ -122,10 +122,10 @@ export function DangerZoneSection() {
         </div>
 
         {/* Delete account */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
-              <Trash2 className="h-5 w-5 text-rose-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+              <Trash2 className="h-5 w-5 text-destructive" />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">
@@ -159,7 +159,7 @@ export function DangerZoneSection() {
                 <AlertDialogAction
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-rose-600 hover:bg-rose-700"
+                  className="bg-destructive hover:bg-destructive/90"
                 >
                   {deleting && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -172,8 +172,8 @@ export function DangerZoneSection() {
         </div>
 
         {/* Warning */}
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2 rounded-xl border border-warning/20 bg-warning/5 p-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" />
           <p className="text-xs text-muted-foreground">
             Deleting your account is permanent and cannot be undone. Consider
             exporting your learning data before proceeding.

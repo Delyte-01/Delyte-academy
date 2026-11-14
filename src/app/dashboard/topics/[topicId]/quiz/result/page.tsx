@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-states";
+import { Reveal } from "@/components/motion";
 import { cn } from "@/lib/utils";
 import FullPageLoader from "@/components/loading/Loading";
 import { useTopics } from "@/hooks/useTopic";
@@ -160,17 +162,15 @@ export default function QuizResultsPage() {
 
   if (!attempt || !result) {
     return (
-      <div className="flex flex-col items-center gap-4 py-24 text-center">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Result not found</h1>
-          <p className="text-sm text-muted-foreground">
-            We couldn&apos;t load this quiz attempt.
-          </p>
-        </div>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/courses">Back to my courses</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="Result not found"
+        description="We couldn't load this quiz attempt."
+        action={
+          <Button asChild>
+            <Link href="/dashboard/courses">Back to my courses</Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -192,7 +192,7 @@ export default function QuizResultsPage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
+    <Reveal on="mount" selector="[data-reveal]" stagger={0.08} className="mx-auto w-full max-w-5xl space-y-6 pb-10">
       <QuizHeader
         courseName={course.title}
         courseId={course.id}
@@ -204,28 +204,33 @@ export default function QuizResultsPage() {
       {autoSubmitted && (
         <div
           role="status"
-          className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm"
+          className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-soft p-4 text-[15px]"
         >
-          <TimerOff className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <TimerOff className="mt-0.5 size-4 shrink-0 text-warning" />
           <p>Time ran out, so your answers were submitted automatically.</p>
         </div>
       )}
 
-      <QuizResultsHero result={result} />
+      <div data-reveal>
+        <QuizResultsHero result={result} />
+      </div>
 
-      <ResultsSummaryCard
-        timeSpent={formatDuration(attempt.time_spent)}
-        attemptNumber={attempt.attempt_number}
-        passingScore={result.passingScore}
-      />
+      <div data-reveal>
+        <ResultsSummaryCard
+          timeSpent={formatDuration(attempt.time_spent)}
+          attemptNumber={attempt.attempt_number}
+          passingScore={result.passingScore}
+        />
+      </div>
 
       {/* The primary action depends on the outcome */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div data-reveal className="flex flex-col gap-3 sm:flex-row">
         {result.passed ? (
           <>
             <Button
+              variant="brand"
               size="lg"
-              className="bg-emerald-600 text-white hover:bg-emerald-500 sm:flex-1"
+              className="sm:flex-1"
               asChild
             >
               <Link href={nextHref}>
@@ -243,8 +248,9 @@ export default function QuizResultsPage() {
         ) : (
           <>
             <Button
+              variant="brand"
               size="lg"
-              className="bg-emerald-600 text-white hover:bg-emerald-500 sm:flex-1"
+              className="sm:flex-1"
               asChild
             >
               <Link href={retryHref}>
@@ -263,6 +269,7 @@ export default function QuizResultsPage() {
       </div>
 
       <section
+        data-reveal
         ref={reviewRef}
         aria-labelledby="review-heading"
         className="scroll-mt-24 space-y-4 pt-4"
@@ -270,9 +277,9 @@ export default function QuizResultsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2
             id="review-heading"
-            className="flex items-center gap-2 text-xl font-semibold tracking-tight"
+            className="flex items-center gap-2 font-heading text-xl font-extrabold tracking-tight"
           >
-            <ListChecks className="size-5 text-emerald-600" />
+            <ListChecks className="size-5 text-primary" />
             Review your answers
           </h2>
 
@@ -289,9 +296,9 @@ export default function QuizResultsPage() {
                 aria-selected={filter === f.key}
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
+                  "min-h-9 rounded-lg px-3 text-sm font-semibold outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/40",
                   filter === f.key
-                    ? "bg-background shadow-sm"
+                    ? "bg-card text-foreground shadow-soft"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -308,14 +315,14 @@ export default function QuizResultsPage() {
           <button
             type="button"
             onClick={() => showReview("incorrect")}
-            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+            className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
           >
             Show only the {incorrectCount} I got wrong
           </button>
         )}
 
         {visible.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             Nothing to show here.
           </p>
         ) : (
@@ -326,6 +333,6 @@ export default function QuizResultsPage() {
           </div>
         )}
       </section>
-    </div>
+    </Reveal>
   );
 }

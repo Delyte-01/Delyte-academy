@@ -3,15 +3,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-full border text-[11px] font-semibold transition-colors',
+  'inline-flex items-center gap-1 rounded-full border text-xs font-semibold tracking-wide transition-colors',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-slate-900 text-white',
-        violet: 'border-violet-100 bg-violet-50 text-[#6D5BF5]',
-        pink: 'border-pink-100 bg-pink-50 text-pink-500',
-        outline: 'border-slate-200 text-slate-600',
-        dot: 'border-transparent bg-emerald-50 text-emerald-600',
+        default: 'border-transparent bg-foreground text-background',
+        brand: 'border-transparent bg-primary-soft text-primary-soft-foreground',
+        success: 'border-transparent bg-success-soft text-success',
+        warning: 'border-transparent bg-warning-soft text-warning',
+        danger: 'border-transparent bg-destructive/10 text-destructive',
+        info: 'border-transparent bg-info-soft text-info',
+        muted: 'border-transparent bg-muted text-muted-foreground',
+        outline: 'border-border text-muted-foreground',
+        // legacy names, now token-based
+        violet: 'border-transparent bg-info-soft text-info',
+        pink: 'border-transparent bg-destructive/10 text-destructive',
+        dot: 'border-transparent bg-success-soft text-success',
       },
       size: {
         default: 'px-2.5 py-1',

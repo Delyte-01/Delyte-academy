@@ -1,86 +1,91 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { Panel } from "./panel";
 
-// Deterministic pseudo-random intensity for 30 days (5 weeks x 7 days)
-// 0 = no activity, 1-4 = increasing intensity
-const heatmapData: number[][] = [
-  [2, 3, 1, 0, 4, 2, 3],
-  [1, 2, 4, 3, 0, 2, 1],
-  [3, 0, 2, 4, 3, 1, 2],
-  [2, 4, 3, 1, 2, 0, 3],
-  [3, 2, 1, 4, 2, 3, 0],
-];
+interface ConsistencyHeatmapProps {
+  /** ISO timestamps of completed topics (real rows only). */
+  completedAt: string[];
+}
 
-const intensityColors = [
-  "bg-muted",
-  "bg-emerald-500/30",
-  "bg-emerald-500/50",
-  "bg-emerald-500/75",
-  "bg-emerald-500",
-];
+const WEEKS = 5;
+const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+const LEVELS = ["bg-muted", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"];
 
-const dayLabels = ["Mon", "Wed", "Fri"];
+const dayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-export function ConsistencyHeatmap() {
+/** Last five Monday-first weeks. Each square is a day; darker = more topics completed. */
+export function ConsistencyHeatmap({ completedAt }: ConsistencyHeatmapProps) {
+  const { cells, activeDays } = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const iso of completedAt) {
+      const k = dayKey(new Date(iso));
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thisMonday = new Date(today);
+    thisMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const start = new Date(thisMonday);
+    start.setDate(thisMonday.getDate() - (WEEKS - 1) * 7);
+
+    let active = 0;
+    const out = Array.from({ length: WEEKS * 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const future = d > today;
+      const n = future ? 0 : (counts.get(dayKey(d)) ?? 0);
+      if (n > 0) active++;
+      return {
+        key: dayKey(d),
+        n,
+        future,
+        isToday: d.getTime() === today.getTime(),
+        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      };
+    });
+    return { cells: out, activeDays: active };
+  }, [completedAt]);
+
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base font-bold">
-          Learning Consistency
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {/* Day labels */}
-            <div className="flex flex-col justify-between py-1 text-[10px] text-muted-foreground">
-              {dayLabels.map((day) => (
-                <span key={day} className="h-3 leading-3">
-                  {day}
-                </span>
-              ))}
-            </div>
-
-            {/* Heatmap grid */}
-            <div className="flex gap-1.5">
-              {heatmapData.map((week, weekIdx) => (
-                <div key={weekIdx} className="flex flex-col gap-1.5">
-                  {week.map((intensity, dayIdx) => (
-                    <div
-                      key={dayIdx}
-                      className={cn(
-                        "h-3.5 w-3.5 rounded-[3px] transition-all hover:ring-1 hover:ring-emerald-500/50",
-                        intensityColors[intensity],
-                      )}
-                      title={`${intensity > 0 ? `${intensity * 2} sessions` : "No activity"}`}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground">
-            <span>Less</span>
-            <div className="flex gap-1">
-              {intensityColors.map((color, i) => (
-                <div key={i} className={cn("h-3 w-3 rounded-[3px]", color)} />
-              ))}
-            </div>
-            <span>More</span>
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3 text-xs">
-            <span className="text-muted-foreground">
-              Active days this month
-            </span>
-            <span className="font-bold text-foreground">26 / 30</span>
-          </div>
+    <Panel title="Consistency" description="Topics completed over the last five weeks">
+      <div role="img" aria-label={`${activeDays} active days in the last ${WEEKS} weeks`} className="space-y-4">
+        <div className="grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-muted-foreground">
+          {DAY_LABELS.map((d, i) => (
+            <span key={i}>{d}</span>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+        <div className="grid grid-cols-7 gap-1.5">
+          {cells.map((c) => (
+            <div
+              key={c.key}
+              title={c.future ? undefined : `${c.label}: ${c.n} ${c.n === 1 ? "topic" : "topics"}`}
+              className={cn(
+                "aspect-square rounded-md",
+                c.future ? "bg-transparent ring-1 ring-inset ring-border/60" : LEVELS[Math.min(c.n, 4)],
+                c.isToday && "ring-2 ring-ring",
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          <span className="font-bold text-foreground tabular-nums">{activeDays}</span> active{" "}
+          {activeDays === 1 ? "day" : "days"}
+        </span>
+        <span className="flex items-center gap-1.5">
+          Less
+          {LEVELS.map((l) => (
+            <span key={l} className={cn("size-3 rounded-[4px]", l)} />
+          ))}
+          More
+        </span>
+      </div>
+    </Panel>
   );
 }

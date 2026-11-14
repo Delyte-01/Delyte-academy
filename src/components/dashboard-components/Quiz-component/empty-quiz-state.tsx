@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 export function EmptyQuizState({ topicId }: { topicId: string }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-4 py-10 text-center">
-      <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+      <div className="flex size-16 items-center justify-center rounded-xl bg-muted">
         <FileQuestion
           className="size-8 text-muted-foreground"
           strokeWidth={1.75}

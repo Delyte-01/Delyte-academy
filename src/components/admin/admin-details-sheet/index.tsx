@@ -138,14 +138,14 @@ export function AdminDetailSheet({
 
   const statusMeta = {
     active: {
-      dot: "bg-emerald-500",
-      text: "text-emerald-700 dark:text-emerald-400",
+      dot: "bg-primary",
+      text: "text-primary",
       label: "Active",
       description: "Signed in and able to manage the platform.",
     },
     suspended: {
-      dot: "bg-rose-500",
-      text: "text-rose-700 dark:text-rose-400",
+      dot: "bg-destructive",
+      text: "text-destructive",
       label: "Suspended",
       description: "Access is paused until reactivated.",
     },

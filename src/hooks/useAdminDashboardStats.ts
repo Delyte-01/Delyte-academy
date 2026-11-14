@@ -10,18 +10,16 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import type { StatTone } from "@/components/ui/stat-card";
 
 
 export interface KpiStat {
   id: string;
   label: string;
-  value: string;
-  change: string;
-  trend: "up" | "down";
-  sublabel: string;
+  value: number;
+  hint: string;
   icon: LucideIcon;
-  color: string;
-  bgColor: string;
+  tone: StatTone;
 }
 
 export function useAdminDashboardStats() {
@@ -59,54 +57,13 @@ export function useAdminDashboardStats() {
 
   const stats: KpiStat[] = useMemo(
     () => [
-      {
-        id: "students",
-        label: "Total Students",
-        value: students.toLocaleString(),
-        change: "Live",
-        trend: "up",
-        sublabel: "Registered learners",
-        icon: Users,
-        color: "text-blue-600",
-        bgColor: "bg-blue-500/10",
-      },
-      {
-        id: "enrollments",
-        label: "Active Enrollments",
-        value: enrollments.toLocaleString(),
-        change: "Live",
-        trend: "up",
-        sublabel: "Across all courses",
-        icon: GraduationCap,
-        color: "text-emerald-600",
-        bgColor: "bg-emerald-500/10",
-      },
-      {
-        id: "courses",
-        label: "Published Courses",
-        value: publishedCourses.toLocaleString(),
-        change: "Live",
-        trend: "up",
-        sublabel: "Visible to students",
-        icon: BookOpen,
-        color: "text-violet-600",
-        bgColor: "bg-violet-500/10",
-      },
-      {
-        id: "quizzes",
-        label: "Quizzes Completed",
-        value: quizzesCompleted.toLocaleString(),
-        change: "Live",
-        trend: "up",
-        sublabel: "Total quiz attempts",
-        icon: ClipboardCheck,
-        color: "text-amber-600",
-        bgColor: "bg-amber-500/10",
-      },
+      { id: "students", label: "Total students", value: students, hint: "Registered learners", icon: Users, tone: "brand" },
+      { id: "enrollments", label: "Active enrollments", value: enrollments, hint: "Across all courses", icon: GraduationCap, tone: "success" },
+      { id: "courses", label: "Published courses", value: publishedCourses, hint: "Visible to students", icon: BookOpen, tone: "info" },
+      { id: "quizzes", label: "Quiz attempts", value: quizzesCompleted, hint: "Submitted by students", icon: ClipboardCheck, tone: "warning" },
     ],
     [students, enrollments, publishedCourses, quizzesCompleted],
   );
-  console.log("stats", stats, students);
 
   return { stats, loading };
 }

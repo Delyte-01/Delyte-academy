@@ -38,6 +38,16 @@ async function signInWithGoogle() {
   });
 }
 
+async function requestPasswordReset(email: string) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+  });
+}
+
+async function updatePassword(password: string) {
+  return supabase.auth.updateUser({ password });
+}
+
 async function logout() {
   return supabase.auth.signOut();
 }
@@ -46,5 +56,7 @@ export const authService = {
   login,
   signup,
   logout,
-  signInWithGoogle
+  signInWithGoogle,
+  requestPasswordReset,
+  updatePassword,
 };

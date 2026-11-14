@@ -32,57 +32,57 @@ export const notificationTypeMeta: Record<
   course_published: {
     icon: BookOpen,
     label: "New Course",
-    accent: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
+    accent: "text-success",
+    bg: "bg-success/10",
   },
 
   topic_added: {
     icon: FileText,
     label: "New Topic",
-    accent: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/10",
+    accent: "text-info",
+    bg: "bg-info/10",
   },
 
   quiz_added: {
     icon: ClipboardList,
     label: "New Quiz",
-    accent: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-500/10",
+    accent: "text-warning",
+    bg: "bg-warning/10",
   },
 
   quiz_result: {
     icon: Trophy,
     label: "Quiz Result",
-    accent: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
+    accent: "text-success",
+    bg: "bg-success/10",
   },
 
   course_completed: {
     icon: Medal,
     label: "Course Completed",
-    accent: "text-violet-600 dark:text-violet-400",
-    bg: "bg-violet-500/10",
+    accent: "text-primary",
+    bg: "bg-primary/10",
   },
 
   announcement: {
     icon: Megaphone,
     label: "Announcement",
-    accent: "text-slate-600 dark:text-slate-400",
-    bg: "bg-slate-500/10",
+    accent: "text-muted-foreground",
+    bg: "bg-muted-foreground/10",
   },
 
   enrollment: {
     icon: BookOpen,
     label: "Enrollment",
-    accent: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
+    accent: "text-success",
+    bg: "bg-success/10",
   },
 
   system: {
     icon: Bell,
     label: "System",
-    accent: "text-slate-600 dark:text-slate-400",
-    bg: "bg-slate-500/10",
+    accent: "text-muted-foreground",
+    bg: "bg-muted-foreground/10",
   },
 };
 
@@ -101,7 +101,8 @@ export function formatRelativeTime(dateString: string): string {
   const timestamp = new Date(dateString).getTime();
   const diff = Date.now() - timestamp;
 
-  if (diff < 60 * 60 * 1000) return "Just now";
+  if (diff < 60 * 1000) return "Just now";
+  if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))}m ago`;
   if (diff < 2 * 60 * 60 * 1000) return "1h ago";
   if (diff < DAY) return `${Math.floor(diff / (60 * 60 * 1000))}h ago`;
   if (diff < 2 * DAY) return "Yesterday";
